@@ -8,8 +8,11 @@ import {
   ShieldCheck, 
   UserCheck, 
   Search,
-  CheckCircle2
+  LogIn,
+  LogOut,
+  User
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export default function Navbar({ 
   activeTab, 
@@ -21,9 +24,12 @@ export default function Navbar({
   unreadNotifications, 
   setShowNotifications, 
   openGrievanceModal,
+  openLoginModal,
   searchQuery,
   setSearchQuery
 }) {
+  const { user, logout } = useAuth();
+
   return (
     <header className="navbar-header glass-card" style={{ borderRadius: 0, borderTop: 0, borderLeft: 0, borderRight: 0, sticky: 'top', zIndex: 900 }}>
       <div className="nav-container">
@@ -74,6 +80,22 @@ export default function Navbar({
               <span>Official Admin</span>
             </button>
           </div>
+
+          {/* User Auth Badge / Login Button */}
+          {user ? (
+            <div className="user-badge-chip flex-align-center gap-2" style={{ background: 'var(--bg-tertiary)', padding: '4px 10px', borderRadius: '20px', border: '1px solid var(--border-subtle)' }}>
+              <User size={14} className="text-blue" />
+              <span className="small-text font-bold" style={{ fontSize: '0.8rem' }}>{user.fullName.split(' ')[0]} ({user.role})</span>
+              <button onClick={logout} className="icon-circle-btn" style={{ width: '24px', height: '24px', border: 'none', background: 'transparent' }} title="Log Out">
+                <LogOut size={13} className="text-muted" />
+              </button>
+            </div>
+          ) : (
+            <button className="btn btn-secondary btn-sm" onClick={openLoginModal}>
+              <LogIn size={14} />
+              <span>Sign In</span>
+            </button>
+          )}
 
           {/* Lodge Grievance quick button */}
           {activePortal === 'citizen' && (

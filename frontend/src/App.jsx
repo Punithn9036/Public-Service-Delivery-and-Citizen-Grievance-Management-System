@@ -7,6 +7,7 @@ import KnowledgeBase from './components/KnowledgeBase';
 import GrievanceFormModal from './components/GrievanceFormModal';
 import ServiceApplicationModal from './components/ServiceApplicationModal';
 import NotificationsDrawer from './components/NotificationsDrawer';
+import LoginModal from './components/LoginModal';
 import { AuthProvider } from './context/AuthContext';
 import { grievanceAPI } from './api/apiClient';
 
@@ -62,6 +63,7 @@ function MainAppContent() {
 
   // Modals state
   const [showGrievanceModal, setShowGrievanceModal] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const [selectedServiceModal, setSelectedServiceModal] = useState(null);
 
   // Sync Theme to document root
@@ -101,7 +103,6 @@ function MainAppContent() {
   // Actions
   const handleAddGrievance = async (newGrievance) => {
     try {
-      // Attempt backend API create
       await grievanceAPI.create(newGrievance);
     } catch (e) {}
 
@@ -208,6 +209,7 @@ function MainAppContent() {
         unreadNotifications={notifications.length}
         setShowNotifications={setShowNotifications}
         openGrievanceModal={() => setShowGrievanceModal(true)}
+        openLoginModal={() => setShowLoginModal(true)}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
       />
@@ -298,6 +300,14 @@ function MainAppContent() {
           service={selectedServiceModal}
           onClose={() => setSelectedServiceModal(null)}
           onSubmitApplication={handleAddApplication}
+        />
+      )}
+
+      {/* Auth Login Modal */}
+      {showLoginModal && (
+        <LoginModal 
+          onClose={() => setShowLoginModal(false)}
+          onSuccess={() => {}}
         />
       )}
 
