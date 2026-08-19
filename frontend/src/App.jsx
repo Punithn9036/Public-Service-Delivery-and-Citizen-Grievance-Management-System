@@ -7,6 +7,8 @@ import KnowledgeBase from './components/KnowledgeBase';
 import GrievanceFormModal from './components/GrievanceFormModal';
 import ServiceApplicationModal from './components/ServiceApplicationModal';
 import NotificationsDrawer from './components/NotificationsDrawer';
+import { AuthProvider } from './context/AuthContext';
+import { grievanceAPI } from './api/apiClient';
 
 import { 
   INITIAL_SERVICES, 
@@ -18,7 +20,7 @@ import {
 
 import './App.css';
 
-export default function App() {
+function MainAppContent() {
   // Theme state
   const [theme, setTheme] = useState(() => localStorage.getItem('janseva_theme') || 'light');
   
@@ -28,7 +30,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTrackId, setSelectedTrackId] = useState('');
 
-  // Data State with LocalStorage Fallback
+  // Data State with API + LocalStorage Fallback
   const [grievances, setGrievances] = useState(() => {
     const saved = localStorage.getItem('janseva_grievances');
     return saved ? JSON.parse(saved) : INITIAL_GRIEVANCES;
@@ -68,7 +70,7 @@ export default function App() {
     localStorage.setItem('janseva_theme', theme);
   }, [theme]);
 
-  // Sync Data to localStorage
+  // Sync Data to localStorage & attempt API sync
   useEffect(() => {
     localStorage.setItem('janseva_grievances', JSON.stringify(grievances));
   }, [grievances]);
@@ -77,12 +79,32 @@ export default function App() {
     localStorage.setItem('janseva_applications', JSON.stringify(applications));
   }, [applications]);
 
+  // Fetch live grievances from backend API on mount
+  useEffect(() => {
+    async function fetchLiveGrievances() {
+      try {
+        const data = await grievanceAPI.getAll();
+        if (data.grievances && data.grievances.length > 0) {
+          setGrievances(data.grievances);
+        }
+      } catch (err) {
+        // Fallback to local state if backend is offline
+      }
+    }
+    fetchLiveGrievances();
+  }, []);
+
   const toggleTheme = () => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
 
   // Actions
-  const handleAddGrievance = (newGrievance) => {
+  const handleAddGrievance = async (newGrievance) => {
+    try {
+      // Attempt backend API create
+      await grievanceAPI.create(newGrievance);
+    } catch (e) {}
+
     setGrievances(prev => [newGrievance, ...prev]);
     setNotifications(prev => [
       {
@@ -110,7 +132,11 @@ export default function App() {
     ]);
   };
 
-  const handleUpdateGrievanceStatus = (id, status, officerName, note) => {
+  const handleUpdateGrievanceStatus = async (id, status, officerName, note) => {
+    try {
+      await grievanceAPI.updateStatus(id, { nextStatus: status, officerName, note });
+    } catch (e) {}
+
     setGrievances(prev => prev.map(g => {
       if (g.id === id) {
         const updatedTimeline = [
@@ -144,7 +170,11 @@ export default function App() {
     ]);
   };
 
-  const handleSubmitFeedback = (id, rating, comment) => {
+  const handleSubmitFeedback = async (id, rating, comment) => {
+    try {
+      await grievanceAPI.submitFeedback(id, { rating, comment });
+    } catch (e) {}
+
     setGrievances(prev => prev.map(g => {
       if (g.id === id) {
         return {
@@ -156,7 +186,11 @@ export default function App() {
     }));
   };
 
-  const handleReopenGrievance = (id) => {
+  const handleReopenGrievance = async (id) => {
+    try {
+      await grievanceAPI.reopen(id, 'Incomplete resolution');
+    } catch (e) {}
+
     handleUpdateGrievanceStatus(id, 'Under Review', 'Control Room Nodal Officer', 'Ticket re-opened by citizen due to incomplete resolution. Priority escalated.');
   };
 
@@ -285,5 +319,13 @@ export default function App() {
       </footer>
 
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <MainAppContent />
+    </AuthProvider>
   );
 }
