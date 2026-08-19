@@ -1,24 +1,45 @@
-# Logs
-logs
-*.log
+# Node
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+package-lock.json.bak
 
-node_modules
-dist
-dist-ssr
-*.local
+# Next.js / React
+.next/
+out/
+dist/
 
-# Editor directories and files
+# Env files — NEVER commit real secrets
+.env
+.env.local
+.env.*.local
+
+# Go
+*.exe
+*.test
+*.out
+vendor/
+
+# Docker
+*.pid
+
+# Fabric generated material — certs/keys, never commit these
+blockchain/network/organizations/
+blockchain/network/channel-artifacts/
+blockchain/network/system-genesis-block/
+*.tx
+*.block
+
+# IDE
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
+
+# Build output
+dist/
+build/
+
+# OS
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+Thumbs.db

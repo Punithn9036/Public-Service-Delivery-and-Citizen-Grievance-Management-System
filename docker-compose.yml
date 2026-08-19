@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  # 1. PostgreSQL Relational Database (App Data & User Auth)
+  postgres:
+    image: postgres:15-alpine
+    container_name: janseva-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-janseva_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-janseva_password}
+      POSTGRES_DB: ${POSTGRES_DB:-janseva_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+
+  # 2. IPFS Node (Kubo) - Decentralized Media & Document Storage
+  ipfs:
+    image: ipfs/kubo:latest
+    container_name: janseva-ipfs
+    restart: always
+    ports:
+      - "4001:4001" # IPFS Swarm
+      - "5001:5001" # IPFS API
+      - "8080:8080" # IPFS Gateway
+    volumes:
+      - ipfs_data:/data/ipfs
+
+  # 3. Node.js Express REST Backend API & Blockchain Gateway
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../docker/Dockerfile.backend
+    container_name: janseva-backend
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - DATABASE_URL=postgresql://janseva_admin:janseva_password@postgres:5432/janseva_db
+      - IPFS_NODE_URL=http://ipfs:5001
+      - JWT_SECRET=${JWT_SECRET:-janseva_jwt_secret_dev}
+    depends_on:
+      - postgres
+      - ipfs
+
+  # 4. React SPA / Next.js Citizen & Officer Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../docker/Dockerfile.frontend
+    container_name: janseva-frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  ipfs_data:
