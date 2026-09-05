@@ -8,9 +8,9 @@ import {
   ShieldCheck, 
   UserCheck, 
   Search,
-  LogIn,
   LogOut,
-  User
+  User,
+  CheckCircle
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -24,11 +24,12 @@ export default function Navbar({
   unreadNotifications, 
   setShowNotifications, 
   openGrievanceModal,
-  openLoginModal,
   searchQuery,
   setSearchQuery
 }) {
   const { user, logout } = useAuth();
+
+  const isCitizen = user?.role === 'CITIZEN';
 
   return (
     <header className="navbar-header glass-card" style={{ borderRadius: 0, borderTop: 0, borderLeft: 0, borderRight: 0, sticky: 'top', zIndex: 900 }}>
@@ -63,42 +64,38 @@ export default function Navbar({
         {/* Middle/Right Navigation Controls */}
         <div className="nav-actions">
 
-          {/* Portal Switcher (Citizen vs Official) */}
-          <div className="portal-toggle-pill">
-            <button 
-              className={`portal-btn ${activePortal === 'citizen' ? 'active' : ''}`}
-              onClick={() => { setActivePortal('citizen'); setActiveTab('overview'); }}
-            >
-              <UserCheck size={14} />
-              <span>Citizen</span>
-            </button>
-            <button 
-              className={`portal-btn ${activePortal === 'admin' ? 'active' : ''}`}
-              onClick={() => { setActivePortal('admin'); setActiveTab('admin-dashboard'); }}
-            >
-              <ShieldCheck size={14} />
-              <span>Official Admin</span>
-            </button>
-          </div>
-
-          {/* User Auth Badge / Login Button */}
-          {user ? (
-            <div className="user-badge-chip flex-align-center gap-2" style={{ background: 'var(--bg-tertiary)', padding: '4px 10px', borderRadius: '20px', border: '1px solid var(--border-subtle)' }}>
-              <User size={14} className="text-blue" />
-              <span className="small-text font-bold" style={{ fontSize: '0.8rem' }}>{user.fullName.split(' ')[0]} ({user.role})</span>
-              <button onClick={logout} className="icon-circle-btn" style={{ width: '24px', height: '24px', border: 'none', background: 'transparent' }} title="Log Out">
-                <LogOut size={13} className="text-muted" />
-              </button>
+          {/* User Role Badge */}
+          {user && (
+            <div className="user-badge-chip flex-align-center gap-2" style={{
+              background: isCitizen ? 'rgba(34, 197, 94, 0.1)' : 'rgba(26, 86, 219, 0.1)',
+              padding: '6px 12px',
+              borderRadius: '20px',
+              border: `1px solid ${isCitizen ? 'rgba(34, 197, 94, 0.3)' : 'rgba(26, 86, 219, 0.3)'}`
+            }}>
+              {isCitizen ? <UserCheck size={14} color="#22c55e" /> : <ShieldCheck size={14} color="#1a56db" />}
+              <span className="small-text font-bold" style={{ fontSize: '0.82rem', color: 'var(--text-primary)' }}>
+                {user.fullName || user.email}
+              </span>
+              <span style={{
+                fontSize: '0.7rem',
+                padding: '2px 6px',
+                borderRadius: '10px',
+                background: isCitizen ? '#22c55e' : '#1a56db',
+                color: '#ffffff',
+                fontWeight: '700'
+              }}>
+                {user.role}
+              </span>
+              {user.department && (
+                <span className="small-text text-muted" style={{ fontSize: '0.75rem' }}>
+                  • {user.department}
+                </span>
+              )}
             </div>
-          ) : (
-            <button className="btn btn-secondary btn-sm" onClick={openLoginModal}>
-              <LogIn size={14} />
-              <span>Sign In</span>
-            </button>
           )}
 
-          {/* Lodge Grievance quick button */}
-          {activePortal === 'citizen' && (
+          {/* Lodge Grievance quick button for Citizen */}
+          {isCitizen && (
             <button className="btn btn-primary btn-sm" onClick={openGrievanceModal}>
               <PlusCircle size={16} />
               <span>Lodge Grievance</span>
@@ -125,12 +122,25 @@ export default function Navbar({
           >
             {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
           </button>
+
+          {/* Logout Button */}
+          {user && (
+            <button
+              onClick={logout}
+              className="btn btn-secondary btn-sm"
+              title="Sign Out of Portal"
+              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <LogOut size={14} />
+              <span>Sign Out</span>
+            </button>
+          )}
         </div>
 
       </div>
 
-      {/* Navigation Sub-bar */}
-      {activePortal === 'citizen' && (
+      {/* Navigation Sub-bar for Citizens */}
+      {isCitizen && (
         <div className="nav-subtabs">
           <button 
             className={`subtab ${activeTab === 'overview' ? 'active' : ''}`} 

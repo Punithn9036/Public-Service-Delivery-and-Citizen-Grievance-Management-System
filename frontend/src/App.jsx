@@ -7,8 +7,8 @@ import KnowledgeBase from './components/KnowledgeBase';
 import GrievanceFormModal from './components/GrievanceFormModal';
 import ServiceApplicationModal from './components/ServiceApplicationModal';
 import NotificationsDrawer from './components/NotificationsDrawer';
-import LoginModal from './components/LoginModal';
-import { AuthProvider } from './context/AuthContext';
+import AuthScreen from './components/AuthScreen';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { grievanceAPI } from './api/apiClient';
 
 import { 
@@ -22,6 +22,8 @@ import {
 import './App.css';
 
 function MainAppContent() {
+  const { user } = useAuth();
+
   // Theme state
   const [theme, setTheme] = useState(() => localStorage.getItem('janseva_theme') || 'light');
   
@@ -30,6 +32,19 @@ function MainAppContent() {
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'services' | 'track' | 'faqs' | 'admin-dashboard'
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTrackId, setSelectedTrackId] = useState('');
+
+  // Synchronize active portal with user role when user changes
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'CITIZEN') {
+        setActivePortal('citizen');
+        setActiveTab('overview');
+      } else {
+        setActivePortal('admin');
+        setActiveTab('admin-dashboard');
+      }
+    }
+  }, [user]);
 
   // Data State with API + LocalStorage Fallback
   const [grievances, setGrievances] = useState(() => {
@@ -63,7 +78,6 @@ function MainAppContent() {
 
   // Modals state
   const [showGrievanceModal, setShowGrievanceModal] = useState(false);
-  const [showLoginModal, setShowLoginModal] = useState(false);
   const [selectedServiceModal, setSelectedServiceModal] = useState(null);
 
   // Sync Theme to document root
@@ -195,6 +209,13 @@ function MainAppContent() {
     handleUpdateGrievanceStatus(id, 'Under Review', 'Control Room Nodal Officer', 'Ticket re-opened by citizen due to incomplete resolution. Priority escalated.');
   };
 
+  // If user is not logged in, enforce the Login-First Gate
+  if (!user) {
+    return <AuthScreen />;
+  }
+
+  const isCitizen = user.role === 'CITIZEN';
+
   return (
     <div className="app-root">
       
@@ -209,7 +230,6 @@ function MainAppContent() {
         unreadNotifications={notifications.length}
         setShowNotifications={setShowNotifications}
         openGrievanceModal={() => setShowGrievanceModal(true)}
-        openLoginModal={() => setShowLoginModal(true)}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
       />
@@ -227,7 +247,7 @@ function MainAppContent() {
       <main className="main-app-container">
         
         {/* Official / Admin Portal View */}
-        {activePortal === 'admin' ? (
+        {!isCitizen && activePortal === 'admin' ? (
           <AdminDashboard 
             grievances={grievances}
             applications={applications}
@@ -300,14 +320,6 @@ function MainAppContent() {
           service={selectedServiceModal}
           onClose={() => setSelectedServiceModal(null)}
           onSubmitApplication={handleAddApplication}
-        />
-      )}
-
-      {/* Auth Login Modal */}
-      {showLoginModal && (
-        <LoginModal 
-          onClose={() => setShowLoginModal(false)}
-          onSuccess={() => {}}
         />
       )}
 
