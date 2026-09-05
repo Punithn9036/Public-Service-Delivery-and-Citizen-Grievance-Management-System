@@ -9,10 +9,10 @@ import {
   UserCheck, 
   Search,
   LogOut,
-  User,
-  CheckCircle
+  Globe
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function Navbar({ 
   activeTab, 
@@ -28,6 +28,7 @@ export default function Navbar({
   setSearchQuery
 }) {
   const { user, logout } = useAuth();
+  const { lang, setLang, t } = useLanguage();
 
   const isCitizen = user?.role === 'CITIZEN';
 
@@ -43,9 +44,9 @@ export default function Navbar({
           <div>
             <div className="brand-title-row">
               <span className="brand-name">JanSeva</span>
-              <span className="brand-tagline">GOV PORTAL</span>
+              <span className="brand-tagline">{t('brandTagline')}</span>
             </div>
-            <p className="brand-sub">Public Services & Grievance Governance</p>
+            <p className="brand-sub">{t('brandSubtitle')}</p>
           </div>
         </div>
 
@@ -54,7 +55,7 @@ export default function Navbar({
           <Search size={16} className="search-icon" />
           <input 
             type="text" 
-            placeholder="Search grievances, service IDs, or FAQs..." 
+            placeholder={t('searchPlaceholder')} 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="nav-search-input"
@@ -63,6 +64,39 @@ export default function Navbar({
 
         {/* Middle/Right Navigation Controls */}
         <div className="nav-actions">
+
+          {/* Language Selector */}
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            background: 'var(--bg-tertiary, rgba(255,255,255,0.06))',
+            borderRadius: '20px',
+            padding: '2px 6px',
+            border: '1px solid var(--border-subtle, rgba(255,255,255,0.1))',
+            gap: '4px'
+          }}>
+            <Globe size={13} style={{ opacity: 0.7, marginLeft: '4px' }} />
+            {['en', 'hi', 'kn'].map((code) => (
+              <button
+                key={code}
+                type="button"
+                onClick={() => setLang(code)}
+                style={{
+                  background: lang === code ? 'var(--primary, #2563eb)' : 'transparent',
+                  color: lang === code ? '#ffffff' : 'var(--text-secondary, #94a3b8)',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '2px 8px',
+                  fontSize: '0.72rem',
+                  fontWeight: lang === code ? 700 : 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+              >
+                {code.toUpperCase()}
+              </button>
+            ))}
+          </div>
 
           {/* User Role Badge */}
           {user && (
@@ -98,7 +132,7 @@ export default function Navbar({
           {isCitizen && (
             <button className="btn btn-primary btn-sm" onClick={openGrievanceModal}>
               <PlusCircle size={16} />
-              <span>Lodge Grievance</span>
+              <span>{t('lodgeGrievance')}</span>
             </button>
           )}
 
@@ -132,7 +166,7 @@ export default function Navbar({
               style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
             >
               <LogOut size={14} />
-              <span>Sign Out</span>
+              <span>{t('signOut')}</span>
             </button>
           )}
         </div>
@@ -146,25 +180,25 @@ export default function Navbar({
             className={`subtab ${activeTab === 'overview' ? 'active' : ''}`} 
             onClick={() => setActiveTab('overview')}
           >
-            Dashboard Overview
+            {t('overviewTab')}
           </button>
           <button 
             className={`subtab ${activeTab === 'services' ? 'active' : ''}`} 
             onClick={() => setActiveTab('services')}
           >
-            Public Services Catalog
+            {t('servicesTab')}
           </button>
           <button 
             className={`subtab ${activeTab === 'track' ? 'active' : ''}`} 
             onClick={() => setActiveTab('track')}
           >
-            Track Status & Resolution
+            {t('trackTab')}
           </button>
           <button 
             className={`subtab ${activeTab === 'faqs' ? 'active' : ''}`} 
             onClick={() => setActiveTab('faqs')}
           >
-            Knowledge Base & AI Guide
+            {t('faqsTab')}
           </button>
         </div>
       )}

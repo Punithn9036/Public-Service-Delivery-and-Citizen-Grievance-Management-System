@@ -20,6 +20,7 @@ import {
   UserCheck
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const ICON_MAP = {
   FileText: FileText,
@@ -41,6 +42,7 @@ export default function CitizenDashboard({
   searchQuery
 }) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [viewScope, setViewScope] = useState('all'); // 'all' | 'my'
   const [statusFilter, setStatusFilter] = useState('All');
   const [departmentFilter, setDepartmentFilter] = useState('All');
@@ -109,10 +111,10 @@ export default function CitizenDashboard({
           <div className="hero-actions">
             <button className="btn btn-primary" onClick={openGrievanceModal}>
               <FilePlus size={18} />
-              Lodge New Grievance
+              {t('lodgeGrievance')}
             </button>
             <button className="btn btn-secondary" onClick={() => setActiveTab('services')}>
-              Browse Public Services
+              {t('popularServices')}
               <ArrowRight size={16} />
             </button>
           </div>
@@ -120,11 +122,11 @@ export default function CitizenDashboard({
         <div className="hero-badge-art">
           <div className="glass-stat-chip">
             <span className="chip-num">{resolutionRate}%</span>
-            <span className="chip-label">SLA Compliance Rate</span>
+            <span className="chip-label">{t('slaCompliance')}</span>
           </div>
           <div className="glass-stat-chip glow">
             <span className="chip-num">{resolvedCount}</span>
-            <span className="chip-label">Cases Resolved This Month</span>
+            <span className="chip-label">{t('resolvedThisMonth')}</span>
           </div>
         </div>
       </div>
@@ -136,7 +138,7 @@ export default function CitizenDashboard({
             <FileText size={22} color="#2563eb" />
           </div>
           <div>
-            <span className="stat-title">Total Lodged</span>
+            <span className="stat-title">{t('totalLodged')}</span>
             <h3 className="stat-value">{totalGrievances}</h3>
             <span className="stat-sub">Across all municipal wards</span>
           </div>
@@ -147,7 +149,7 @@ export default function CitizenDashboard({
             <Clock size={22} color="#d97706" />
           </div>
           <div>
-            <span className="stat-title">In Progress</span>
+            <span className="stat-title">{t('inProgress')}</span>
             <h3 className="stat-value">{inProgressCount}</h3>
             <span className="stat-sub">Assigned to field officers</span>
           </div>
@@ -158,7 +160,7 @@ export default function CitizenDashboard({
             <CheckCircle size={22} color="#16a34a" />
           </div>
           <div>
-            <span className="stat-title">Successfully Resolved</span>
+            <span className="stat-title">{t('resolvedCases')}</span>
             <h3 className="stat-value">{resolvedCount}</h3>
             <span className="stat-sub">{resolutionRate}% resolution efficiency</span>
           </div>
@@ -169,7 +171,7 @@ export default function CitizenDashboard({
             <AlertTriangle size={22} color="#e11d48" />
           </div>
           <div>
-            <span className="stat-title">Urgent Alerts</span>
+            <span className="stat-title">{t('urgentAlerts')}</span>
             <h3 className="stat-value">{urgentCount}</h3>
             <span className="stat-sub">High priority intervention</span>
           </div>
@@ -180,7 +182,7 @@ export default function CitizenDashboard({
       <div className="section-block">
         <div className="section-header">
           <div>
-            <h2>Popular Public Services</h2>
+            <h2>{t('popularServices')}</h2>
             <p>Direct online applications with guaranteed Service Level Agreements (SLAs)</p>
           </div>
           <button className="btn btn-outline btn-sm" onClick={() => setActiveTab('services')}>
@@ -205,7 +207,7 @@ export default function CitizenDashboard({
                 <div className="service-footer">
                   <span className="service-fee">Fee: <strong>{service.fee}</strong></span>
                   <button className="btn btn-primary btn-sm" onClick={() => openServiceModal(service)}>
-                    Apply Now
+                    {t('applyNow')}
                   </button>
                 </div>
               </div>
@@ -218,7 +220,7 @@ export default function CitizenDashboard({
       <div className="section-block">
         <div className="section-header">
           <div>
-            <h2>Grievance Tracking & Redressal Stream</h2>
+            <h2>{t('recentSubmissions')}</h2>
             <p>Track grievances submitted by citizens and monitor action taken by department officers</p>
           </div>
 
@@ -231,7 +233,7 @@ export default function CitizenDashboard({
                 style={{ borderRadius: '6px', fontSize: '0.75rem', padding: '4px 10px', border: 'none' }}
                 onClick={() => setViewScope('all')}
               >
-                All Wards ({grievances.length})
+                {t('allWards')} ({grievances.length})
               </button>
               <button
                 type="button"
@@ -239,7 +241,7 @@ export default function CitizenDashboard({
                 style={{ borderRadius: '6px', fontSize: '0.75rem', padding: '4px 10px', border: 'none' }}
                 onClick={() => setViewScope('my')}
               >
-                My Submissions
+                {t('mySubmissions')}
               </button>
             </div>
 
@@ -252,7 +254,7 @@ export default function CitizenDashboard({
                   onChange={(e) => setStatusFilter(e.target.value)}
                   className="filter-select"
                 >
-                  <option value="All">All Statuses</option>
+                  <option value="All">{t('allStatuses')}</option>
                   <option value="Submitted">Submitted</option>
                   <option value="Under Review">Under Review</option>
                   <option value="Assigned">Assigned</option>
@@ -334,7 +336,7 @@ export default function CitizenDashboard({
                       setActiveTab('track');
                     }}
                   >
-                    Track Progress & Timeline
+                    {t('trackProgress')}
                     <ExternalLink size={14} />
                   </button>
                 </div>
