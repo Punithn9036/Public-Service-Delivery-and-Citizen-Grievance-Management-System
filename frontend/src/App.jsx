@@ -240,6 +240,13 @@ function MainAppContent() {
           notifications={notifications}
           onClose={() => setShowNotifications(false)}
           onClearAll={() => setNotifications([])}
+          onSelectNotification={(n) => {
+            const match = n.title.match(/#(GRV-[\w-]+|APP-[\w-]+)/i);
+            if (match && match[1]) {
+              setSelectedTrackId(match[1]);
+              setActiveTab('track');
+            }
+          }}
         />
       )}
 

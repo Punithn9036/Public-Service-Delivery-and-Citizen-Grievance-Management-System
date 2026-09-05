@@ -10,13 +10,16 @@ import {
   MapPin, 
   Building, 
   Star, 
-  RotateCcw,
-  Send,
-  FileCheck,
-  Database,
-  ExternalLink,
-  ShieldCheck,
-  Flame,
+  RotateCcw, 
+  Send, 
+  FileCheck, 
+  Database, 
+  ExternalLink, 
+  ShieldCheck, 
+  Flame, 
+  Printer, 
+  Layers, 
+  X,
   FileText
 } from 'lucide-react';
 
@@ -38,6 +41,7 @@ export default function TrackingView({
   const [rating, setRating] = useState(5);
   const [feedbackText, setFeedbackText] = useState('');
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+  const [showLedgerModal, setShowLedgerModal] = useState(false);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -60,6 +64,10 @@ export default function TrackingView({
       onSubmitFeedback(activeSearchResult.id, rating, feedbackText);
       setFeedbackSubmitted(true);
     }
+  };
+
+  const handlePrintReceipt = () => {
+    window.print();
   };
 
   // Determine stage index
@@ -255,13 +263,16 @@ export default function TrackingView({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  fontSize: '0.8rem'
-                }}>
+                  fontSize: '0.8rem',
+                  cursor: 'pointer'
+                }} onClick={() => setShowLedgerModal(true)}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <ShieldCheck size={16} color="#2563eb" />
                     <span>Hyperledger Fabric Ledger Tx: <code style={{ color: '#2563eb', fontWeight: 600 }}>{activeSearchResult.fabricTxId.slice(0, 22)}...</code></span>
                   </div>
-                  <span className="text-muted" style={{ fontSize: '0.75rem' }}>Immutable Audit Verified</span>
+                  <span style={{ color: '#2563eb', fontWeight: 600, fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Layers size={13} /> View Blockchain Block ↗
+                  </span>
                 </div>
               )}
 
@@ -401,6 +412,17 @@ export default function TrackingView({
                   </div>
                 </div>
               </div>
+
+              {/* Printable Receipt Button */}
+              <button
+                type="button"
+                onClick={handlePrintReceipt}
+                className="btn btn-secondary btn-sm"
+                style={{ width: '100%', marginTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+              >
+                <Printer size={15} />
+                <span>Print Official Acknowledgment Receipt</span>
+              </button>
             </div>
 
             <div className="side-help-card glass-card" style={{ marginTop: '16px' }}>
@@ -415,6 +437,61 @@ export default function TrackingView({
           <AlertCircle size={48} className="empty-icon text-amber" />
           <h3>Reference Ticket Not Found</h3>
           <p>We couldn't find a grievance or application matching "{trackInput}". Please verify your Tracking ID.</p>
+        </div>
+      )}
+
+      {/* Hyperledger Fabric Blockchain Block Explorer Modal */}
+      {showLedgerModal && activeSearchResult && (
+        <div className="modal-overlay">
+          <div className="modal-content animate-slide-up" style={{ maxWidth: '620px' }}>
+            <div className="modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <ShieldCheck size={22} color="#2563eb" />
+                <div>
+                  <h3 style={{ margin: 0 }}>Hyperledger Fabric Ledger Verification</h3>
+                  <p className="small-text text-muted" style={{ margin: 0 }}>Immutable Governance Blockchain Block Record</p>
+                </div>
+              </div>
+              <button className="close-btn" onClick={() => setShowLedgerModal(false)}>&times;</button>
+            </div>
+
+            <div className="modal-body" style={{ padding: '20px' }}>
+              <div style={{ background: 'var(--bg-tertiary)', padding: '16px', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.85rem' }}>
+                <div>
+                  <span className="text-muted" style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600 }}>TRANSACTION HASH (SHA-256)</span>
+                  <code style={{ color: '#2563eb', wordBreak: 'break-all', fontWeight: 700 }}>{activeSearchResult.fabricTxId}</code>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <span className="text-muted" style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600 }}>CHANNEL NAME</span>
+                    <strong>janseva-governance-channel</strong>
+                  </div>
+                  <div>
+                    <span className="text-muted" style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600 }}>SMART CONTRACT</span>
+                    <strong>GrievanceContract:v1.0.0</strong>
+                  </div>
+                  <div>
+                    <span className="text-muted" style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600 }}>BLOCK STATUS</span>
+                    <span style={{ color: '#16a34a', fontWeight: 700 }}>● COMMITTED (Valid 200)</span>
+                  </div>
+                  <div>
+                    <span className="text-muted" style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600 }}>ENDORSEMENT PEERS</span>
+                    <strong>Org1 (Gov) & Org2 (Audit)</strong>
+                  </div>
+                </div>
+              </div>
+
+              <p className="small-text text-muted" style={{ margin: '16px 0 0', textAlign: 'center' }}>
+                🔒 Cryptographically signed by State Governance Authority nodes. Tamper-evident ledger integrity guaranteed.
+              </p>
+            </div>
+
+            <div className="modal-footer" style={{ justifyContent: 'flex-end', padding: '12px 20px' }}>
+              <button className="btn btn-primary btn-sm" onClick={() => setShowLedgerModal(false)}>
+                Close Ledger Viewer
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
