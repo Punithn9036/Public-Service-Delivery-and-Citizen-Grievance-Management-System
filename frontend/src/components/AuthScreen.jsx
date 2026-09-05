@@ -73,7 +73,7 @@ export default function AuthScreen() {
       alignItems: 'center',
       justifyContent: 'center',
       padding: '24px',
-      background: 'radial-gradient(circle at 50% 10%, rgba(26, 86, 219, 0.08), transparent 70%), var(--bg-primary)'
+      background: 'radial-gradient(circle at 50% 10%, rgba(37, 99, 235, 0.08), transparent 70%), var(--bg-primary)'
     }}>
       <div className="glass-card" style={{
         maxWidth: '520px',
@@ -90,42 +90,42 @@ export default function AuthScreen() {
             width: '56px',
             height: '56px',
             borderRadius: '14px',
-            background: 'var(--brand-primary)',
+            background: 'linear-gradient(135deg, #1d4ed8, #2563eb)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            margin: '0 auto 16px'
+            margin: '0 auto 16px',
+            boxShadow: '0 4px 14px rgba(37, 99, 235, 0.35)'
           }}>
             <Building size={30} color="#ffffff" />
           </div>
-          <h2 style={{ fontSize: '1.6rem', fontWeight: 800, margin: '0 0 6px', color: 'var(--text-primary)' }}>
+          <h2 style={{ fontSize: '1.6rem', fontWeight: 800, margin: '0 0 6px', color: 'var(--text-main)' }}>
             JanSeva Governance Portal
           </h2>
-          <p className="text-muted small-text" style={{ margin: 0 }}>
+          <p className="small-text" style={{ margin: 0, color: 'var(--text-muted)' }}>
             Unified Public Service Delivery & Grievance Redressal System
           </p>
         </div>
 
         {/* Auth Mode Toggle (Login vs Register) */}
-        <div style={{
+        <div className="auth-toggle-pill-wrapper" style={{
           display: 'flex',
           background: 'var(--bg-tertiary)',
           padding: '4px',
           borderRadius: '10px',
-          marginBottom: '20px'
+          marginBottom: '22px',
+          border: '1px solid var(--border-subtle)'
         }}>
           <button
             type="button"
-            className={`btn-sm ${!isRegister ? 'btn btn-primary' : 'btn'}`}
-            style={{ flex: 1, borderRadius: '8px', border: 'none', background: !isRegister ? 'var(--brand-primary)' : 'transparent' }}
+            className={`auth-toggle-btn ${!isRegister ? 'active' : ''}`}
             onClick={() => { setIsRegister(false); setError(null); }}
           >
             Sign In
           </button>
           <button
             type="button"
-            className={`btn-sm ${isRegister ? 'btn btn-primary' : 'btn'}`}
-            style={{ flex: 1, borderRadius: '8px', border: 'none', background: isRegister ? 'var(--brand-primary)' : 'transparent' }}
+            className={`auth-toggle-btn ${isRegister ? 'active' : ''}`}
             onClick={() => { setIsRegister(true); setError(null); }}
           >
             Create Account
@@ -141,7 +141,8 @@ export default function AuthScreen() {
             padding: '12px 16px',
             borderRadius: '8px',
             background: 'rgba(239, 68, 68, 0.1)',
-            color: '#ef4444',
+            color: '#dc2626',
+            border: '1px solid rgba(239, 68, 68, 0.2)',
             fontSize: '0.85rem',
             marginBottom: '18px'
           }}>
@@ -158,7 +159,8 @@ export default function AuthScreen() {
             padding: '12px 16px',
             borderRadius: '8px',
             background: 'rgba(34, 197, 94, 0.1)',
-            color: '#22c55e',
+            color: '#16a34a',
+            border: '1px solid rgba(34, 197, 94, 0.2)',
             fontSize: '0.85rem',
             marginBottom: '18px'
           }}>
@@ -172,51 +174,29 @@ export default function AuthScreen() {
           {isRegister && (
             <>
               <div style={{ marginBottom: '14px' }}>
-                <label className="small-text font-bold" style={{ display: 'block', marginBottom: '6px' }}>Account Role</label>
+                <label className="small-text font-bold" style={{ display: 'block', marginBottom: '6px', color: 'var(--text-main)' }}>Account Role</label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                   <button
                     type="button"
                     onClick={() => setRole('CITIZEN')}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '8px',
-                      padding: '10px',
-                      borderRadius: '8px',
-                      border: role === 'CITIZEN' ? '2px solid var(--brand-primary)' : '1px solid var(--border-subtle)',
-                      background: role === 'CITIZEN' ? 'rgba(26, 86, 219, 0.08)' : 'var(--bg-tertiary)',
-                      color: 'var(--text-primary)',
-                      cursor: 'pointer'
-                    }}
+                    className={`auth-role-select-btn ${role === 'CITIZEN' ? 'selected' : ''}`}
                   >
-                    <UserCheck size={16} color={role === 'CITIZEN' ? 'var(--brand-primary)' : 'currentColor'} />
+                    <UserCheck size={16} color={role === 'CITIZEN' ? '#2563eb' : 'currentColor'} />
                     <span className="small-text font-bold">Citizen</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setRole('OFFICER')}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '8px',
-                      padding: '10px',
-                      borderRadius: '8px',
-                      border: role === 'OFFICER' ? '2px solid var(--brand-primary)' : '1px solid var(--border-subtle)',
-                      background: role === 'OFFICER' ? 'rgba(26, 86, 219, 0.08)' : 'var(--bg-tertiary)',
-                      color: 'var(--text-primary)',
-                      cursor: 'pointer'
-                    }}
+                    className={`auth-role-select-btn ${role === 'OFFICER' ? 'selected' : ''}`}
                   >
-                    <ShieldCheck size={16} color={role === 'OFFICER' ? 'var(--brand-primary)' : 'currentColor'} />
+                    <ShieldCheck size={16} color={role === 'OFFICER' ? '#2563eb' : 'currentColor'} />
                     <span className="small-text font-bold">Gov Officer</span>
                   </button>
                 </div>
               </div>
 
               <div style={{ marginBottom: '14px' }}>
-                <label className="small-text font-bold" style={{ display: 'block', marginBottom: '6px' }}>Full Name</label>
+                <label className="small-text font-bold" style={{ display: 'block', marginBottom: '6px', color: 'var(--text-main)' }}>Full Name</label>
                 <div style={{ position: 'relative' }}>
                   <User size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />
                   <input
@@ -225,13 +205,13 @@ export default function AuthScreen() {
                     placeholder="e.g. Aarav Sharma"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    style={{ width: '100%', padding: '10px 12px 10px 38px', borderRadius: '8px', border: '1px solid var(--border-subtle)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
+                    className="auth-input-field"
                   />
                 </div>
               </div>
 
               <div style={{ marginBottom: '14px' }}>
-                <label className="small-text font-bold" style={{ display: 'block', marginBottom: '6px' }}>Phone Number</label>
+                <label className="small-text font-bold" style={{ display: 'block', marginBottom: '6px', color: 'var(--text-main)' }}>Phone Number</label>
                 <div style={{ position: 'relative' }}>
                   <Phone size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />
                   <input
@@ -240,18 +220,19 @@ export default function AuthScreen() {
                     placeholder="+91 98765 43210"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    style={{ width: '100%', padding: '10px 12px 10px 38px', borderRadius: '8px', border: '1px solid var(--border-subtle)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
+                    className="auth-input-field"
                   />
                 </div>
               </div>
 
               {role !== 'CITIZEN' && (
                 <div style={{ marginBottom: '14px' }}>
-                  <label className="small-text font-bold" style={{ display: 'block', marginBottom: '6px' }}>Assigned Department</label>
+                  <label className="small-text font-bold" style={{ display: 'block', marginBottom: '6px', color: 'var(--text-main)' }}>Assigned Department</label>
                   <select
                     value={department}
                     onChange={(e) => setDepartment(e.target.value)}
-                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--border-subtle)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
+                    className="auth-input-field"
+                    style={{ paddingLeft: '12px' }}
                   >
                     <option value="Water Supply & Sanitation">Water Supply & Sanitation</option>
                     <option value="Public Works & Infrastructure">Public Works & Infrastructure</option>
@@ -265,7 +246,7 @@ export default function AuthScreen() {
           )}
 
           <div style={{ marginBottom: '14px' }}>
-            <label className="small-text font-bold" style={{ display: 'block', marginBottom: '6px' }}>Email Address</label>
+            <label className="small-text font-bold" style={{ display: 'block', marginBottom: '6px', color: 'var(--text-main)' }}>Email Address</label>
             <div style={{ position: 'relative' }}>
               <Mail size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />
               <input
@@ -274,13 +255,13 @@ export default function AuthScreen() {
                 placeholder="name@example.gov.in"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                style={{ width: '100%', padding: '10px 12px 10px 38px', borderRadius: '8px', border: '1px solid var(--border-subtle)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
+                className="auth-input-field"
               />
             </div>
           </div>
 
-          <div style={{ marginBottom: '20px' }}>
-            <label className="small-text font-bold" style={{ display: 'block', marginBottom: '6px' }}>Password</label>
+          <div style={{ marginBottom: '22px' }}>
+            <label className="small-text font-bold" style={{ display: 'block', marginBottom: '6px', color: 'var(--text-main)' }}>Password</label>
             <div style={{ position: 'relative' }}>
               <Lock size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />
               <input
@@ -289,7 +270,7 @@ export default function AuthScreen() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                style={{ width: '100%', padding: '10px 12px 10px 38px', borderRadius: '8px', border: '1px solid var(--border-subtle)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
+                className="auth-input-field"
               />
             </div>
           </div>
@@ -307,31 +288,31 @@ export default function AuthScreen() {
 
         {/* Quick Demo Logins */}
         <div style={{ marginTop: '28px', paddingTop: '20px', borderTop: '1px dashed var(--border-subtle)' }}>
-          <p className="small-text text-muted" style={{ margin: '0 0 10px', textAlign: 'center' }}>
+          <p className="small-text" style={{ margin: '0 0 10px', textAlign: 'center', color: 'var(--text-muted)' }}>
             Quick Demo Login Profiles (One-Click):
           </p>
           <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
             <button
               type="button"
-              className="btn btn-sm btn-secondary"
+              className="btn btn-sm btn-secondary demo-pill-btn"
               onClick={() => handleQuickLogin('CITIZEN')}
-              style={{ fontSize: '0.75rem', padding: '6px 10px' }}
+              style={{ fontSize: '0.78rem', padding: '6px 12px', fontWeight: 600 }}
             >
               👤 Citizen (Aarav)
             </button>
             <button
               type="button"
-              className="btn btn-sm btn-secondary"
+              className="btn btn-sm btn-secondary demo-pill-btn"
               onClick={() => handleQuickLogin('OFFICER')}
-              style={{ fontSize: '0.75rem', padding: '6px 10px' }}
+              style={{ fontSize: '0.78rem', padding: '6px 12px', fontWeight: 600 }}
             >
               🛡️ Officer (Rajesh)
             </button>
             <button
               type="button"
-              className="btn btn-sm btn-secondary"
+              className="btn btn-sm btn-secondary demo-pill-btn"
               onClick={() => handleQuickLogin('ADMIN')}
-              style={{ fontSize: '0.75rem', padding: '6px 10px' }}
+              style={{ fontSize: '0.78rem', padding: '6px 12px', fontWeight: 600 }}
             >
               🏛️ Admin (Kavitha)
             </button>

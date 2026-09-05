@@ -9,12 +9,15 @@ import {
   Calendar, 
   MapPin, 
   Building, 
-  MessageSquare, 
   Star, 
   RotateCcw,
-  ShieldAlert,
   Send,
-  FileCheck
+  FileCheck,
+  Database,
+  ExternalLink,
+  ShieldCheck,
+  Flame,
+  FileText
 } from 'lucide-react';
 
 export default function TrackingView({ 
@@ -63,13 +66,35 @@ export default function TrackingView({
   const stages = ['Submitted', 'Under Review', 'Assigned', 'In Progress', 'Resolved'];
   const currentStageIndex = activeSearchResult ? stages.indexOf(activeSearchResult.status) : 0;
 
+  // SLA Calculation Helper
+  const getSlaStatus = () => {
+    if (!activeSearchResult || !activeSearchResult.slaDeadline) return null;
+    if (activeSearchResult.status === 'Resolved') {
+      return { status: 'resolved', text: 'Resolved within SLA', color: '#16a34a', bg: 'rgba(34, 197, 94, 0.1)' };
+    }
+    const deadline = new Date(activeSearchResult.slaDeadline).getTime();
+    const now = Date.now();
+    const diffHours = Math.round((deadline - now) / (1000 * 60 * 60));
+
+    if (diffHours < 0) {
+      return { status: 'breached', text: `SLA Breached by ${Math.abs(diffHours)} hrs (Escalated)`, color: '#dc2626', bg: 'rgba(239, 68, 68, 0.12)' };
+    } else if (diffHours <= 24) {
+      return { status: 'critical', text: `SLA Critical (${diffHours}h remaining)`, color: '#ea580c', bg: 'rgba(234, 88, 12, 0.12)' };
+    } else {
+      const days = Math.ceil(diffHours / 24);
+      return { status: 'ontrack', text: `SLA On-Track (${days} days left)`, color: '#2563eb', bg: 'rgba(37, 99, 235, 0.1)' };
+    }
+  };
+
+  const slaInfo = getSlaStatus();
+
   return (
     <div className="tracking-container animate-fade-in">
       
       {/* Search Header */}
       <div className="track-search-card glass-card">
         <h2>Live Grievance & Application Tracker</h2>
-        <p>Enter your unique Reference Ticket ID (e.g., GRV-2026-8910 or APP-2026-1049) to view officer activity and stage history.</p>
+        <p>Enter your unique Reference Ticket ID (e.g., GRV-2026-8910 or APP-2026-1049) to view officer activity, IPFS documents, and immutable timeline.</p>
 
         <form onSubmit={handleSearch} className="track-form">
           <div className="input-group">
@@ -122,14 +147,26 @@ export default function TrackingView({
                 <p className="ticket-id-tag">Reference No: <strong>{activeSearchResult.id}</strong></p>
               </div>
 
-              <div className="ticket-status-box">
+              <div className="ticket-status-box" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
                 <span className={`badge badge-${activeSearchResult.status.toLowerCase().replace(/\s+/g, '-')}`}>
                   <span className="pulse-dot"></span>
                   {activeSearchResult.status}
                 </span>
-                {activeSearchResult.priority && (
-                  <span className={`priority-pill priority-${activeSearchResult.priority.toLowerCase()}`}>
-                    {activeSearchResult.priority} Priority
+
+                {slaInfo && (
+                  <span style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    padding: '4px 10px',
+                    borderRadius: '20px',
+                    background: slaInfo.bg,
+                    color: slaInfo.color,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}>
+                    {slaInfo.status === 'critical' ? <Flame size={13} /> : <Clock size={13} />}
+                    {slaInfo.text}
                   </span>
                 )}
               </div>
@@ -153,6 +190,80 @@ export default function TrackingView({
                   );
                 })}
               </div>
+
+              {/* IPFS Evidence Document Card */}
+              {activeSearchResult.ipfsDocumentCid && (
+                <div style={{
+                  background: 'var(--bg-tertiary)',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  marginBottom: '20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '12px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '8px',
+                      background: 'rgba(37, 99, 235, 0.1)',
+                      color: '#2563eb',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <Database size={22} />
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <strong style={{ fontSize: '0.9rem' }}>Decentralized Proof on IPFS</strong>
+                        <span style={{ fontSize: '0.7rem', padding: '2px 6px', borderRadius: '10px', background: 'rgba(34, 197, 94, 0.15)', color: '#16a34a', fontWeight: 700 }}>
+                          Verified
+                        </span>
+                      </div>
+                      <p className="text-muted small-text" style={{ margin: 0, wordBreak: 'break-all', fontFamily: 'monospace' }}>
+                        CID: {activeSearchResult.ipfsDocumentCid}
+                      </p>
+                    </div>
+                  </div>
+
+                  <a
+                    href={`https://ipfs.io/ipfs/${activeSearchResult.ipfsDocumentCid}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-secondary btn-sm"
+                    style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    <ExternalLink size={14} />
+                    <span>View Evidence via IPFS Gateway</span>
+                  </a>
+                </div>
+              )}
+
+              {/* Fabric Transaction Ledger Proof */}
+              {activeSearchResult.fabricTxId && (
+                <div style={{
+                  background: 'rgba(15, 23, 42, 0.03)',
+                  border: '1px dashed var(--border-subtle)',
+                  borderRadius: '10px',
+                  padding: '12px 16px',
+                  marginBottom: '20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  fontSize: '0.8rem'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <ShieldCheck size={16} color="#2563eb" />
+                    <span>Hyperledger Fabric Ledger Tx: <code style={{ color: '#2563eb', fontWeight: 600 }}>{activeSearchResult.fabricTxId.slice(0, 22)}...</code></span>
+                  </div>
+                  <span className="text-muted" style={{ fontSize: '0.75rem' }}>Immutable Audit Verified</span>
+                </div>
+              )}
 
               {/* Detailed Activity Logs */}
               <div className="timeline-logs">
@@ -292,7 +403,7 @@ export default function TrackingView({
               </div>
             </div>
 
-            <div className="side-help-card glass-card">
+            <div className="side-help-card glass-card" style={{ marginTop: '16px' }}>
               <h4>Need Immediate Escalation?</h4>
               <p>If your grievance has passed SLA target date without resolution, call the 24x7 Municipal Helpline: <strong>1800-425-GOV (468)</strong></p>
             </div>

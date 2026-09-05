@@ -6,13 +6,14 @@ import {
   AlertTriangle, 
   CheckCircle, 
   FileSpreadsheet, 
-  UserPlus, 
-  Filter, 
   Edit3, 
   BarChart2, 
-  PieChart, 
   Send,
-  Building
+  Building,
+  Database,
+  ExternalLink,
+  Flame,
+  FileText
 } from 'lucide-react';
 
 export default function AdminDashboard({
@@ -62,10 +63,38 @@ export default function AdminDashboard({
     setEditingItem(null);
   };
 
+  const getSlaBadge = (item) => {
+    if (!item.slaDeadline) return null;
+    if (item.status === 'Resolved') {
+      return <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 600 }}>Resolved</span>;
+    }
+    const deadline = new Date(item.slaDeadline).getTime();
+    const diffHours = Math.round((deadline - Date.now()) / (1000 * 60 * 60));
+
+    if (diffHours < 0) {
+      return (
+        <span style={{ fontSize: '0.7rem', color: '#dc2626', background: 'rgba(239,68,68,0.1)', padding: '2px 6px', borderRadius: '4px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+          <AlertTriangle size={11} /> Overdue ({Math.abs(diffHours)}h)
+        </span>
+      );
+    } else if (diffHours <= 24) {
+      return (
+        <span style={{ fontSize: '0.7rem', color: '#ea580c', background: 'rgba(234,88,12,0.1)', padding: '2px 6px', borderRadius: '4px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+          <Flame size={11} /> {diffHours}h left
+        </span>
+      );
+    }
+    return (
+      <span style={{ fontSize: '0.7rem', color: '#2563eb', background: 'rgba(37,99,235,0.08)', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>
+        {Math.ceil(diffHours / 24)}d left
+      </span>
+    );
+  };
+
   const exportCSV = () => {
-    const headers = "ID,Title,Department,Priority,Status,Citizen,Location,SubmittedDate\n";
+    const headers = "ID,Title,Department,Priority,Status,Citizen,Phone,Location,IPFS_CID,Fabric_Tx,SubmittedDate\n";
     const rows = grievances.map(g => 
-      `"${g.id}","${g.title.replace(/"/g, '""')}","${g.department}","${g.priority}","${g.status}","${g.citizenName}","${g.location}","${g.createdAt}"`
+      `"${g.id}","${g.title.replace(/"/g, '""')}","${g.department}","${g.priority}","${g.status}","${g.citizenName}","${g.citizenPhone}","${g.location}","${g.ipfsDocumentCid || ''}","${g.fabricTxId || ''}","${g.createdAt}"`
     ).join("\n");
 
     const blob = new Blob([headers + rows], { type: 'text/csv' });
@@ -133,7 +162,7 @@ export default function AdminDashboard({
             <CheckCircle size={20} className="text-emerald" />
           </div>
           <h2>{resolvedCount}</h2>
-          <span className="kpi-foot text-emerald">{Math.round((resolvedCount/total)*100)}% SLA Compliance</span>
+          <span className="kpi-foot text-emerald">{Math.round((resolvedCount/total)*100) || 0}% SLA Compliance</span>
         </div>
 
         <div className="kpi-card glass-card">
@@ -152,7 +181,7 @@ export default function AdminDashboard({
         <div className="dept-bars-list">
           {departments.slice(0, 5).map(dept => {
             const count = grievances.filter(g => g.department === dept).length;
-            const pct = Math.min(100, Math.round((count / total) * 100) || 5);
+            const pct = Math.min(100, Math.round((count / (total || 1)) * 100) || 5);
             return (
               <div key={dept} className="dept-bar-item">
                 <div className="bar-info">
@@ -173,7 +202,7 @@ export default function AdminDashboard({
         <div className="table-header-controls">
           <div>
             <h2>Manage Grievance Tickets</h2>
-            <p>Assign officers, update status, and attach official resolution notes</p>
+            <p>Assign officers, update status, inspect IPFS evidence, and attach official resolution notes</p>
           </div>
 
           <div className="filter-row">
@@ -210,7 +239,8 @@ export default function AdminDashboard({
                 <th>Ticket ID</th>
                 <th>Title & Category</th>
                 <th>Department</th>
-                <th>Priority</th>
+                <th>Priority / SLA</th>
+                <th>Evidence (IPFS)</th>
                 <th>Assigned Officer</th>
                 <th>Status</th>
                 <th>Action</th>
@@ -229,9 +259,38 @@ export default function AdminDashboard({
                   </td>
                   <td>{item.department}</td>
                   <td>
-                    <span className={`priority-pill priority-${item.priority.toLowerCase()}`}>
-                      {item.priority}
-                    </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span className={`priority-pill priority-${item.priority.toLowerCase()}`}>
+                        {item.priority}
+                      </span>
+                      {getSlaBadge(item)}
+                    </div>
+                  </td>
+                  <td>
+                    {item.ipfsDocumentCid ? (
+                      <a
+                        href={`https://ipfs.io/ipfs/${item.ipfsDocumentCid}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          fontSize: '0.75rem',
+                          color: '#2563eb',
+                          textDecoration: 'none',
+                          background: 'rgba(37, 99, 235, 0.08)',
+                          padding: '3px 8px',
+                          borderRadius: '6px'
+                        }}
+                      >
+                        <Database size={12} />
+                        <span>IPFS Doc</span>
+                        <ExternalLink size={10} />
+                      </a>
+                    ) : (
+                      <span className="text-muted" style={{ fontSize: '0.75rem' }}>No Attachment</span>
+                    )}
                   </td>
                   <td>
                     <div className="officer-cell">
@@ -273,6 +332,14 @@ export default function AdminDashboard({
                 <h4>{editingItem.title}</h4>
                 <p><strong>Citizen:</strong> {editingItem.citizenName} ({editingItem.citizenPhone})</p>
                 <p><strong>Location:</strong> {editingItem.location}</p>
+                {editingItem.ipfsDocumentCid && (
+                  <p>
+                    <strong>IPFS Evidence: </strong>
+                    <a href={`https://ipfs.io/ipfs/${editingItem.ipfsDocumentCid}`} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb' }}>
+                      {editingItem.ipfsDocumentCid} ↗
+                    </a>
+                  </p>
+                )}
               </div>
 
               <div className="form-group">
