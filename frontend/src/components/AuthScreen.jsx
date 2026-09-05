@@ -1,0 +1,344 @@
+import React, { useState } from 'react';
+import { Building, ShieldCheck, UserCheck, Lock, Mail, Phone, User, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+
+export default function AuthScreen() {
+  const { login, register } = useAuth();
+  const [isRegister, setIsRegister] = useState(false);
+  const [role, setRole] = useState('CITIZEN'); // 'CITIZEN' | 'OFFICER' | 'ADMIN'
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [department, setDepartment] = useState('Water Supply & Sanitation');
+  
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [successMsg, setSuccessMsg] = useState(null);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setSuccessMsg(null);
+    setLoading(true);
+
+    try {
+      if (isRegister) {
+        if (!fullName || !email || !phone || !password) {
+          throw new Error('Please fill in all required fields.');
+        }
+        await register({
+          fullName,
+          email,
+          phone,
+          password,
+          role,
+          department: role === 'CITIZEN' ? null : department
+        });
+        setSuccessMsg('Account registered successfully! Redirecting...');
+      } else {
+        if (!email || !password) {
+          throw new Error('Please enter your email and password.');
+        }
+        await login(email, password);
+      }
+    } catch (err) {
+      setError(err.message || 'Authentication failed. Please check your credentials.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleQuickLogin = (demoRole) => {
+    setError(null);
+    if (demoRole === 'CITIZEN') {
+      setEmail('aarav.sharma@example.com');
+      setPassword('Password123!');
+      setRole('CITIZEN');
+    } else if (demoRole === 'OFFICER') {
+      setEmail('rajesh.varma@gov.in');
+      setPassword('Officer123!');
+      setRole('OFFICER');
+    } else if (demoRole === 'ADMIN') {
+      setEmail('admin.controlroom@gov.in');
+      setPassword('Admin123!');
+      setRole('ADMIN');
+    }
+  };
+
+  return (
+    <div className="auth-screen-container" style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '24px',
+      background: 'radial-gradient(circle at 50% 10%, rgba(26, 86, 219, 0.08), transparent 70%), var(--bg-primary)'
+    }}>
+      <div className="glass-card" style={{
+        maxWidth: '520px',
+        width: '100%',
+        padding: '36px',
+        boxShadow: '0 20px 40px rgba(0,0,0,0.12)',
+        border: '1px solid var(--border-subtle)',
+        borderRadius: '16px'
+      }}>
+        
+        {/* Header Branding */}
+        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+          <div style={{
+            width: '56px',
+            height: '56px',
+            borderRadius: '14px',
+            background: 'var(--brand-primary)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 16px'
+          }}>
+            <Building size={30} color="#ffffff" />
+          </div>
+          <h2 style={{ fontSize: '1.6rem', fontWeight: 800, margin: '0 0 6px', color: 'var(--text-primary)' }}>
+            JanSeva Governance Portal
+          </h2>
+          <p className="text-muted small-text" style={{ margin: 0 }}>
+            Unified Public Service Delivery & Grievance Redressal System
+          </p>
+        </div>
+
+        {/* Auth Mode Toggle (Login vs Register) */}
+        <div style={{
+          display: 'flex',
+          background: 'var(--bg-tertiary)',
+          padding: '4px',
+          borderRadius: '10px',
+          marginBottom: '20px'
+        }}>
+          <button
+            type="button"
+            className={`btn-sm ${!isRegister ? 'btn btn-primary' : 'btn'}`}
+            style={{ flex: 1, borderRadius: '8px', border: 'none', background: !isRegister ? 'var(--brand-primary)' : 'transparent' }}
+            onClick={() => { setIsRegister(false); setError(null); }}
+          >
+            Sign In
+          </button>
+          <button
+            type="button"
+            className={`btn-sm ${isRegister ? 'btn btn-primary' : 'btn'}`}
+            style={{ flex: 1, borderRadius: '8px', border: 'none', background: isRegister ? 'var(--brand-primary)' : 'transparent' }}
+            onClick={() => { setIsRegister(true); setError(null); }}
+          >
+            Create Account
+          </button>
+        </div>
+
+        {/* Error / Success Notifications */}
+        {error && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            padding: '12px 16px',
+            borderRadius: '8px',
+            background: 'rgba(239, 68, 68, 0.1)',
+            color: '#ef4444',
+            fontSize: '0.85rem',
+            marginBottom: '18px'
+          }}>
+            <AlertCircle size={18} />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {successMsg && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            padding: '12px 16px',
+            borderRadius: '8px',
+            background: 'rgba(34, 197, 94, 0.1)',
+            color: '#22c55e',
+            fontSize: '0.85rem',
+            marginBottom: '18px'
+          }}>
+            <CheckCircle2 size={18} />
+            <span>{successMsg}</span>
+          </div>
+        )}
+
+        {/* Form */}
+        <form onSubmit={handleSubmit}>
+          {isRegister && (
+            <>
+              <div style={{ marginBottom: '14px' }}>
+                <label className="small-text font-bold" style={{ display: 'block', marginBottom: '6px' }}>Account Role</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setRole('CITIZEN')}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      padding: '10px',
+                      borderRadius: '8px',
+                      border: role === 'CITIZEN' ? '2px solid var(--brand-primary)' : '1px solid var(--border-subtle)',
+                      background: role === 'CITIZEN' ? 'rgba(26, 86, 219, 0.08)' : 'var(--bg-tertiary)',
+                      color: 'var(--text-primary)',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <UserCheck size={16} color={role === 'CITIZEN' ? 'var(--brand-primary)' : 'currentColor'} />
+                    <span className="small-text font-bold">Citizen</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRole('OFFICER')}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      padding: '10px',
+                      borderRadius: '8px',
+                      border: role === 'OFFICER' ? '2px solid var(--brand-primary)' : '1px solid var(--border-subtle)',
+                      background: role === 'OFFICER' ? 'rgba(26, 86, 219, 0.08)' : 'var(--bg-tertiary)',
+                      color: 'var(--text-primary)',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <ShieldCheck size={16} color={role === 'OFFICER' ? 'var(--brand-primary)' : 'currentColor'} />
+                    <span className="small-text font-bold">Gov Officer</span>
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '14px' }}>
+                <label className="small-text font-bold" style={{ display: 'block', marginBottom: '6px' }}>Full Name</label>
+                <div style={{ position: 'relative' }}>
+                  <User size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Aarav Sharma"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    style={{ width: '100%', padding: '10px 12px 10px 38px', borderRadius: '8px', border: '1px solid var(--border-subtle)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '14px' }}>
+                <label className="small-text font-bold" style={{ display: 'block', marginBottom: '6px' }}>Phone Number</label>
+                <div style={{ position: 'relative' }}>
+                  <Phone size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />
+                  <input
+                    type="tel"
+                    required
+                    placeholder="+91 98765 43210"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    style={{ width: '100%', padding: '10px 12px 10px 38px', borderRadius: '8px', border: '1px solid var(--border-subtle)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
+                  />
+                </div>
+              </div>
+
+              {role !== 'CITIZEN' && (
+                <div style={{ marginBottom: '14px' }}>
+                  <label className="small-text font-bold" style={{ display: 'block', marginBottom: '6px' }}>Assigned Department</label>
+                  <select
+                    value={department}
+                    onChange={(e) => setDepartment(e.target.value)}
+                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--border-subtle)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
+                  >
+                    <option value="Water Supply & Sanitation">Water Supply & Sanitation</option>
+                    <option value="Public Works & Infrastructure">Public Works & Infrastructure</option>
+                    <option value="Revenue & Land Records">Revenue & Land Records</option>
+                    <option value="Public Health & Safety">Public Health & Safety</option>
+                    <option value="Municipal Governance">Municipal Governance</option>
+                  </select>
+                </div>
+              )}
+            </>
+          )}
+
+          <div style={{ marginBottom: '14px' }}>
+            <label className="small-text font-bold" style={{ display: 'block', marginBottom: '6px' }}>Email Address</label>
+            <div style={{ position: 'relative' }}>
+              <Mail size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />
+              <input
+                type="email"
+                required
+                placeholder="name@example.gov.in"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                style={{ width: '100%', padding: '10px 12px 10px 38px', borderRadius: '8px', border: '1px solid var(--border-subtle)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
+              />
+            </div>
+          </div>
+
+          <div style={{ marginBottom: '20px' }}>
+            <label className="small-text font-bold" style={{ display: 'block', marginBottom: '6px' }}>Password</label>
+            <div style={{ position: 'relative' }}>
+              <Lock size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />
+              <input
+                type="password"
+                required
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                style={{ width: '100%', padding: '10px 12px 10px 38px', borderRadius: '8px', border: '1px solid var(--border-subtle)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn btn-primary"
+            style={{ width: '100%', padding: '12px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '0.95rem' }}
+          >
+            {loading ? 'Authenticating...' : isRegister ? 'Register Account' : 'Sign In to Portal'}
+            <ArrowRight size={16} />
+          </button>
+        </form>
+
+        {/* Quick Demo Logins */}
+        <div style={{ marginTop: '28px', paddingTop: '20px', borderTop: '1px dashed var(--border-subtle)' }}>
+          <p className="small-text text-muted" style={{ margin: '0 0 10px', textAlign: 'center' }}>
+            Quick Demo Login Profiles (One-Click):
+          </p>
+          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              className="btn btn-sm btn-secondary"
+              onClick={() => handleQuickLogin('CITIZEN')}
+              style={{ fontSize: '0.75rem', padding: '6px 10px' }}
+            >
+              👤 Citizen (Aarav)
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm btn-secondary"
+              onClick={() => handleQuickLogin('OFFICER')}
+              style={{ fontSize: '0.75rem', padding: '6px 10px' }}
+            >
+              🛡️ Officer (Rajesh)
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm btn-secondary"
+              onClick={() => handleQuickLogin('ADMIN')}
+              style={{ fontSize: '0.75rem', padding: '6px 10px' }}
+            >
+              🏛️ Admin (Kavitha)
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
