@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { FileText, CheckCircle2, Send, Clock, ShieldCheck } from 'lucide-react';
+import { FileText, CheckCircle2, Send, Clock, ShieldCheck, User, Phone, Mail } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export default function ServiceApplicationModal({ service, onClose, onSubmitApplication }) {
+  const { user } = useAuth();
+
   const [formData, setFormData] = useState({
-    applicantName: '',
-    applicantEmail: '',
-    applicantPhone: '',
+    applicantName: user?.fullName || '',
+    applicantEmail: user?.email || '',
+    applicantPhone: user?.phone || '',
     identityProof: 'Aadhaar Card',
     identityNumber: '',
     address: '',
@@ -49,7 +52,7 @@ export default function ServiceApplicationModal({ service, onClose, onSubmitAppl
           <div className="modal-title-box">
             <FileText size={22} className="text-emerald" />
             <div>
-              <h2>Apply for Service</h2>
+              <h2>Apply for Public Service</h2>
               <p>{service.name} ({service.department})</p>
             </div>
           </div>
@@ -58,9 +61,11 @@ export default function ServiceApplicationModal({ service, onClose, onSubmitAppl
 
         {submittedId ? (
           <div className="modal-body success-state text-center" style={{ padding: '40px 20px' }}>
-            <CheckCircle2 size={56} color="#16a34a" />
-            <h2>Application Submitted!</h2>
-            <p className="success-sub">Application Reference Code:</p>
+            <div className="success-icon-wrapper" style={{ margin: '0 auto 16px', width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(34, 197, 94, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <CheckCircle2 size={40} color="#16a34a" />
+            </div>
+            <h2>Application Submitted Successfully!</h2>
+            <p className="success-sub">Application Reference Tracking Code:</p>
             <div className="id-highlight-box">{submittedId}</div>
             <p className="muted-text" style={{ margin: '15px 0 20px' }}>
               Guaranteed SLA Delivery: <strong>{service.slaDays} Days</strong> (Target: {new Date(Date.now() + service.slaDays * 24 * 60 * 60 * 1000).toLocaleDateString()})
@@ -73,12 +78,14 @@ export default function ServiceApplicationModal({ service, onClose, onSubmitAppl
           <form onSubmit={handleSubmit} className="modal-form">
             
             {/* Service Summary Info */}
-            <div className="form-info-box border-blue">
+            <div className="form-info-box border-blue" style={{ background: 'var(--bg-tertiary)', padding: '14px', borderRadius: '10px', marginBottom: '16px' }}>
               <div className="flex-between">
                 <span>Government Fee: <strong>{service.fee}</strong></span>
                 <span className="sla-pill"><Clock size={12} /> {service.slaDays} Days SLA Guarantee</span>
               </div>
-              <p className="small-text mt-2"><strong>Required Documents:</strong> {service.documentsNeeded.join(', ')}</p>
+              <p className="small-text" style={{ margin: '8px 0 0', color: 'var(--text-muted)' }}>
+                <strong>Required Documents:</strong> {service.documentsNeeded.join(', ')}
+              </p>
             </div>
 
             <div className="form-grid-2">
@@ -153,14 +160,14 @@ export default function ServiceApplicationModal({ service, onClose, onSubmitAppl
                 />
               </div>
 
-              <div className="form-group col-span-2 flex-align-center">
+              <div className="form-group col-span-2 flex-align-center" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <input 
                   type="checkbox" 
                   id="decl"
                   checked={formData.declarationAgreed}
                   onChange={(e) => setFormData({...formData, declarationAgreed: e.target.checked})}
                 />
-                <label htmlFor="decl" className="checkbox-label">
+                <label htmlFor="decl" className="checkbox-label" style={{ fontSize: '0.85rem' }}>
                   I declare that all submitted information is accurate and true according to state government rules.
                 </label>
               </div>

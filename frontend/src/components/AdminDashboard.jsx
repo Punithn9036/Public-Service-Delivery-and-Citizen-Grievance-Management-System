@@ -13,22 +13,29 @@ import {
   Database,
   ExternalLink,
   Flame,
-  FileText
+  FileText,
+  FileCheck2,
+  CheckCircle2,
+  XCircle
 } from 'lucide-react';
 
 export default function AdminDashboard({
   grievances,
-  applications,
+  applications = [],
   departments,
   onUpdateGrievanceStatus,
   onAssignOfficer
 }) {
+  const [activeSection, setActiveSection] = useState('grievances'); // 'grievances' | 'applications'
   const [selectedDept, setSelectedDept] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [editingItem, setEditingItem] = useState(null);
   const [newStatus, setNewStatus] = useState('');
   const [officerName, setOfficerName] = useState('');
   const [resolutionNote, setResolutionNote] = useState('');
+
+  // Local state for applications if updated
+  const [serviceApps, setServiceApps] = useState(applications);
 
   // Metrics
   const total = grievances.length;
@@ -61,6 +68,19 @@ export default function AdminDashboard({
       resolutionNote || `Status updated to ${newStatus} by Admin Controller.`
     );
     setEditingItem(null);
+  };
+
+  const handleApproveApplication = (appId, status) => {
+    setServiceApps(prev => prev.map(a => {
+      if (a.id === appId) {
+        return {
+          ...a,
+          status,
+          remarks: status === 'Approved' ? 'Verified by Registrar. Digital certificate generated.' : 'Application rejected due to document mismatch.'
+        };
+      }
+      return a;
+    }));
   };
 
   const getSlaBadge = (item) => {
@@ -175,148 +195,242 @@ export default function AdminDashboard({
         </div>
       </div>
 
-      {/* Department Breakdown Bar Graph Visualizer */}
-      <div className="admin-analytics-card glass-card">
-        <h3><BarChart2 size={20} /> Department Grievance Workload Breakdown</h3>
-        <div className="dept-bars-list">
-          {departments.slice(0, 5).map(dept => {
-            const count = grievances.filter(g => g.department === dept).length;
-            const pct = Math.min(100, Math.round((count / (total || 1)) * 100) || 5);
-            return (
-              <div key={dept} className="dept-bar-item">
-                <div className="bar-info">
-                  <span className="dept-name">{dept}</span>
-                  <span className="dept-count">{count} Tickets ({pct}%)</span>
-                </div>
-                <div className="bar-track">
-                  <div className="bar-fill" style={{ width: `${pct}%` }}></div>
-                </div>
+      {/* Section Switcher Tabs: Grievance Tickets vs Public Service Applications */}
+      <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+        <button
+          onClick={() => setActiveSection('grievances')}
+          className={`btn btn-sm ${activeSection === 'grievances' ? 'btn-primary' : 'btn-secondary'}`}
+          style={{ padding: '8px 18px', fontWeight: 700 }}
+        >
+          <Building size={16} /> Grievance Tickets Queue ({grievances.length})
+        </button>
+        <button
+          onClick={() => setActiveSection('applications')}
+          className={`btn btn-sm ${activeSection === 'applications' ? 'btn-primary' : 'btn-secondary'}`}
+          style={{ padding: '8px 18px', fontWeight: 700 }}
+        >
+          <FileCheck2 size={16} /> Public Service Applications ({serviceApps.length})
+        </button>
+      </div>
+
+      {activeSection === 'grievances' ? (
+        <>
+          {/* Department Breakdown Bar Graph Visualizer */}
+          <div className="admin-analytics-card glass-card">
+            <h3><BarChart2 size={20} /> Department Grievance Workload Breakdown</h3>
+            <div className="dept-bars-list">
+              {departments.slice(0, 5).map(dept => {
+                const count = grievances.filter(g => g.department === dept).length;
+                const pct = Math.min(100, Math.round((count / (total || 1)) * 100) || 5);
+                return (
+                  <div key={dept} className="dept-bar-item">
+                    <div className="bar-info">
+                      <span className="dept-name">{dept}</span>
+                      <span className="dept-count">{count} Tickets ({pct}%)</span>
+                    </div>
+                    <div className="bar-track">
+                      <div className="bar-fill" style={{ width: `${pct}%` }}></div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Grievance Management Table */}
+          <div className="admin-table-card glass-card">
+            <div className="table-header-controls">
+              <div>
+                <h2>Manage Grievance Tickets</h2>
+                <p>Assign officers, update status, inspect IPFS evidence, and attach official resolution notes</p>
               </div>
-            );
-          })}
-        </div>
-      </div>
 
-      {/* Grievance Management Table */}
-      <div className="admin-table-card glass-card">
-        <div className="table-header-controls">
-          <div>
-            <h2>Manage Grievance Tickets</h2>
-            <p>Assign officers, update status, inspect IPFS evidence, and attach official resolution notes</p>
+              <div className="filter-row">
+                <select 
+                  value={selectedDept} 
+                  onChange={(e) => setSelectedDept(e.target.value)}
+                  className="filter-select"
+                >
+                  <option value="All">All Departments</option>
+                  {departments.map(d => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+
+                <select 
+                  value={selectedStatus} 
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  className="filter-select"
+                >
+                  <option value="All">All Statuses</option>
+                  <option value="Submitted">Submitted</option>
+                  <option value="Under Review">Under Review</option>
+                  <option value="Assigned">Assigned</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Resolved">Resolved</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="table-wrapper">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Ticket ID</th>
+                    <th>Title & Category</th>
+                    <th>Department</th>
+                    <th>Priority / SLA</th>
+                    <th>Evidence (IPFS)</th>
+                    <th>Assigned Officer</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredList.map(item => (
+                    <tr key={item.id}>
+                      <td className="td-id">
+                        <strong>{item.id}</strong>
+                        <span className="td-date">{new Date(item.createdAt).toLocaleDateString()}</span>
+                      </td>
+                      <td>
+                        <div className="td-title">{item.title}</div>
+                        <div className="td-sub">{item.location}</div>
+                      </td>
+                      <td>{item.department}</td>
+                      <td>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <span className={`priority-pill priority-${item.priority.toLowerCase()}`}>
+                            {item.priority}
+                          </span>
+                          {getSlaBadge(item)}
+                        </div>
+                      </td>
+                      <td>
+                        {item.ipfsDocumentCid ? (
+                          <a
+                            href={`https://ipfs.io/ipfs/${item.ipfsDocumentCid}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              fontSize: '0.75rem',
+                              color: '#2563eb',
+                              textDecoration: 'none',
+                              background: 'rgba(37, 99, 235, 0.08)',
+                              padding: '3px 8px',
+                              borderRadius: '6px'
+                            }}
+                          >
+                            <Database size={12} />
+                            <span>IPFS Doc</span>
+                            <ExternalLink size={10} />
+                          </a>
+                        ) : (
+                          <span className="text-muted" style={{ fontSize: '0.75rem' }}>No Attachment</span>
+                        )}
+                      </td>
+                      <td>
+                        <div className="officer-cell">
+                          <UserCheck size={14} className="text-muted" />
+                          <span>{item.assignedOfficer || 'Unassigned'}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <span className={`badge badge-${item.status.toLowerCase().replace(/\s+/g, '-')}`}>
+                          {item.status}
+                        </span>
+                      </td>
+                      <td>
+                        <button 
+                          className="btn btn-outline btn-sm"
+                          onClick={() => handleOpenEdit(item)}
+                        >
+                          <Edit3 size={14} /> Update
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      ) : (
+        /* Public Service Applications Table */
+        <div className="admin-table-card glass-card">
+          <div className="table-header-controls">
+            <div>
+              <h2>Citizen Public Service Applications Queue</h2>
+              <p>Review citizen welfare applications, verify identity proofs, and issue approvals</p>
+            </div>
           </div>
 
-          <div className="filter-row">
-            <select 
-              value={selectedDept} 
-              onChange={(e) => setSelectedDept(e.target.value)}
-              className="filter-select"
-            >
-              <option value="All">All Departments</option>
-              {departments.map(d => (
-                <option key={d} value={d}>{d}</option>
-              ))}
-            </select>
-
-            <select 
-              value={selectedStatus} 
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="filter-select"
-            >
-              <option value="All">All Statuses</option>
-              <option value="Submitted">Submitted</option>
-              <option value="Under Review">Under Review</option>
-              <option value="Assigned">Assigned</option>
-              <option value="In Progress">In Progress</option>
-              <option value="Resolved">Resolved</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="table-wrapper">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Ticket ID</th>
-                <th>Title & Category</th>
-                <th>Department</th>
-                <th>Priority / SLA</th>
-                <th>Evidence (IPFS)</th>
-                <th>Assigned Officer</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredList.map(item => (
-                <tr key={item.id}>
-                  <td className="td-id">
-                    <strong>{item.id}</strong>
-                    <span className="td-date">{new Date(item.createdAt).toLocaleDateString()}</span>
-                  </td>
-                  <td>
-                    <div className="td-title">{item.title}</div>
-                    <div className="td-sub">{item.location}</div>
-                  </td>
-                  <td>{item.department}</td>
-                  <td>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <span className={`priority-pill priority-${item.priority.toLowerCase()}`}>
-                        {item.priority}
-                      </span>
-                      {getSlaBadge(item)}
-                    </div>
-                  </td>
-                  <td>
-                    {item.ipfsDocumentCid ? (
-                      <a
-                        href={`https://ipfs.io/ipfs/${item.ipfsDocumentCid}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          fontSize: '0.75rem',
-                          color: '#2563eb',
-                          textDecoration: 'none',
-                          background: 'rgba(37, 99, 235, 0.08)',
-                          padding: '3px 8px',
-                          borderRadius: '6px'
-                        }}
-                      >
-                        <Database size={12} />
-                        <span>IPFS Doc</span>
-                        <ExternalLink size={10} />
-                      </a>
-                    ) : (
-                      <span className="text-muted" style={{ fontSize: '0.75rem' }}>No Attachment</span>
-                    )}
-                  </td>
-                  <td>
-                    <div className="officer-cell">
-                      <UserCheck size={14} className="text-muted" />
-                      <span>{item.assignedOfficer || 'Unassigned'}</span>
-                    </div>
-                  </td>
-                  <td>
-                    <span className={`badge badge-${item.status.toLowerCase().replace(/\s+/g, '-')}`}>
-                      {item.status}
-                    </span>
-                  </td>
-                  <td>
-                    <button 
-                      className="btn btn-outline btn-sm"
-                      onClick={() => handleOpenEdit(item)}
-                    >
-                      <Edit3 size={14} /> Update
-                    </button>
-                  </td>
+          <div className="table-wrapper">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>App ID</th>
+                  <th>Service Requested</th>
+                  <th>Department</th>
+                  <th>Applicant Name</th>
+                  <th>Phone</th>
+                  <th>SLA Target</th>
+                  <th>Status</th>
+                  <th>Decision Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {serviceApps.map(app => (
+                  <tr key={app.id}>
+                    <td className="td-id">
+                      <strong>{app.id}</strong>
+                      <span className="td-date">{app.appliedDate}</span>
+                    </td>
+                    <td>
+                      <div className="td-title">{app.serviceName}</div>
+                      <div className="td-sub">{app.remarks}</div>
+                    </td>
+                    <td>{app.department}</td>
+                    <td><strong>{app.applicantName}</strong></td>
+                    <td>{app.applicantPhone}</td>
+                    <td><span className="sla-pill">{app.slaDays} Days</span></td>
+                    <td>
+                      <span className={`badge badge-${(app.status || 'submitted').toLowerCase().replace(/\s+/g, '-')}`}>
+                        {app.status}
+                      </span>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        {app.status !== 'Approved' && (
+                          <button
+                            className="btn btn-sm"
+                            style={{ background: 'rgba(34, 197, 94, 0.12)', color: '#16a34a', border: '1px solid rgba(34, 197, 94, 0.3)', padding: '4px 10px' }}
+                            onClick={() => handleApproveApplication(app.id, 'Approved')}
+                          >
+                            <CheckCircle2 size={13} /> Approve
+                          </button>
+                        )}
+                        {app.status !== 'Rejected' && (
+                          <button
+                            className="btn btn-sm"
+                            style={{ background: 'rgba(239, 68, 68, 0.12)', color: '#dc2626', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '4px 10px' }}
+                            onClick={() => handleApproveApplication(app.id, 'Rejected')}
+                          >
+                            <XCircle size={13} /> Reject
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Edit Modal */}
       {editingItem && (

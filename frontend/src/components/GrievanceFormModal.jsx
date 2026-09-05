@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { FilePlus, Upload, CheckCircle2, Send, ShieldCheck, Database } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { FilePlus, Upload, CheckCircle2, Send, Database, Sparkles, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function GrievanceFormModal({ departments, onClose, onSubmitGrievance }) {
@@ -20,8 +20,54 @@ export default function GrievanceFormModal({ departments, onClose, onSubmitGriev
     fileContent: null
   });
 
+  const [aiSuggestion, setAiSuggestion] = useState(null);
   const [submittedId, setSubmittedId] = useState(null);
   const [ipfsCid, setIpfsCid] = useState(null);
+
+  // AI Smart Auto-Classifier based on subject & description
+  useEffect(() => {
+    const text = `${formData.title} ${formData.description}`.toLowerCase();
+    if (text.length < 5) {
+      setAiSuggestion(null);
+      return;
+    }
+
+    let dept = null;
+    let priority = 'Medium';
+
+    if (text.includes('water') || text.includes('drain') || text.includes('sewer') || text.includes('pipeline') || text.includes('leak') || text.includes('overflow')) {
+      dept = 'Water Supply & Sanitation';
+    } else if (text.includes('road') || text.includes('light') || text.includes('pothole') || text.includes('street') || text.includes('bridge') || text.includes('footpath')) {
+      dept = 'Public Works & Infrastructure';
+    } else if (text.includes('tax') || text.includes('land') || text.includes('patta') || text.includes('khata') || text.includes('property') || text.includes('revenue')) {
+      dept = 'Revenue & Land Records';
+    } else if (text.includes('garbage') || text.includes('waste') || text.includes('mosquito') || text.includes('hospital') || text.includes('health') || text.includes('hygiene')) {
+      dept = 'Public Health & Safety';
+    }
+
+    if (text.includes('urgent') || text.includes('flood') || text.includes('hazard') || text.includes('danger') || text.includes('shock') || text.includes('emergency') || text.includes('fire')) {
+      priority = 'Urgent';
+    } else if (text.includes('blocked') || text.includes('dark') || text.includes('severe') || text.includes('broken')) {
+      priority = 'High';
+    }
+
+    if (dept && (dept !== formData.department || priority !== formData.priority)) {
+      setAiSuggestion({ department: dept, priority });
+    } else {
+      setAiSuggestion(null);
+    }
+  }, [formData.title, formData.description]);
+
+  const applyAiSuggestion = () => {
+    if (aiSuggestion) {
+      setFormData(prev => ({
+        ...prev,
+        department: aiSuggestion.department,
+        priority: aiSuggestion.priority
+      }));
+      setAiSuggestion(null);
+    }
+  };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -124,6 +170,36 @@ export default function GrievanceFormModal({ departments, onClose, onSubmitGriev
         ) : (
           <form onSubmit={handleSubmit} className="modal-form">
             
+            {/* AI Auto Routing Recommendation Banner */}
+            {aiSuggestion && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                background: 'rgba(37, 99, 235, 0.08)',
+                border: '1px solid rgba(37, 99, 235, 0.2)',
+                marginBottom: '16px',
+                fontSize: '0.825rem'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Sparkles size={16} color="#2563eb" />
+                  <span>
+                    AI Suggestion: Route to <strong>{aiSuggestion.department}</strong> (Priority: <strong>{aiSuggestion.priority}</strong>)
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={applyAiSuggestion}
+                  className="btn btn-primary btn-sm"
+                  style={{ padding: '4px 10px', fontSize: '0.75rem' }}
+                >
+                  Apply AI Routing
+                </button>
+              </div>
+            )}
+
             <div className="form-grid-2">
               <div className="form-group col-span-2">
                 <label>Grievance Subject / Title <span className="req">*</span></label>
