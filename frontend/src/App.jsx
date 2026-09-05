@@ -9,6 +9,8 @@ import ServiceApplicationModal from './components/ServiceApplicationModal';
 import NotificationsDrawer from './components/NotificationsDrawer';
 import AuthScreen from './components/AuthScreen';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { LanguageProvider } from './context/LanguageContext';
+import ErrorBoundary from './components/ErrorBoundary';
 import { grievanceAPI } from './api/apiClient';
 
 import { 
@@ -353,8 +355,12 @@ function MainAppContent() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <MainAppContent />
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <LanguageProvider>
+          <MainAppContent />
+        </LanguageProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }

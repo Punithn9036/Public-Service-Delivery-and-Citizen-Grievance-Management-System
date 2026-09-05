@@ -9,10 +9,10 @@ import {
   UserCheck, 
   Search,
   LogOut,
-  User,
-  CheckCircle
+  Globe
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function Navbar({ 
   activeTab, 
@@ -28,6 +28,7 @@ export default function Navbar({
   setSearchQuery
 }) {
   const { user, logout } = useAuth();
+  const { lang, setLang, t } = useLanguage();
 
   const isCitizen = user?.role === 'CITIZEN';
 
@@ -43,9 +44,9 @@ export default function Navbar({
           <div>
             <div className="brand-title-row">
               <span className="brand-name">JanSeva</span>
-              <span className="brand-tagline">GOV PORTAL</span>
+              <span className="brand-tagline">{t('brandTagline')}</span>
             </div>
-            <p className="brand-sub">Public Services & Grievance Governance</p>
+            <p className="brand-sub">{t('brandSubtitle')}</p>
           </div>
         </div>
 
@@ -54,7 +55,7 @@ export default function Navbar({
           <Search size={16} className="search-icon" />
           <input 
             type="text" 
-            placeholder="Search grievances, service IDs, or FAQs..." 
+            placeholder={t('searchPlaceholder')} 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="nav-search-input"
@@ -63,6 +64,51 @@ export default function Navbar({
 
         {/* Middle/Right Navigation Controls */}
         <div className="nav-actions">
+
+          {/* Regional Languages Dropdown Selector */}
+          <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              background: 'var(--bg-tertiary, rgba(255,255,255,0.06))',
+              borderRadius: '20px',
+              padding: '4px 10px',
+              border: '1px solid var(--border-subtle, rgba(255,255,255,0.1))',
+              gap: '6px'
+            }}>
+              <Globe size={14} style={{ color: 'var(--brand-500, #2563eb)' }} />
+              <select
+                value={lang}
+                onChange={(e) => setLang(e.target.value)}
+                style={{
+                  background: 'transparent',
+                  color: 'var(--text-main, #ffffff)',
+                  border: 'none',
+                  outline: 'none',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  paddingRight: '4px'
+                }}
+                aria-label="Select State Language"
+                title="Select Regional Language"
+              >
+                <option value="en" style={{ background: '#1e293b', color: '#fff' }}>English (Official)</option>
+                <option value="hi" style={{ background: '#1e293b', color: '#fff' }}>हिन्दी (North & Central)</option>
+                <option value="kn" style={{ background: '#1e293b', color: '#fff' }}>ಕನ್ನಡ (Karnataka)</option>
+                <option value="ta" style={{ background: '#1e293b', color: '#fff' }}>தமிழ் (Tamil Nadu)</option>
+                <option value="te" style={{ background: '#1e293b', color: '#fff' }}>తెలుగు (AP & Telangana)</option>
+                <option value="ml" style={{ background: '#1e293b', color: '#fff' }}>മലയാളം (Kerala)</option>
+                <option value="mr" style={{ background: '#1e293b', color: '#fff' }}>मराठी (Maharashtra)</option>
+                <option value="gu" style={{ background: '#1e293b', color: '#fff' }}>ગુજરાતી (Gujarat)</option>
+                <option value="bn" style={{ background: '#1e293b', color: '#fff' }}>বাংলা (West Bengal)</option>
+                <option value="or" style={{ background: '#1e293b', color: '#fff' }}>ଓଡ଼ିଆ (Odisha)</option>
+                <option value="pa" style={{ background: '#1e293b', color: '#fff' }}>ਪੰਜਾਬੀ (Punjab)</option>
+                <option value="as" style={{ background: '#1e293b', color: '#fff' }}>অসমীয়া (Assam)</option>
+                <option value="ur" style={{ background: '#1e293b', color: '#fff' }}>اردو (J&K, Telangana, UP)</option>
+              </select>
+            </div>
+          </div>
 
           {/* User Role Badge */}
           {user && (
@@ -98,7 +144,7 @@ export default function Navbar({
           {isCitizen && (
             <button className="btn btn-primary btn-sm" onClick={openGrievanceModal}>
               <PlusCircle size={16} />
-              <span>Lodge Grievance</span>
+              <span>{t('lodgeGrievance')}</span>
             </button>
           )}
 
@@ -132,7 +178,7 @@ export default function Navbar({
               style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
             >
               <LogOut size={14} />
-              <span>Sign Out</span>
+              <span>{t('signOut')}</span>
             </button>
           )}
         </div>
@@ -146,25 +192,25 @@ export default function Navbar({
             className={`subtab ${activeTab === 'overview' ? 'active' : ''}`} 
             onClick={() => setActiveTab('overview')}
           >
-            Dashboard Overview
+            {t('overviewTab')}
           </button>
           <button 
             className={`subtab ${activeTab === 'services' ? 'active' : ''}`} 
             onClick={() => setActiveTab('services')}
           >
-            Public Services Catalog
+            {t('servicesTab')}
           </button>
           <button 
             className={`subtab ${activeTab === 'track' ? 'active' : ''}`} 
             onClick={() => setActiveTab('track')}
           >
-            Track Status & Resolution
+            {t('trackTab')}
           </button>
           <button 
             className={`subtab ${activeTab === 'faqs' ? 'active' : ''}`} 
             onClick={() => setActiveTab('faqs')}
           >
-            Knowledge Base & AI Guide
+            {t('faqsTab')}
           </button>
         </div>
       )}

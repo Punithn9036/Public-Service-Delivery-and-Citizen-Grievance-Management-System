@@ -1340,3 +1340,39 @@
   color: var(--brand-500) !important;
 }
 
+/* Print Media Styles for Official Governance Audit & Receipts */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt;
+  }
+
+  .navbar-header,
+  .nav-subtabs,
+  .admin-actions,
+  .filter-row,
+  .filter-controls,
+  .hero-actions,
+  .icon-circle-btn,
+  .close-btn,
+  .notifications-drawer,
+  footer {
+    display: none !important;
+  }
+
+  .glass-card {
+    border: 1px solid #cccccc !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .admin-table th,
+  .admin-table td {
+    border-bottom: 1px solid #dddddd !important;
+    color: #000000 !important;
+  }
+}
+
+
