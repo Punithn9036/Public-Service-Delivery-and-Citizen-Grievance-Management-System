@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Building, ShieldCheck, UserCheck, Lock, Mail, Phone, User, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Building, ShieldCheck, UserCheck, Lock, Mail, Phone, User, ArrowRight, AlertCircle, CheckCircle2, Globe } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function AuthScreen() {
   const { login, register, quickDemoLogin } = useAuth();
+  const { lang, setLang, t } = useLanguage();
   const [isRegister, setIsRegister] = useState(false);
   const [role, setRole] = useState('CITIZEN'); // 'CITIZEN' | 'OFFICER' | 'ADMIN'
   const [email, setEmail] = useState('');
@@ -84,9 +86,55 @@ export default function AuthScreen() {
         padding: '36px',
         boxShadow: '0 20px 40px rgba(0,0,0,0.12)',
         border: '1px solid var(--border-subtle)',
-        borderRadius: '16px'
+        borderRadius: '16px',
+        position: 'relative'
       }}>
         
+        {/* Top Right Regional Language Selector */}
+        <div style={{
+          position: 'absolute',
+          top: '18px',
+          right: '18px',
+          display: 'inline-flex',
+          alignItems: 'center',
+          background: 'var(--bg-tertiary, rgba(255,255,255,0.06))',
+          borderRadius: '18px',
+          padding: '3px 8px',
+          border: '1px solid var(--border-subtle, rgba(255,255,255,0.1))',
+          gap: '4px'
+        }}>
+          <Globe size={13} style={{ color: 'var(--brand-500, #2563eb)' }} />
+          <select
+            value={lang}
+            onChange={(e) => setLang(e.target.value)}
+            style={{
+              background: 'transparent',
+              color: 'var(--text-main, #ffffff)',
+              border: 'none',
+              outline: 'none',
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+            aria-label="Select State Language"
+            title="Select Regional Language"
+          >
+            <option value="en" style={{ background: '#1e293b', color: '#fff' }}>English (Official)</option>
+            <option value="hi" style={{ background: '#1e293b', color: '#fff' }}>हिन्दी (North & Central)</option>
+            <option value="kn" style={{ background: '#1e293b', color: '#fff' }}>ಕನ್ನಡ (Karnataka)</option>
+            <option value="ta" style={{ background: '#1e293b', color: '#fff' }}>தமிழ் (Tamil Nadu)</option>
+            <option value="te" style={{ background: '#1e293b', color: '#fff' }}>తెలుగు (AP & Telangana)</option>
+            <option value="ml" style={{ background: '#1e293b', color: '#fff' }}>മലയാളം (Kerala)</option>
+            <option value="mr" style={{ background: '#1e293b', color: '#fff' }}>मराठी (Maharashtra)</option>
+            <option value="gu" style={{ background: '#1e293b', color: '#fff' }}>ગુજરાતી (Gujarat)</option>
+            <option value="bn" style={{ background: '#1e293b', color: '#fff' }}>বাংলা (West Bengal)</option>
+            <option value="or" style={{ background: '#1e293b', color: '#fff' }}>ଓଡ଼ିଆ (Odisha)</option>
+            <option value="pa" style={{ background: '#1e293b', color: '#fff' }}>ਪੰਜਾਬੀ (Punjab)</option>
+            <option value="as" style={{ background: '#1e293b', color: '#fff' }}>অসমীয়া (Assam)</option>
+            <option value="ur" style={{ background: '#1e293b', color: '#fff' }}>اردو (J&K, Telangana, UP)</option>
+          </select>
+        </div>
+
         {/* Header Branding */}
         <div style={{ textAlign: 'center', marginBottom: '28px' }}>
           <div style={{
