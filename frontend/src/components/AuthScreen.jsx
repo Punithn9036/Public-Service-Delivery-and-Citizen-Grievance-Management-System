@@ -154,7 +154,7 @@ export default function AuthScreen() {
             JanSeva Governance Portal
           </h2>
           <p className="small-text" style={{ margin: 0, color: 'var(--text-muted)' }}>
-            Unified Public Service Delivery & Grievance Redressal System
+            {t('brandSubtitle')}
           </p>
         </div>
 
@@ -172,14 +172,14 @@ export default function AuthScreen() {
             className={`auth-toggle-btn ${!isRegister ? 'active' : ''}`}
             onClick={() => { setIsRegister(false); setError(null); }}
           >
-            Sign In
+            {t('signIn')}
           </button>
           <button
             type="button"
             className={`auth-toggle-btn ${isRegister ? 'active' : ''}`}
             onClick={() => { setIsRegister(true); setError(null); }}
           >
-            Create Account
+            {t('createAccount')}
           </button>
         </div>
 

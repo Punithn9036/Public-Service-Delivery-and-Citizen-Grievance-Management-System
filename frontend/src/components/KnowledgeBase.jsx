@@ -1,21 +1,23 @@
 import React, { useState } from 'react';
 import { BookOpen, Bot, Send, Search, ChevronDown, ChevronUp, Sparkles, HelpCircle, CheckCircle2 } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function KnowledgeBase({ faqs, searchQuery }) {
+  const { t } = useLanguage();
   const [openFaqId, setOpenFaqId] = useState(faqs[0]?.id || null);
   const [chatMessages, setChatMessages] = useState([
     {
       sender: 'bot',
-      text: 'Namaste! I am JanSeva AI Assistant. Ask me anything about citizen service SLAs, required documents, or paste your Ticket ID (e.g. GRV-2026-8910) to look up live status!'
+      text: t('aiGreeting')
     }
   ]);
   const [userChatInput, setUserChatInput] = useState('');
 
   const quickPrompts = [
-    'How do I track my grievance?',
-    'What documents are needed for a Birth Certificate?',
-    'What is the SLA deadline for Drainage overflow?',
-    'How do I re-open an unresolved ticket?'
+    t('quickPrompt1'),
+    t('quickPrompt2'),
+    t('quickPrompt3'),
+    t('quickPrompt4')
   ];
 
   const filteredFaqs = faqs.filter(f => 
@@ -44,11 +46,11 @@ export default function KnowledgeBase({ faqs, searchQuery }) {
         botResponse = "📋 Ticket #GRV-2026-8910 Status: 'In Progress'. Assigned to Er. Rajesh Varma (Sanitation). Dredging team dispatched. SLA Target: 24 Hours.";
       } else if (lower.includes('grv-2026-8904')) {
         botResponse = "📋 Ticket #GRV-2026-8904 Status: 'Assigned'. Assigned to Vikram Singh (Public Works). Field technician team dispatched for streetlight LED repair.";
-      } else if (lower.includes('water') || lower.includes('sewer') || lower.includes('drain')) {
-        botResponse = "💧 For Water & Drainage issues: Standard SLA is 24-48 hours. Please lodge a complaint under 'Water Supply & Sanitation' with Ward details.";
-      } else if (lower.includes('birth') || lower.includes('certificate') || lower.includes('document')) {
+      } else if (lower.includes('water') || lower.includes('sewer') || lower.includes('drain') || lower.includes('पानी') || lower.includes('ನೀರು')) {
+        botResponse = "💧 Water & Drainage issues: Standard SLA is 24-48 hours. Please lodge a complaint under 'Water Supply & Sanitation' with Ward details.";
+      } else if (lower.includes('birth') || lower.includes('certificate') || lower.includes('जन्म') || lower.includes('ಜನನ')) {
         botResponse = "📜 Birth Certificates take 7 SLA working days. Documents needed: (1) Hospital birth card, (2) Parents' Aadhaar Card, (3) Address proof.";
-      } else if (lower.includes('urgent') || lower.includes('emergency') || lower.includes('danger')) {
+      } else if (lower.includes('urgent') || lower.includes('emergency') || lower.includes('आपात') || lower.includes('ತುರ್ತು')) {
         botResponse = "🚨 For urgent public safety hazards (flooding, exposed high-voltage cables), set Priority to 'Urgent' or call 24x7 Helpline: 1800-425-GOV.";
       } else if (lower.includes('reopen') || lower.includes('not fixed')) {
         botResponse = "🔄 If your ticket was marked resolved but the problem persists, go to 'Track Status', enter your ticket ID, and click 'Issue Not Fixed? Re-open Ticket'.";
@@ -70,8 +72,8 @@ export default function KnowledgeBase({ faqs, searchQuery }) {
           <div className="section-title-row">
             <BookOpen size={24} className="text-blue" />
             <div>
-              <h2>Citizen Knowledge Base & FAQs</h2>
-              <p>Official guidelines, SLA timelines, and procedure documents</p>
+              <h2>{t('kbTitle')}</h2>
+              <p>{t('kbSubtitle')}</p>
             </div>
           </div>
 
@@ -108,8 +110,8 @@ export default function KnowledgeBase({ faqs, searchQuery }) {
                 <Bot size={20} color="#ffffff" />
               </div>
               <div>
-                <h3>JanSeva AI Assistant</h3>
-                <span className="ai-online-tag"><Sparkles size={12} /> Instant 24x7 Help Bot</span>
+                <h3>{t('aiBotTitle')}</h3>
+                <span className="ai-online-tag"><Sparkles size={12} /> {t('aiBotSub')}</span>
               </div>
             </div>
           </div>
@@ -149,7 +151,7 @@ export default function KnowledgeBase({ faqs, searchQuery }) {
           <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} className="chat-input-form">
             <input 
               type="text" 
-              placeholder="Ask AI e.g. How long does a birth certificate take?"
+              placeholder={t('askAiPlaceholder')}
               value={userChatInput}
               onChange={(e) => setUserChatInput(e.target.value)}
               className="chat-input"

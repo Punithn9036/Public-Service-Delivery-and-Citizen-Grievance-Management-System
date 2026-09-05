@@ -22,6 +22,7 @@ import {
   X,
   FileText
 } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function TrackingView({ 
   grievances, 
@@ -30,6 +31,7 @@ export default function TrackingView({
   onSubmitFeedback,
   onReopenGrievance
 }) {
+  const { t } = useLanguage();
   const [trackInput, setTrackInput] = useState(selectedTrackId || '');
   const [activeSearchResult, setActiveSearchResult] = useState(() => {
     if (selectedTrackId) {
@@ -101,22 +103,22 @@ export default function TrackingView({
       
       {/* Search Header */}
       <div className="track-search-card glass-card">
-        <h2>Live Grievance & Application Tracker</h2>
-        <p>Enter your unique Reference Ticket ID (e.g., GRV-2026-8910 or APP-2026-1049) to view officer activity, IPFS documents, and immutable timeline.</p>
+        <h2>{t('trackTitle')}</h2>
+        <p>{t('trackSubtitle')}</p>
 
         <form onSubmit={handleSearch} className="track-form">
           <div className="input-group">
             <Search size={20} className="input-icon" />
             <input 
               type="text" 
-              placeholder="Enter Reference Number (e.g. GRV-2026-8910)..." 
+              placeholder={t('enterTrackingId')} 
               value={trackInput} 
               onChange={(e) => setTrackInput(e.target.value)}
               className="track-input"
             />
           </div>
           <button type="submit" className="btn btn-primary">
-            Track Request
+            {t('trackButton')}
           </button>
         </form>
 
@@ -303,7 +305,7 @@ export default function TrackingView({
             {/* Citizen Feedback Form if Resolved */}
             {activeSearchResult.status === 'Resolved' && (
               <div className="feedback-box glass-card glow-emerald">
-                <h3><FileCheck size={20} color="#16a34a" /> Citizen Satisfaction Feedback</h3>
+                <h3><FileCheck size={20} color="#16a34a" /> {t('citizenFeedback')}</h3>
                 
                 {activeSearchResult.feedback || feedbackSubmitted ? (
                   <div className="feedback-done">
@@ -319,7 +321,7 @@ export default function TrackingView({
                   </div>
                 ) : (
                   <form onSubmit={handleRatingSubmit} className="rating-form">
-                    <p>Rate the speed and quality of resolution provided by the municipal team:</p>
+                    <p>{t('rateResolution')}:</p>
                     <div className="star-rating-select">
                       {[1, 2, 3, 4, 5].map(s => (
                         <button
@@ -343,14 +345,14 @@ export default function TrackingView({
 
                     <div className="form-action-row">
                       <button type="submit" className="btn btn-primary btn-sm">
-                        <Send size={14} /> Submit Feedback
+                        <Send size={14} /> {t('submitFeedback')}
                       </button>
                       <button 
                         type="button" 
                         className="btn btn-outline btn-sm text-rose"
                         onClick={() => onReopenGrievance(activeSearchResult.id)}
                       >
-                        <RotateCcw size={14} /> Issue Not Fixed? Re-open Ticket
+                        <RotateCcw size={14} /> {t('reopenTicket')}
                       </button>
                     </div>
                   </form>
