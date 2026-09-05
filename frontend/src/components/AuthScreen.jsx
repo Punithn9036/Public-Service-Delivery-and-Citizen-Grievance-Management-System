@@ -3,7 +3,7 @@ import { Building, ShieldCheck, UserCheck, Lock, Mail, Phone, User, ArrowRight, 
 import { useAuth } from '../context/AuthContext';
 
 export default function AuthScreen() {
-  const { login, register } = useAuth();
+  const { login, register, quickDemoLogin } = useAuth();
   const [isRegister, setIsRegister] = useState(false);
   const [role, setRole] = useState('CITIZEN'); // 'CITIZEN' | 'OFFICER' | 'ADMIN'
   const [email, setEmail] = useState('');
@@ -51,20 +51,23 @@ export default function AuthScreen() {
 
   const handleQuickLogin = (demoRole) => {
     setError(null);
-    if (demoRole === 'CITIZEN') {
-      setEmail('aarav.sharma@example.com');
-      setPassword('Password123!');
-      setRole('CITIZEN');
-    } else if (demoRole === 'OFFICER') {
-      setEmail('rajesh.varma@gov.in');
-      setPassword('Officer123!');
-      setRole('OFFICER');
-    } else if (demoRole === 'ADMIN') {
-      setEmail('admin.controlroom@gov.in');
-      setPassword('Admin123!');
-      setRole('ADMIN');
+    try {
+      if (demoRole === 'CITIZEN') {
+        setEmail('aarav.sharma@example.com');
+        setPassword('Password123!');
+      } else if (demoRole === 'OFFICER') {
+        setEmail('rajesh.varma@gov.in');
+        setPassword('Officer123!');
+      } else if (demoRole === 'ADMIN') {
+        setEmail('admin.controlroom@gov.in');
+        setPassword('Admin123!');
+      }
+      quickDemoLogin(demoRole);
+    } catch (e) {
+      setError('Quick login failed: ' + e.message);
     }
   };
+
 
   return (
     <div className="auth-screen-container" style={{
