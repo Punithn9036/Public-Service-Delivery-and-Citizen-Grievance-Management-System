@@ -1,4 +1,3 @@
-import React from 'react';
 import { 
   Building, 
   Moon, 
@@ -7,9 +6,10 @@ import {
   PlusCircle, 
   ShieldCheck, 
   UserCheck, 
-  Search,
-  LogOut,
-  Globe
+  Search, 
+  LogOut, 
+  Globe,
+  Settings
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -25,7 +25,8 @@ export default function Navbar({
   setShowNotifications, 
   openGrievanceModal,
   searchQuery,
-  setSearchQuery
+  setSearchQuery,
+  onOpenSettings
 }) {
   const { user, logout } = useAuth();
   const { lang, setLang, t } = useLanguage();
@@ -166,6 +167,15 @@ export default function Navbar({
             title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
           >
             {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+          </button>
+
+          {/* Portal & User Settings */}
+          <button
+            className="icon-circle-btn"
+            onClick={onOpenSettings}
+            title="Portal Settings & Preferences"
+          >
+            <Settings size={18} />
           </button>
 
           {/* Logout Button */}

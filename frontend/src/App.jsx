@@ -7,6 +7,7 @@ import KnowledgeBase from './components/KnowledgeBase';
 import GrievanceFormModal from './components/GrievanceFormModal';
 import ServiceApplicationModal from './components/ServiceApplicationModal';
 import NotificationsDrawer from './components/NotificationsDrawer';
+import SettingsModal from './components/SettingsModal';
 import AuthScreen from './components/AuthScreen';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
@@ -81,6 +82,7 @@ function MainAppContent() {
   // Modals state
   const [showGrievanceModal, setShowGrievanceModal] = useState(false);
   const [selectedServiceModal, setSelectedServiceModal] = useState(null);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   // Sync Theme to document root
   useEffect(() => {
@@ -234,6 +236,7 @@ function MainAppContent() {
         openGrievanceModal={() => setShowGrievanceModal(true)}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
+        onOpenSettings={() => setShowSettingsModal(true)}
       />
 
       {/* Real-time Notifications Popover */}
@@ -329,6 +332,15 @@ function MainAppContent() {
           service={selectedServiceModal}
           onClose={() => setSelectedServiceModal(null)}
           onSubmitApplication={handleAddApplication}
+        />
+      )}
+
+      {/* Portal & User Settings Modal */}
+      {showSettingsModal && (
+        <SettingsModal 
+          onClose={() => setShowSettingsModal(false)}
+          theme={theme}
+          toggleTheme={toggleTheme}
         />
       )}
 
