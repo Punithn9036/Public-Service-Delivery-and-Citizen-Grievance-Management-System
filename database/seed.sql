@@ -1,13 +1,13 @@
 -- Seed Data Script for Public Service Delivery and Citizen Grievance Management System (JanSeva / DIGIT CMS)
 
--- 1. Users
+-- 1. Users with valid bcrypt password hashes
 INSERT INTO users (user_id, full_name, email, phone, password_hash, role, department)
 VALUES
-  ('USR-CIT-001', 'Aarav Sharma', 'aarav.sharma@example.com', '+91 98765 43210', '$2b$10$wT8...hash', 'CITIZEN', NULL),
-  ('USR-CIT-002', 'Priya Sundaram', 'priya.sundaram@example.com', '+91 98112 33445', '$2b$10$wT8...hash', 'CITIZEN', NULL),
-  ('USR-OFF-012', 'Er. Rajesh Varma', 'rajesh.varma@gov.in', '+91 94433 11223', '$2b$10$wT8...hash', 'OFFICER', 'Water Supply & Sanitation'),
-  ('USR-OFF-008', 'Vikram Singh', 'vikram.singh@gov.in', '+91 98700 55443', '$2b$10$wT8...hash', 'OFFICER', 'Public Works & Infrastructure'),
-  ('USR-ADM-001', 'Smt. Kavitha Reddi', 'admin.controlroom@gov.in', '+91 94411 99887', '$2b$10$wT8...hash', 'ADMIN', 'Municipal Governance')
+  ('USR-CIT-001', 'Aarav Sharma', 'aarav.sharma@example.com', '+91 98765 43210', '$2a$10$eE0oXG9r1mU66t3kY5rEee4zG5U9Oq1u5JkQ4WfUeK.U6FqO8Oa5u', 'CITIZEN', NULL),
+  ('USR-CIT-002', 'Priya Sundaram', 'priya.sundaram@example.com', '+91 98112 33445', '$2a$10$eE0oXG9r1mU66t3kY5rEee4zG5U9Oq1u5JkQ4WfUeK.U6FqO8Oa5u', 'CITIZEN', NULL),
+  ('USR-OFF-012', 'Er. Rajesh Varma', 'rajesh.varma@gov.in', '+91 94433 11223', '$2a$10$eE0oXG9r1mU66t3kY5rEee4zG5U9Oq1u5JkQ4WfUeK.U6FqO8Oa5u', 'OFFICER', 'Water Supply & Sanitation'),
+  ('USR-OFF-008', 'Vikram Singh', 'vikram.singh@gov.in', '+91 98700 55443', '$2a$10$eE0oXG9r1mU66t3kY5rEee4zG5U9Oq1u5JkQ4WfUeK.U6FqO8Oa5u', 'OFFICER', 'Public Works & Infrastructure'),
+  ('USR-ADM-001', 'Smt. Kavitha Reddi', 'admin.controlroom@gov.in', '+91 94411 99887', '$2a$10$eE0oXG9r1mU66t3kY5rEee4zG5U9Oq1u5JkQ4WfUeK.U6FqO8Oa5u', 'ADMIN', 'Municipal Governance')
 ON CONFLICT (user_id) DO NOTHING;
 
 -- 2. Public Services Catalog
