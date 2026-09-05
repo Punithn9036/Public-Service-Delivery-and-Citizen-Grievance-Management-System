@@ -13,10 +13,13 @@ import {
   Building2, 
   Award, 
   Home, 
-  Bot,
-  ExternalLink,
-  MessageSquareCheck
+  ExternalLink, 
+  MessageSquareCheck,
+  Database,
+  Flame,
+  UserCheck
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const ICON_MAP = {
   FileText: FileText,
@@ -37,6 +40,8 @@ export default function CitizenDashboard({
   selectGrievanceToTrack,
   searchQuery
 }) {
+  const { user } = useAuth();
+  const [viewScope, setViewScope] = useState('all'); // 'all' | 'my'
   const [statusFilter, setStatusFilter] = useState('All');
   const [departmentFilter, setDepartmentFilter] = useState('All');
 
@@ -49,6 +54,11 @@ export default function CitizenDashboard({
 
   // Filtered grievances list
   const filteredGrievances = grievances.filter(item => {
+    if (viewScope === 'my' && user) {
+      const matchName = item.citizenName && user.fullName && item.citizenName.toLowerCase().includes(user.fullName.toLowerCase());
+      const matchPhone = item.citizenPhone && user.phone && item.citizenPhone === user.phone;
+      if (!matchName && !matchPhone) return false;
+    }
     const matchesStatus = statusFilter === 'All' || item.status === statusFilter;
     const matchesDepartment = departmentFilter === 'All' || item.department === departmentFilter;
     const matchesSearch = !searchQuery || 
@@ -57,6 +67,32 @@ export default function CitizenDashboard({
       item.category.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesStatus && matchesDepartment && matchesSearch;
   });
+
+  const getSlaBadge = (item) => {
+    if (!item.slaDeadline) return null;
+    if (item.status === 'Resolved') return null;
+    const deadline = new Date(item.slaDeadline).getTime();
+    const diffHours = Math.round((deadline - Date.now()) / (1000 * 60 * 60));
+
+    if (diffHours < 0) {
+      return (
+        <span style={{ fontSize: '0.7rem', color: '#dc2626', background: 'rgba(239,68,68,0.1)', padding: '2px 8px', borderRadius: '12px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+          <AlertTriangle size={11} /> Overdue by {Math.abs(diffHours)}h
+        </span>
+      );
+    } else if (diffHours <= 24) {
+      return (
+        <span style={{ fontSize: '0.7rem', color: '#ea580c', background: 'rgba(234,88,12,0.1)', padding: '2px 8px', borderRadius: '12px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+          <Flame size={11} /> {diffHours}h left
+        </span>
+      );
+    }
+    return (
+      <span style={{ fontSize: '0.7rem', color: '#2563eb', background: 'rgba(37,99,235,0.08)', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
+        {Math.ceil(diffHours / 24)}d left
+      </span>
+    );
+  };
 
   return (
     <div className="dashboard-content animate-fade-in">
@@ -182,26 +218,48 @@ export default function CitizenDashboard({
       <div className="section-block">
         <div className="section-header">
           <div>
-            <h2>Recent Grievance Submissions</h2>
+            <h2>Grievance Tracking & Redressal Stream</h2>
             <p>Track grievances submitted by citizens and monitor action taken by department officers</p>
           </div>
 
-          {/* Filters */}
-          <div className="filter-controls">
-            <div className="select-wrapper">
-              <Filter size={14} className="select-icon" />
-              <select 
-                value={statusFilter} 
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="filter-select"
+          {/* Scope Toggle: All Wards vs My Grievances */}
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', background: 'var(--bg-tertiary)', padding: '3px', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+              <button
+                type="button"
+                className={`btn-sm ${viewScope === 'all' ? 'btn btn-primary' : 'btn'}`}
+                style={{ borderRadius: '6px', fontSize: '0.75rem', padding: '4px 10px', border: 'none' }}
+                onClick={() => setViewScope('all')}
               >
-                <option value="All">All Statuses</option>
-                <option value="Submitted">Submitted</option>
-                <option value="Under Review">Under Review</option>
-                <option value="Assigned">Assigned</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Resolved">Resolved</option>
-              </select>
+                All Wards ({grievances.length})
+              </button>
+              <button
+                type="button"
+                className={`btn-sm ${viewScope === 'my' ? 'btn btn-primary' : 'btn'}`}
+                style={{ borderRadius: '6px', fontSize: '0.75rem', padding: '4px 10px', border: 'none' }}
+                onClick={() => setViewScope('my')}
+              >
+                My Submissions
+              </button>
+            </div>
+
+            {/* Filters */}
+            <div className="filter-controls">
+              <div className="select-wrapper">
+                <Filter size={14} className="select-icon" />
+                <select 
+                  value={statusFilter} 
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="filter-select"
+                >
+                  <option value="All">All Statuses</option>
+                  <option value="Submitted">Submitted</option>
+                  <option value="Under Review">Under Review</option>
+                  <option value="Assigned">Assigned</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Resolved">Resolved</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
@@ -223,11 +281,19 @@ export default function CitizenDashboard({
                     <span className={`priority-tag priority-${item.priority.toLowerCase()}`}>
                       {item.priority} Priority
                     </span>
+                    {getSlaBadge(item)}
                   </div>
-                  <span className={`badge badge-${item.status.toLowerCase().replace(/\s+/g, '-')}`}>
-                    <span className="pulse-dot"></span>
-                    {item.status}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {item.ipfsDocumentCid && (
+                      <span style={{ fontSize: '0.7rem', color: '#2563eb', background: 'rgba(37,99,235,0.08)', padding: '2px 6px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <Database size={11} /> IPFS Proof
+                      </span>
+                    )}
+                    <span className={`badge badge-${item.status.toLowerCase().replace(/\s+/g, '-')}`}>
+                      <span className="pulse-dot"></span>
+                      {item.status}
+                    </span>
+                  </div>
                 </div>
 
                 <h3 className="g-title">{item.title}</h3>
@@ -244,7 +310,7 @@ export default function CitizenDashboard({
                   </div>
                   <div>
                     <span className="meta-label">Officer Assigned</span>
-                    <span className="meta-value">{item.assignedOfficer}</span>
+                    <span className="meta-value">{item.assignedOfficer || 'Pending Dispatch'}</span>
                   </div>
                   <div>
                     <span className="meta-label">Submitted On</span>
@@ -258,7 +324,7 @@ export default function CitizenDashboard({
                       <MessageSquareCheck size={14} /> Citizen Feedback Submitted ({item.feedback.rating}/5 ★)
                     </span>
                   ) : (
-                    <span className="g-sla-info">SLA Deadline: <strong>{new Date(item.slaDeadline).toLocaleDateString()}</strong></span>
+                    <span className="g-sla-info">SLA Target Date: <strong>{new Date(item.slaDeadline).toLocaleDateString()}</strong></span>
                   )}
 
                   <button 
