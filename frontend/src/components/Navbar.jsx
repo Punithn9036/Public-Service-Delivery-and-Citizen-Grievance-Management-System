@@ -65,37 +65,49 @@ export default function Navbar({
         {/* Middle/Right Navigation Controls */}
         <div className="nav-actions">
 
-          {/* Language Selector */}
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            background: 'var(--bg-tertiary, rgba(255,255,255,0.06))',
-            borderRadius: '20px',
-            padding: '2px 6px',
-            border: '1px solid var(--border-subtle, rgba(255,255,255,0.1))',
-            gap: '4px'
-          }}>
-            <Globe size={13} style={{ opacity: 0.7, marginLeft: '4px' }} />
-            {['en', 'hi', 'kn'].map((code) => (
-              <button
-                key={code}
-                type="button"
-                onClick={() => setLang(code)}
+          {/* Regional Languages Dropdown Selector */}
+          <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              background: 'var(--bg-tertiary, rgba(255,255,255,0.06))',
+              borderRadius: '20px',
+              padding: '4px 10px',
+              border: '1px solid var(--border-subtle, rgba(255,255,255,0.1))',
+              gap: '6px'
+            }}>
+              <Globe size={14} style={{ color: 'var(--brand-500, #2563eb)' }} />
+              <select
+                value={lang}
+                onChange={(e) => setLang(e.target.value)}
                 style={{
-                  background: lang === code ? 'var(--primary, #2563eb)' : 'transparent',
-                  color: lang === code ? '#ffffff' : 'var(--text-secondary, #94a3b8)',
+                  background: 'transparent',
+                  color: 'var(--text-main, #ffffff)',
                   border: 'none',
-                  borderRadius: '12px',
-                  padding: '2px 8px',
-                  fontSize: '0.72rem',
-                  fontWeight: lang === code ? 700 : 500,
+                  outline: 'none',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
                   cursor: 'pointer',
-                  transition: 'all 0.2s'
+                  paddingRight: '4px'
                 }}
+                aria-label="Select State Language"
+                title="Select Regional Language"
               >
-                {code.toUpperCase()}
-              </button>
-            ))}
+                <option value="en" style={{ background: '#1e293b', color: '#fff' }}>English (Official)</option>
+                <option value="hi" style={{ background: '#1e293b', color: '#fff' }}>हिन्दी (North & Central)</option>
+                <option value="kn" style={{ background: '#1e293b', color: '#fff' }}>ಕನ್ನಡ (Karnataka)</option>
+                <option value="ta" style={{ background: '#1e293b', color: '#fff' }}>தமிழ் (Tamil Nadu)</option>
+                <option value="te" style={{ background: '#1e293b', color: '#fff' }}>తెలుగు (AP & Telangana)</option>
+                <option value="ml" style={{ background: '#1e293b', color: '#fff' }}>മലയാളം (Kerala)</option>
+                <option value="mr" style={{ background: '#1e293b', color: '#fff' }}>मराठी (Maharashtra)</option>
+                <option value="gu" style={{ background: '#1e293b', color: '#fff' }}>ગુજરાતી (Gujarat)</option>
+                <option value="bn" style={{ background: '#1e293b', color: '#fff' }}>বাংলা (West Bengal)</option>
+                <option value="or" style={{ background: '#1e293b', color: '#fff' }}>ଓଡ଼ିଆ (Odisha)</option>
+                <option value="pa" style={{ background: '#1e293b', color: '#fff' }}>ਪੰਜਾਬੀ (Punjab)</option>
+                <option value="as" style={{ background: '#1e293b', color: '#fff' }}>অসমীয়া (Assam)</option>
+                <option value="ur" style={{ background: '#1e293b', color: '#fff' }}>اردو (J&K, Telangana, UP)</option>
+              </select>
+            </div>
           </div>
 
           {/* User Role Badge */}
