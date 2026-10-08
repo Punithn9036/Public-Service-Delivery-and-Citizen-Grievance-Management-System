@@ -134,28 +134,6 @@ export default function Navbar({
             )}
           </button>
 
-          {/* Settings Quick Access */}
-          <button
-            type="button"
-            className="icon-circle-btn"
-            onClick={onOpenSettings}
-            title="Portal Settings (Theme, Language, Profile)"
-          >
-            <Settings size={18} />
-          </button>
-
-          {/* Quick Lodge Grievance for Citizen */}
-          {isCitizen && (
-            <button 
-              type="button"
-              className="btn btn-primary btn-sm" 
-              onClick={openGrievanceModal}
-            >
-              <PlusCircle size={15} />
-              <span>{t('lodgeGrievance') || 'Lodge Grievance'}</span>
-            </button>
-          )}
-
         </div>
 
       </div>
