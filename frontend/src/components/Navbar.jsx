@@ -44,7 +44,7 @@ export default function Navbar({
     <header className={`navbar-header ${isHeroTab ? 'navbar-hero-merged' : ''}`}>
       <div className="nav-container">
         
-        {/* Left Section: JanSeva Brand Heading & Left Search Bar */}
+        {/* Left Section: JanSeva Brand Heading */}
         <div className="nav-left-group">
           {/* JanSeva Official Brand Badge & Portal Title */}
           <div 
@@ -53,25 +53,10 @@ export default function Navbar({
             style={{ cursor: 'pointer' }}
             title="JanSeva Civic Portal Home"
           >
-            <div className="nav-brand-icon-box">
-              <Building size={20} color="#ffffff" />
-            </div>
             <div className="nav-brand-title-wrap">
               <span className="nav-brand-name">JanSeva</span>
-              <span className="nav-brand-tag">GOV</span>
+              <span className="nav-brand-gov-plain">gov</span>
             </div>
-          </div>
-
-          {/* Left-Aligned Search bar */}
-          <div className="nav-search-box">
-            <Search size={16} className="search-icon" />
-            <input 
-              type="text" 
-              placeholder={t('searchPlaceholder') || 'Search tickets, services, or FAQs...'} 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="nav-search-input"
-            />
           </div>
         </div>
 

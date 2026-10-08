@@ -33,6 +33,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import govHeroBg from '../assets/gov-hero-bg.png';
+import nationalEmblemImg from '../assets/national-emblem.webp';
 
 const ICON_MAP = {
   FileText: FileText,
@@ -331,9 +332,13 @@ export default function CitizenDashboard({
         {/* Hero Main Core Content */}
         <div className="hero-center-content">
           
-          {/* State Emblem of India (Ashoka Lion Capital & Satyameva Jayate) */}
+          {/* State Emblem of India (Uploaded Official Lion Capital & Satyameva Jayate) */}
           <div className="hero-emblem-container animate-float-subtle">
-            <NationalEmblem size={86} />
+            <img 
+              src={nationalEmblemImg} 
+              alt="State Emblem of India" 
+              className="hero-emblem-img"
+            />
           </div>
 
           {/* Majestic Portal Title */}
