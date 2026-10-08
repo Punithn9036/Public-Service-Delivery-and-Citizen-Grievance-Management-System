@@ -920,44 +920,45 @@
   min-height: 100vh;
   min-height: 100dvh;
   box-sizing: border-box;
-  background: linear-gradient(180deg, rgba(10, 18, 35, 0.28) 0%, rgba(10, 18, 35, 0.45) 55%, rgba(10, 18, 35, 0.72) 100%), 
+  background: linear-gradient(180deg, rgba(10, 18, 35, 0.25) 0%, rgba(10, 18, 35, 0.42) 50%, rgba(10, 18, 35, 0.70) 100%), 
               url('./assets/gov-hero-bg.png') center 30% / cover no-repeat;
   color: #FFFFFF;
-  padding: 90px 24px 75px;
+  padding: 80px 24px 75px;
   border-bottom: 3.5px solid #EB7D00;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   overflow: visible;
 }
 
-/* Hero Center Content */
+/* Hero Center Content - Perfectly Centered in Viewport */
 .hero-center-content {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  margin: auto auto 24px auto;
-  max-width: 900px;
+  margin: auto 0;
+  max-width: 880px;
   width: 100%;
   z-index: 10;
   position: relative;
+  transform: translateY(-20px);
 }
 
 .hero-emblem-container {
-  margin-bottom: 8px;
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4));
+  margin-bottom: 12px;
+  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.5));
 }
 
 .hero-portal-title {
   font-family: var(--font-heading);
-  font-size: 2.75rem;
+  font-size: 3rem;
   font-weight: 900;
   color: #FFFFFF;
-  margin: 0;
+  margin: 0 0 16px 0;
   letter-spacing: -0.03em;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+  text-shadow: 0 3px 12px rgba(0, 0, 0, 0.65);
   display: flex;
   align-items: baseline;
   justify-content: center;
