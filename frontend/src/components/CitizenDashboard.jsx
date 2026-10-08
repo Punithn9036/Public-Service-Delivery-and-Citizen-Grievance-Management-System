@@ -26,6 +26,7 @@ import {
   MapPin,
   ShieldCheck,
   ChevronRight,
+  ChevronDown,
   TrendingUp,
   Layers
 } from 'lucide-react';

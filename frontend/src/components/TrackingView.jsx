@@ -32,12 +32,14 @@ export default function TrackingView({
   onReopenGrievance
 }) {
   const { t } = useLanguage();
-  const [trackInput, setTrackInput] = useState(selectedTrackId || '');
+  const gList = Array.isArray(grievances) ? grievances : [];
+  const aList = Array.isArray(applications) ? applications : [];
+
   const [activeSearchResult, setActiveSearchResult] = useState(() => {
     if (selectedTrackId) {
-      return grievances.find(g => g.id === selectedTrackId) || applications.find(a => a.id === selectedTrackId);
+      return gList.find(g => g && g.id === selectedTrackId) || aList.find(a => a && a.id === selectedTrackId);
     }
-    return grievances[0] || null;
+    return gList[0] || null;
   });
 
   const [rating, setRating] = useState(5);
@@ -49,8 +51,8 @@ export default function TrackingView({
     e.preventDefault();
     if (!trackInput.trim()) return;
     const cleanId = trackInput.trim().toUpperCase();
-    const foundGrievance = grievances.find(g => g.id.toUpperCase() === cleanId);
-    const foundApp = applications.find(a => a.id.toUpperCase() === cleanId);
+    const foundGrievance = gList.find(g => g && g.id && g.id.toUpperCase() === cleanId);
+    const foundApp = aList.find(a => a && a.id && a.id.toUpperCase() === cleanId);
     
     if (foundGrievance || foundApp) {
       setActiveSearchResult(foundGrievance || foundApp);
