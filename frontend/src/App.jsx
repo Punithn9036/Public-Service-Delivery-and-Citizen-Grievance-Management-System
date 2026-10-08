@@ -442,29 +442,31 @@ function MainAppContent() {
         {/* Main Application Area */}
         <div className="app-main-wrapper">
           
-          {/* Top Navbar Header */}
-          <Navbar 
-            activeTab={activeTab}
-            setActiveTab={(tab) => navigateTo(tab)}
-            onNavigate={(tab) => navigateTo(tab)}
-            canGoBack={canGoBack}
-            onGoBack={handleGoBack}
-            previousPageTitle={getPreviousPageTitle()}
-            unreadNotifications={notifications.length}
-            setShowNotifications={setShowNotifications}
-            openGrievanceModal={() => {
-              navigateTo(activeTab, { closeModals: false });
-              setShowGrievanceModal(true);
-            }}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            onOpenSettings={() => {
-              navigateTo(activeTab, { closeModals: false });
-              setShowSettingsModal(true);
-            }}
-            isSidebarOpen={isSidebarOpen}
-            onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
-          />
+          {/* Top Navbar Header - Only on Dashboard Overview */}
+          {activeTab === 'overview' && (
+            <Navbar 
+              activeTab={activeTab}
+              setActiveTab={(tab) => navigateTo(tab)}
+              onNavigate={(tab) => navigateTo(tab)}
+              canGoBack={canGoBack}
+              onGoBack={handleGoBack}
+              previousPageTitle={getPreviousPageTitle()}
+              unreadNotifications={notifications.length}
+              setShowNotifications={setShowNotifications}
+              openGrievanceModal={() => {
+                navigateTo(activeTab, { closeModals: false });
+                setShowGrievanceModal(true);
+              }}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              onOpenSettings={() => {
+                navigateTo(activeTab, { closeModals: false });
+                setShowSettingsModal(true);
+              }}
+              isSidebarOpen={isSidebarOpen}
+              onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
+            />
+          )}
 
           {/* Real-time Notifications Popover */}
           {showNotifications && (
@@ -520,6 +522,8 @@ function MainAppContent() {
                 onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
                 onGoBack={handleGoBack}
                 canGoBack={canGoBack}
+                unreadNotifications={notifications.length}
+                setShowNotifications={setShowNotifications}
               />
             )}
 
@@ -545,6 +549,8 @@ function MainAppContent() {
                 onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
                 onGoBack={handleGoBack}
                 canGoBack={canGoBack}
+                unreadNotifications={notifications.length}
+                setShowNotifications={setShowNotifications}
               />
             )}
 
@@ -558,6 +564,10 @@ function MainAppContent() {
                 onGoBack={handleGoBack}
                 canGoBack={canGoBack}
                 previousPageTitle={getPreviousPageTitle()}
+                unreadNotifications={notifications.length}
+                setShowNotifications={setShowNotifications}
+                isSidebarOpen={isSidebarOpen}
+                onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
               />
             )}
 
@@ -568,6 +578,10 @@ function MainAppContent() {
                 onGoBack={handleGoBack}
                 canGoBack={canGoBack}
                 previousPageTitle={getPreviousPageTitle()}
+                unreadNotifications={notifications.length}
+                setShowNotifications={setShowNotifications}
+                isSidebarOpen={isSidebarOpen}
+                onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
               />
             )}
           </>

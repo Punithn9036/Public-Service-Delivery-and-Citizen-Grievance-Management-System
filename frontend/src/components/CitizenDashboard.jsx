@@ -29,7 +29,8 @@ import {
   ChevronDown,
   TrendingUp,
   Layers,
-  ArrowLeft
+  ArrowLeft,
+  Bell
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -203,7 +204,9 @@ export default function CitizenDashboard({
   isSidebarOpen,
   onToggleSidebar,
   onGoBack,
-  canGoBack
+  canGoBack,
+  unreadNotifications,
+  setShowNotifications
 }) {
   const { user } = useAuth();
   const { lang, setLang, t } = useLanguage();
@@ -473,18 +476,80 @@ export default function CitizenDashboard({
       <div className="dashboard-inner-wrap" style={{ padding: '24px 20px', maxWidth: '1400px', margin: '0 auto' }}>
 
         {/* Top Contextual Back Bar & Breadcrumb (when on Services Tab) */}
-        {canGoBack && activeTab === 'services' && (
+        {activeTab === 'services' && (
           <div className="subpage-back-bar" style={{ marginBottom: '20px' }}>
-            <button 
-              type="button" 
-              className="subpage-back-btn" 
-              onClick={onGoBack}
-              title="Return to Overview Dashboard"
-            >
-              <ArrowLeft size={16} />
-              <span>Back to Overview Dashboard</span>
-            </button>
-            <span className="subpage-breadcrumb">JanSeva &gt; Public Services Catalog</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              <button 
+                type="button" 
+                className="subpage-back-btn" 
+                onClick={onGoBack}
+                title="Return to Overview Dashboard"
+              >
+                <ArrowLeft size={16} />
+                <span>Back to Overview Dashboard</span>
+              </button>
+              <span className="subpage-breadcrumb">JanSeva &gt; Public Services Catalog</span>
+            </div>
+
+            <div className="subpage-actions-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              {/* Regional Languages Dropdown Selector */}
+              <div className="language-selector-pill">
+                <Globe size={15} style={{ flexShrink: 0, color: 'var(--brand-700)' }} />
+                <select
+                  value={lang}
+                  onChange={(e) => setLang(e.target.value)}
+                  className="language-select-dropdown"
+                  aria-label="Select State Language"
+                  title="Select Regional Language"
+                >
+                  <option value="en">English (Official)</option>
+                  <option value="hi">हिन्दी (North & Central)</option>
+                  <option value="kn">ಕನ್ನಡ (Karnataka)</option>
+                  <option value="ta">தமிழ் (Tamil Nadu)</option>
+                  <option value="te">తెలుగు (AP & Telangana)</option>
+                  <option value="ml">മലയാളം (Kerala)</option>
+                  <option value="mr">मराठी (Maharashtra)</option>
+                  <option value="gu">ગુજરાતી (Gujarat)</option>
+                  <option value="bn">বাংলা (West Bengal)</option>
+                  <option value="or">ଓଡ଼ିଆ (Odisha)</option>
+                  <option value="pa">ਪੰਜਾਬੀ (Punjab)</option>
+                  <option value="as">অসমীয়া (Assam)</option>
+                  <option value="ur">اردو (J&K, Telangana, UP)</option>
+                </select>
+              </div>
+
+              {/* Notifications */}
+              {setShowNotifications && (
+                <button 
+                  type="button" 
+                  className="icon-circle-btn" 
+                  onClick={() => setShowNotifications(prev => !prev)}
+                  title="Notifications"
+                >
+                  <Bell size={18} />
+                  {unreadNotifications > 0 && (
+                    <span className="notification-badge">{unreadNotifications}</span>
+                  )}
+                </button>
+              )}
+
+              {/* Tricolour Menu Button */}
+              {onToggleSidebar && (
+                <button
+                  type="button"
+                  className={`tricolour-menu-btn ${isSidebarOpen ? 'active' : ''}`}
+                  onClick={onToggleSidebar}
+                  title="Toggle Navigation Menu"
+                  aria-label="Toggle Navigation Sidebar"
+                >
+                  <div className="tricolour-icon">
+                    <span className="tricolour-bar saffron-bar" />
+                    <span className="tricolour-bar white-bar" />
+                    <span className="tricolour-bar green-bar" />
+                  </div>
+                </button>
+              )}
+            </div>
           </div>
         )}
 
