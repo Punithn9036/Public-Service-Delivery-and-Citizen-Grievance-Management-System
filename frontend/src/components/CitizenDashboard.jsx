@@ -43,62 +43,145 @@ const ICON_MAP = {
   Zap: Zap
 };
 
-// Majestic Vector Representation of State Emblem of India (Ashoka Lion Capital & Satyameva Jayate)
-function NationalEmblem({ size = 72, className = '' }) {
+// High-Fidelity Vector Representation of State Emblem of India (Ashoka Lion Capital & Satyameva Jayate)
+function NationalEmblem({ size = 84, className = '' }) {
   return (
     <div className={`national-emblem-wrap ${className}`} style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
-      <svg width={size} height={size * 1.15} viewBox="0 0 100 115" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="State Emblem of India">
+      <svg 
+        width={size} 
+        height={size * 1.25} 
+        viewBox="0 0 120 150" 
+        fill="none" 
+        xmlns="http://www.w3.org/2000/svg" 
+        role="img"
+        aria-label="State Emblem of India"
+      >
         <defs>
-          <linearGradient id="emblemGoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#FFF4C2" />
-            <stop offset="50%" stopColor="#E6C665" />
-            <stop offset="100%" stopColor="#C49A2D" />
+          {/* Rich Regal Gold Gradients */}
+          <linearGradient id="emblemGoldRegal" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#FFF9E6" />
+            <stop offset="25%" stopColor="#F5D77F" />
+            <stop offset="50%" stopColor="#E5B842" />
+            <stop offset="75%" stopColor="#C89620" />
+            <stop offset="100%" stopColor="#8C6007" />
           </linearGradient>
-          <filter id="goldGlow" x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="rgba(235, 125, 0, 0.45)" />
+
+          <linearGradient id="emblemGoldDark" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#E5B842" />
+            <stop offset="100%" stopColor="#684203" />
+          </linearGradient>
+
+          <linearGradient id="chakraBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#1E3A8A" />
+            <stop offset="100%" stopColor="#0B192C" />
+          </linearGradient>
+
+          <filter id="emblemGlow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="3" stdDeviation="4" floodColor="rgba(0, 0, 0, 0.6)" />
           </filter>
         </defs>
 
-        {/* Outer Glow Halo */}
-        <circle cx="50" cy="46" r="38" fill="url(#emblemGoldGrad)" opacity="0.12" />
+        <g filter="url(#emblemGlow)">
+          {/* Subtle Ambient Radial Backlight */}
+          <circle cx="60" cy="50" r="42" fill="url(#emblemGoldRegal)" opacity="0.16" />
 
-        {/* Center Lion Head */}
-        <path d="M42 20C42 15 45 10 50 10C55 10 58 15 58 20C58 24 55 27 50 27C45 27 42 24 42 20Z" fill="url(#emblemGoldGrad)" filter="url(#goldGlow)" />
-        <path d="M44 26C38 28 36 34 38 41C40 46 45 48 50 48C55 48 60 46 62 41C64 34 62 28 56 26" stroke="url(#emblemGoldGrad)" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-        
-        {/* Left Lion Profile */}
-        <path d="M28 26C24 28 22 34 25 40C28 45 34 47 38 45" stroke="url(#emblemGoldGrad)" strokeWidth="2.2" strokeLinecap="round" fill="none" />
-        <path d="M31 22C28 22 25 24 25 28C25 31 28 33 32 32" stroke="url(#emblemGoldGrad)" strokeWidth="2" strokeLinecap="round" fill="none" />
+          {/* ================= 1. CENTRAL LION (FRONT) ================= */}
+          {/* Crown & Forehead */}
+          <path d="M50 14C50 8 55 5 60 5C65 5 70 8 70 14C70 18 67 21 60 21C53 21 50 18 50 14Z" fill="url(#emblemGoldRegal)" />
+          {/* Ears */}
+          <path d="M48 10C44 7 42 12 46 15" stroke="url(#emblemGoldRegal)" strokeWidth="2.5" strokeLinecap="round" fill="url(#emblemGoldDark)" />
+          <path d="M72 10C76 7 78 12 74 15" stroke="url(#emblemGoldRegal)" strokeWidth="2.5" strokeLinecap="round" fill="url(#emblemGoldDark)" />
+          {/* Eyes & Brow Arch */}
+          <path d="M52 18Q60 22 68 18" stroke="#451A03" strokeWidth="1.8" strokeLinecap="round" />
+          <circle cx="55" cy="18.5" r="1.3" fill="#451A03" />
+          <circle cx="65" cy="18.5" r="1.3" fill="#451A03" />
+          {/* Snout & Muzzle */}
+          <path d="M57 20H63L61 24H59L57 20Z" fill="#5C2605" />
+          <path d="M56 24Q60 28 64 24" stroke="url(#emblemGoldRegal)" strokeWidth="2" strokeLinecap="round" fill="none" />
+          {/* Open Jaws & Whiskers */}
+          <path d="M57 26H63V28C63 29.5 61.5 31 60 31C58.5 31 57 29.5 57 28V26Z" fill="#8C3A00" stroke="url(#emblemGoldRegal)" strokeWidth="1" />
+          {/* Mane Curls (Front Lion) */}
+          <path d="M50 23C44 26 42 34 45 42C47 48 53 52 60 52C67 52 73 48 75 42C78 34 76 26 70 23" stroke="url(#emblemGoldRegal)" strokeWidth="2.8" strokeLinecap="round" fill="none" />
+          <path d="M53 32L49 42M67 32L71 42M57 32V47M63 32V47M60 30V49" stroke="url(#emblemGoldRegal)" strokeWidth="1.8" strokeLinecap="round" />
+          <path d="M46 36Q52 44 60 44Q68 44 74 36" stroke="url(#emblemGoldDark)" strokeWidth="1.5" fill="none" />
 
-        {/* Right Lion Profile */}
-        <path d="M72 26C76 28 78 34 75 40C72 45 66 47 62 45" stroke="url(#emblemGoldGrad)" strokeWidth="2.2" strokeLinecap="round" fill="none" />
-        <path d="M69 22C72 22 75 24 75 28C75 31 72 33 68 32" stroke="url(#emblemGoldGrad)" strokeWidth="2" strokeLinecap="round" fill="none" />
+          {/* ================= 2. LEFT LION (PROFILE) ================= */}
+          {/* Head & Ear */}
+          <path d="M33 16C28 16 25 21 27 26C29 30 35 32 39 29" stroke="url(#emblemGoldRegal)" strokeWidth="2.5" strokeLinecap="round" fill="url(#emblemGoldDark)" />
+          <path d="M28 14C25 12 22 17 25 19" stroke="url(#emblemGoldRegal)" strokeWidth="2" fill="none" />
+          {/* Eye & Snout */}
+          <circle cx="29" cy="21" r="1.2" fill="#451A03" />
+          <path d="M24 23L21 26L25 27" stroke="url(#emblemGoldRegal)" strokeWidth="1.8" strokeLinecap="round" fill="url(#emblemGoldDark)" />
+          {/* Mane Profile */}
+          <path d="M37 28C31 32 28 38 31 46C33 50 39 53 45 52" stroke="url(#emblemGoldRegal)" strokeWidth="2.4" strokeLinecap="round" fill="none" />
+          <path d="M30 35L38 43M33 42L42 47" stroke="url(#emblemGoldRegal)" strokeWidth="1.5" strokeLinecap="round" />
 
-        {/* Lion Chest & Manes */}
-        <path d="M46 36L44 44M54 36L56 44M50 34V46M35 34L32 42M65 34L68 42" stroke="url(#emblemGoldGrad)" strokeWidth="1.5" strokeLinecap="round" />
-        
-        {/* Abacus Platform Base */}
-        <rect x="20" y="52" width="60" height="12" rx="3" fill="url(#emblemGoldGrad)" opacity="0.9" />
-        
-        {/* Central Ashoka Chakra in Abacus */}
-        <circle cx="50" cy="58" r="4.5" stroke="#1E293B" strokeWidth="1.2" fill="#FFFFFF" />
-        <circle cx="50" cy="58" r="1.2" fill="#1E293B" />
-        {/* Chakra Spokes */}
-        <path d="M50 53.5V62.5M45.5 58H54.5M47 55L53 61M47 61L53 55" stroke="#1E293B" strokeWidth="0.8" />
+          {/* ================= 3. RIGHT LION (PROFILE) ================= */}
+          {/* Head & Ear */}
+          <path d="M87 16C92 16 95 21 93 26C91 30 85 32 81 29" stroke="url(#emblemGoldRegal)" strokeWidth="2.5" strokeLinecap="round" fill="url(#emblemGoldDark)" />
+          <path d="M92 14C95 12 98 17 95 19" stroke="url(#emblemGoldRegal)" strokeWidth="2" fill="none" />
+          {/* Eye & Snout */}
+          <circle cx="91" cy="21" r="1.2" fill="#451A03" />
+          <path d="M96 23L99 26L95 27" stroke="url(#emblemGoldRegal)" strokeWidth="1.8" strokeLinecap="round" fill="url(#emblemGoldDark)" />
+          {/* Mane Profile */}
+          <path d="M83 28C89 32 92 38 89 46C87 50 81 53 75 52" stroke="url(#emblemGoldRegal)" strokeWidth="2.4" strokeLinecap="round" fill="none" />
+          <path d="M90 35L82 43M87 42L78 47" stroke="url(#emblemGoldRegal)" strokeWidth="1.5" strokeLinecap="round" />
 
-        {/* Bull on Left, Horse on Right (Stylized) */}
-        <circle cx="32" cy="58" r="2.2" fill="#1E293B" />
-        <circle cx="68" cy="58" r="2.2" fill="#1E293B" />
+          {/* Pillars & Forelegs Support */}
+          <path d="M42 52L40 68M78 52L80 68M52 53L51 68M68 53L69 68" stroke="url(#emblemGoldRegal)" strokeWidth="2.2" strokeLinecap="round" />
 
-        {/* Lotus Bell Pedestal Base */}
-        <path d="M25 64C28 72 38 75 50 75C62 75 72 72 75 64H25Z" fill="url(#emblemGoldGrad)" opacity="0.85" />
-        <path d="M30 75H70L66 79H34L30 75Z" fill="url(#emblemGoldGrad)" />
+          {/* ================= 4. CIRCULAR ABACUS PLATFORM ================= */}
+          {/* Upper Trim */}
+          <path d="M18 68H102L98 72H22L18 68Z" fill="url(#emblemGoldRegal)" />
+          {/* Main Abacus Frieze Band */}
+          <rect x="16" y="72" width="88" height="18" rx="2" fill="url(#emblemGoldRegal)" />
+          <rect x="18" y="74" width="84" height="14" rx="1.5" fill="url(#emblemGoldDark)" opacity="0.6" />
 
-        {/* Satyameva Jayate Banner */}
-        <rect x="16" y="84" width="68" height="12" rx="2" fill="#111827" stroke="url(#emblemGoldGrad)" strokeWidth="1" />
-        <text x="50" y="93" fill="#FFF4C2" fontSize="6.5" fontWeight="900" textAnchor="middle" letterSpacing="0.8" fontFamily="'Plus Jakarta Sans', sans-serif">
-          सत्यमेव जयते
-        </text>
+          {/* Galloping Horse on Left (High-detail Stylized) */}
+          <path d="M28 84C27 80 30 76 34 77C38 78 39 82 36 85M31 82L25 86M35 83L39 87" stroke="url(#emblemGoldRegal)" strokeWidth="1.4" strokeLinecap="round" fill="none" />
+
+          {/* CENTRAL ASHOKA CHAKRA (24 SPOKES) */}
+          <circle cx="60" cy="81" r="7.5" fill="#FFFFFF" stroke="url(#chakraBlue)" strokeWidth="1.6" />
+          <circle cx="60" cy="81" r="2" fill="url(#chakraBlue)" />
+          {/* Precise 24-Spoke Radial Wheel */}
+          <path d="M60 74.5V87.5M53.5 81H66.5M55.4 76.4L64.6 85.6M55.4 85.6L64.6 76.4" stroke="url(#chakraBlue)" strokeWidth="0.8" />
+          <path d="M57.8 74.9L62.2 87.1M54.9 77.8L65.1 84.2M54.9 84.2L65.1 77.8M57.8 87.1L62.2 74.9" stroke="url(#chakraBlue)" strokeWidth="0.6" />
+
+          {/* Charging Bull on Right (High-detail Stylized) */}
+          <path d="M86 84C89 80 93 79 95 82C96 85 91 86 88 85M87 84L84 87M93 84L96 87" stroke="url(#emblemGoldRegal)" strokeWidth="1.4" strokeLinecap="round" fill="none" />
+
+          {/* Lower Abacus Beading */}
+          <path d="M16 90H104L100 94H20L16 90Z" fill="url(#emblemGoldRegal)" />
+
+          {/* ================= 5. BELL-SHAPED LOTUS PEDESTAL ================= */}
+          <path d="M24 94C28 107 42 112 60 112C78 112 92 107 96 94H24Z" fill="url(#emblemGoldRegal)" opacity="0.95" />
+          {/* Lotus Petal Ridges */}
+          <path d="M34 94C38 104 46 109 60 109C74 109 82 104 86 94" stroke="url(#emblemGoldDark)" strokeWidth="1.5" fill="none" />
+          <path d="M44 94Q50 106 60 106Q70 106 76 94" stroke="url(#emblemGoldDark)" strokeWidth="1.2" fill="none" />
+          <path d="M60 94V111M48 94L52 108M72 94L68 108" stroke="url(#emblemGoldDark)" strokeWidth="1" />
+
+          {/* Lotus Base Step */}
+          <rect x="28" y="112" width="64" height="4" rx="1.5" fill="url(#emblemGoldRegal)" />
+
+          {/* ================= 6. SATYAMEVA JAYATE BANNER ================= */}
+          <rect x="10" y="122" width="100" height="19" rx="3" fill="#0B132B" stroke="url(#emblemGoldRegal)" strokeWidth="1.6" />
+          <rect x="12" y="124" width="96" height="15" rx="2" fill="rgba(245, 215, 127, 0.08)" />
+
+          {/* Satyameva Jayate (सत्यमेव जयते) Inscription */}
+          <text 
+            x="60" 
+            y="135" 
+            fill="#FFF9E6" 
+            fontSize="9" 
+            fontWeight="900" 
+            textAnchor="middle" 
+            letterSpacing="1.2" 
+            fontFamily="'Noto Sans Devanagari', 'Yatra One', 'Mukta', 'Plus Jakarta Sans', sans-serif"
+            style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}
+          >
+            सत्यमेव जयते
+          </text>
+        </g>
       </svg>
     </div>
   );
@@ -248,9 +331,9 @@ export default function CitizenDashboard({
         {/* Hero Main Core Content */}
         <div className="hero-center-content">
           
-          {/* Emblem of India */}
+          {/* State Emblem of India (Ashoka Lion Capital & Satyameva Jayate) */}
           <div className="hero-emblem-container animate-float-subtle">
-            <NationalEmblem size={72} />
+            <NationalEmblem size={86} />
           </div>
 
           {/* Majestic Portal Title */}
