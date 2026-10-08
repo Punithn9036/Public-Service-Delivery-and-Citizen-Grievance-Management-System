@@ -6,7 +6,10 @@ import {
   UserCheck, 
   Search, 
   Globe,
-  Settings
+  Settings,
+  Menu,
+  PanelLeftClose,
+  PanelLeftOpen
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -18,7 +21,9 @@ export default function Navbar({
   openGrievanceModal,
   searchQuery,
   setSearchQuery,
-  onOpenSettings
+  onOpenSettings,
+  isCollapsed,
+  onToggleCollapse
 }) {
   const { user } = useAuth();
   const { lang, setLang, t } = useLanguage();
@@ -40,10 +45,21 @@ export default function Navbar({
     <header className="navbar-header">
       <div className="nav-container">
         
-        {/* Left: Page Title / Breadcrumb */}
-        <div className="nav-page-context">
-          <h2 className="nav-page-heading">{getPageTitle()}</h2>
-          <span className="nav-page-sub">Public Service Delivery & Citizen Grievance Portal</span>
+        {/* Left: Sidebar Toggle & Page Title */}
+        <div className="nav-left-group">
+          <button
+            type="button"
+            className="icon-circle-btn nav-toggle-btn"
+            onClick={onToggleCollapse}
+            title={isCollapsed ? "Expand Sidebar Navigation" : "Retract Sidebar Navigation"}
+          >
+            {isCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+          </button>
+
+          <div className="nav-page-context">
+            <h2 className="nav-page-heading">{getPageTitle()}</h2>
+            <span className="nav-page-sub">Public Service Delivery & Citizen Grievance Portal</span>
+          </div>
         </div>
 
         {/* Center: Search bar */}

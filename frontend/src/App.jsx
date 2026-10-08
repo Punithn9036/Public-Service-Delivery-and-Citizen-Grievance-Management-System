@@ -11,6 +11,7 @@ import NotificationsDrawer from './components/NotificationsDrawer';
 import SettingsModal from './components/SettingsModal';
 import PrivacyPolicyModal from './components/PrivacyPolicyModal';
 import TermsOfServiceModal from './components/TermsOfServiceModal';
+import FloatingAiChatBot from './components/FloatingAiChatBot';
 import AuthScreen from './components/AuthScreen';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
@@ -38,6 +39,11 @@ function MainAppContent() {
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'services' | 'track' | 'faqs' | 'admin-dashboard'
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTrackId, setSelectedTrackId] = useState('');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem('janseva_sidebar_collapsed') === 'true');
+
+  useEffect(() => {
+    localStorage.setItem('janseva_sidebar_collapsed', isSidebarCollapsed);
+  }, [isSidebarCollapsed]);
 
   // Synchronize active portal with user role when user changes
   useEffect(() => {
@@ -229,7 +235,7 @@ function MainAppContent() {
     <div className="app-root">
       <div className="app-layout">
         
-        {/* Left Navigation Sidebar */}
+        {/* Left Navigation Sidebar (Retractable) */}
         <Sidebar 
           activeTab={activeTab}
           setActiveTab={setActiveTab}
@@ -237,6 +243,8 @@ function MainAppContent() {
           setActivePortal={setActivePortal}
           openGrievanceModal={() => setShowGrievanceModal(true)}
           onOpenSettings={() => setShowSettingsModal(true)}
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={() => setIsSidebarCollapsed(prev => !prev)}
         />
 
         {/* Main Application Area */}
@@ -251,6 +259,8 @@ function MainAppContent() {
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             onOpenSettings={() => setShowSettingsModal(true)}
+            isCollapsed={isSidebarCollapsed}
+            onToggleCollapse={() => setIsSidebarCollapsed(prev => !prev)}
           />
 
           {/* Real-time Notifications Popover */}
@@ -399,6 +409,15 @@ function MainAppContent() {
   {showTermsModal && (
     <TermsOfServiceModal onClose={() => setShowTermsModal(false)} />
   )}
+
+  {/* Movable Floating AI Redressal Bot */}
+  <FloatingAiChatBot 
+    onTrackTicket={(id) => {
+      setSelectedTrackId(id);
+      setActiveTab('track');
+    }}
+    onOpenGrievanceModal={() => setShowGrievanceModal(true)}
+  />
 
 </div>
 );
