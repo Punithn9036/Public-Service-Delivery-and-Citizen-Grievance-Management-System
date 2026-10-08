@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Search, 
   CheckCircle2, 
@@ -39,12 +39,28 @@ export default function TrackingView({
   const gList = Array.isArray(grievances) ? grievances : [];
   const aList = Array.isArray(applications) ? applications : [];
 
+  const [trackInput, setTrackInput] = useState(selectedTrackId || '');
+
   const [activeSearchResult, setActiveSearchResult] = useState(() => {
     if (selectedTrackId) {
       return gList.find(g => g && g.id === selectedTrackId) || aList.find(a => a && a.id === selectedTrackId);
     }
     return gList[0] || null;
   });
+
+  // Sync search input and result when selectedTrackId changes from external navigation
+  useEffect(() => {
+    if (selectedTrackId) {
+      setTrackInput(selectedTrackId);
+      const cleanId = selectedTrackId.toUpperCase();
+      const foundGrievance = gList.find(g => g && g.id && g.id.toUpperCase() === cleanId);
+      const foundApp = aList.find(a => a && a.id && a.id.toUpperCase() === cleanId);
+      if (foundGrievance || foundApp) {
+        setActiveSearchResult(foundGrievance || foundApp);
+        setFeedbackSubmitted(false);
+      }
+    }
+  }, [selectedTrackId]);
 
   const [rating, setRating] = useState(5);
   const [feedbackText, setFeedbackText] = useState('');
