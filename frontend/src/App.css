@@ -387,8 +387,9 @@
 .nav-left-group {
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
+  gap: 16px;
+  flex: 1;
+  max-width: 550px;
 }
 
 .nav-brand-badge {
@@ -916,97 +917,19 @@
 .india-gov-hero-section {
   position: relative;
   width: 100%;
-  min-height: 560px;
+  min-height: 100vh;
+  min-height: 100dvh;
+  box-sizing: border-box;
   background: linear-gradient(180deg, rgba(10, 18, 35, 0.28) 0%, rgba(10, 18, 35, 0.45) 55%, rgba(10, 18, 35, 0.72) 100%), 
-              url('./assets/gov-hero-bg.png') center top / cover no-repeat;
+              url('./assets/gov-hero-bg.png') center 30% / cover no-repeat;
   color: #FFFFFF;
-  padding: 72px 24px 80px;
+  padding: 90px 24px 75px;
   border-bottom: 3.5px solid #EB7D00;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  align-items: center;
   overflow: visible;
-}
-
-/* Top Utility Accessibility Bar Inside Hero */
-.hero-utility-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6px 12px;
-  font-size: 0.78rem;
-  color: rgba(255, 255, 255, 0.82);
-  z-index: 10;
-  position: relative;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.hero-utility-left, .hero-utility-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.hero-utility-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-weight: 600;
-}
-
-.hero-utility-divider {
-  color: rgba(255, 255, 255, 0.35);
-  font-size: 0.85rem;
-}
-
-.font-resize-btns {
-  display: inline-flex;
-  gap: 3px;
-  align-items: center;
-}
-
-.text-size-btn {
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  color: #FFFFFF;
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 1px 6px;
-  border-radius: 3px;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.text-size-btn:hover {
-  background: rgba(255, 255, 255, 0.25);
-  color: #FFF2B2;
-}
-
-.hero-lang-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 4px;
-  padding: 2px 8px;
-  color: #FFFFFF;
-}
-
-.hero-lang-select {
-  background: transparent;
-  border: none;
-  color: #FFFFFF;
-  font-size: 0.75rem;
-  font-weight: 600;
-  outline: none;
-  cursor: pointer;
-}
-
-.hero-lang-select option {
-  background: #0f172a;
-  color: #FFFFFF;
 }
 
 /* Hero Center Content */
@@ -1015,7 +938,7 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  margin: 18px auto 30px;
+  margin: auto auto 24px auto;
   max-width: 900px;
   width: 100%;
   z-index: 10;

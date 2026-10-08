@@ -248,12 +248,6 @@ export default function CitizenDashboard({
           <h1 className="hero-portal-title">
             janseva<span className="hero-gov-dot">.gov.in</span>
           </h1>
-          <p className="hero-portal-sub">
-            National Public Service Delivery & Citizen Grievance Portal
-          </p>
-          <p className="hero-tagline-quote">
-            Where Citizen Public Services & Time-Bound Grievance Redressal Converge
-          </p>
 
           {/* Central India.gov.in Style Search Bar */}
           <form onSubmit={handleHeroSearchSubmit} className="hero-search-wrapper">

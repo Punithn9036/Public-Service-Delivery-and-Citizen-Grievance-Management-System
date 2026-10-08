@@ -44,7 +44,7 @@ export default function Navbar({
     <header className={`navbar-header ${isHeroTab ? 'navbar-hero-merged' : ''}`}>
       <div className="nav-container">
         
-        {/* Left Section: JanSeva Brand Heading & Context */}
+        {/* Left Section: JanSeva Brand Heading & Left Search Bar */}
         <div className="nav-left-group">
           {/* JanSeva Official Brand Badge & Portal Title */}
           <div 
@@ -62,24 +62,17 @@ export default function Navbar({
             </div>
           </div>
 
-          <div className="nav-vertical-divider" />
-
-          {/* Clean Portal Subtitle */}
-          <div className="nav-page-context">
-            <span className="nav-page-sub-main">Public Service Delivery & Citizen Grievance Portal</span>
+          {/* Left-Aligned Search bar */}
+          <div className="nav-search-box">
+            <Search size={16} className="search-icon" />
+            <input 
+              type="text" 
+              placeholder={t('searchPlaceholder') || 'Search tickets, services, or FAQs...'} 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="nav-search-input"
+            />
           </div>
-        </div>
-
-        {/* Center: Search bar */}
-        <div className="nav-search-box">
-          <Search size={16} className="search-icon" />
-          <input 
-            type="text" 
-            placeholder={t('searchPlaceholder') || 'Search tickets, services, or FAQs...'} 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="nav-search-input"
-          />
         </div>
 
         {/* Right Controls */}
