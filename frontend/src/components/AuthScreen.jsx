@@ -78,15 +78,15 @@ export default function AuthScreen() {
       alignItems: 'center',
       justifyContent: 'center',
       padding: '24px',
-      background: 'radial-gradient(circle at 50% 10%, rgba(37, 99, 235, 0.08), transparent 70%), var(--bg-primary)'
+      background: 'var(--bg-primary)'
     }}>
       <div className="glass-card" style={{
         maxWidth: '520px',
         width: '100%',
         padding: '36px',
-        boxShadow: '0 20px 40px rgba(0,0,0,0.12)',
+        boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
         border: '1px solid var(--border-subtle)',
-        borderRadius: '16px',
+        borderRadius: 'var(--radius-md)',
         position: 'relative'
       }}>
         
@@ -97,13 +97,13 @@ export default function AuthScreen() {
           right: '18px',
           display: 'inline-flex',
           alignItems: 'center',
-          background: 'var(--bg-tertiary, rgba(255,255,255,0.06))',
-          borderRadius: '18px',
+          background: 'var(--bg-tertiary)',
+          borderRadius: 'var(--radius-sm)',
           padding: '3px 8px',
-          border: '1px solid var(--border-subtle, rgba(255,255,255,0.1))',
+          border: '1px solid var(--border-subtle)',
           gap: '4px'
         }}>
-          <Globe size={13} style={{ color: 'var(--brand-500, #2563eb)' }} />
+          <Globe size={13} style={{ color: 'var(--brand-700)' }} />
           <select
             value={lang}
             onChange={(e) => setLang(e.target.value)}
@@ -232,7 +232,7 @@ export default function AuthScreen() {
                     onClick={() => setRole('CITIZEN')}
                     className={`auth-role-select-btn ${role === 'CITIZEN' ? 'selected' : ''}`}
                   >
-                    <UserCheck size={16} color={role === 'CITIZEN' ? '#2563eb' : 'currentColor'} />
+                    <UserCheck size={16} color={role === 'CITIZEN' ? 'var(--brand-700)' : 'currentColor'} />
                     <span className="small-text font-bold">Citizen</span>
                   </button>
                   <button
@@ -240,7 +240,7 @@ export default function AuthScreen() {
                     onClick={() => setRole('OFFICER')}
                     className={`auth-role-select-btn ${role === 'OFFICER' ? 'selected' : ''}`}
                   >
-                    <ShieldCheck size={16} color={role === 'OFFICER' ? '#2563eb' : 'currentColor'} />
+                    <ShieldCheck size={16} color={role === 'OFFICER' ? 'var(--brand-700)' : 'currentColor'} />
                     <span className="small-text font-bold">Gov Officer</span>
                   </button>
                 </div>

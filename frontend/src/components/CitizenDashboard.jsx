@@ -97,36 +97,41 @@ export default function CitizenDashboard({
   };
 
   return (
-    <div className="dashboard-content animate-fade-in">
+    <div className="dashboard-content">
 
-      {/* Hero Welcome Banner */}
-      <div className="hero-banner glass-card">
-        <div className="hero-text">
-          <span className="hero-pill">Official Public Governance Portal</span>
-          <h1>Citizen Service Delivery & Grievance Redressal</h1>
+      {/* Institutional Public Service Banner */}
+      <div className="gov-service-header-panel">
+        <div className="gov-header-info">
+          <div className="gov-official-tag">
+            <Building2 size={14} />
+            <span>Digital Public Service & Citizen Redressal System</span>
+          </div>
+          <h1>Public Service Delivery & Citizen Grievances</h1>
           <p>
-            Transparent, accountable, and SLA-bound public service fulfillment for every citizen.
-            Lodge complaints, apply for official certificates, and monitor real-time officer progress.
+            Submit complaints, track certificate requests, and monitor time-bound SLA fulfillment by designated municipal and state nodal officers.
           </p>
-          <div className="hero-actions">
+          <div className="gov-header-cta-group">
             <button className="btn btn-primary" onClick={openGrievanceModal}>
-              <FilePlus size={18} />
-              {t('lodgeGrievance')}
+              <FilePlus size={16} />
+              <span>{t('lodgeGrievance')}</span>
             </button>
             <button className="btn btn-secondary" onClick={() => setActiveTab('services')}>
-              {t('popularServices')}
-              <ArrowRight size={16} />
+              <span>{t('popularServices')}</span>
+              <ArrowRight size={15} />
             </button>
           </div>
         </div>
-        <div className="hero-badge-art">
-          <div className="glass-stat-chip">
-            <span className="chip-num">{resolutionRate}%</span>
-            <span className="chip-label">{t('slaCompliance')}</span>
+
+        <div className="gov-sla-summary-box">
+          <div className="gov-summary-stat">
+            <span className="stat-label">{t('slaCompliance')}</span>
+            <strong className="stat-val-highlight">{resolutionRate}%</strong>
+            <span className="stat-desc">Statutory resolution timeline</span>
           </div>
-          <div className="glass-stat-chip glow">
-            <span className="chip-num">{resolvedCount}</span>
-            <span className="chip-label">{t('resolvedThisMonth')}</span>
+          <div className="gov-summary-stat">
+            <span className="stat-label">{t('resolvedThisMonth')}</span>
+            <strong className="stat-val-highlight">{resolvedCount}</strong>
+            <span className="stat-desc">Verified closed cases</span>
           </div>
         </div>
       </div>
