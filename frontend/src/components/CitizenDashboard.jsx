@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import govHeroBg from '../assets/gov-hero-bg.png';
 
 const ICON_MAP = {
   FileText: FileText,
@@ -48,17 +49,17 @@ function NationalEmblem({ size = 72, className = '' }) {
       <svg width={size} height={size * 1.15} viewBox="0 0 100 115" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="State Emblem of India">
         <defs>
           <linearGradient id="emblemGoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#FFF2B2" />
+            <stop offset="0%" stopColor="#FFF4C2" />
             <stop offset="50%" stopColor="#E6C665" />
-            <stop offset="100%" stopColor="#B38B29" />
+            <stop offset="100%" stopColor="#C49A2D" />
           </linearGradient>
           <filter id="goldGlow" x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="rgba(235, 125, 0, 0.4)" />
+            <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="rgba(235, 125, 0, 0.45)" />
           </filter>
         </defs>
 
         {/* Outer Glow Halo */}
-        <circle cx="50" cy="46" r="38" fill="url(#emblemGoldGrad)" opacity="0.08" />
+        <circle cx="50" cy="46" r="38" fill="url(#emblemGoldGrad)" opacity="0.12" />
 
         {/* Center Lion Head */}
         <path d="M42 20C42 15 45 10 50 10C55 10 58 15 58 20C58 24 55 27 50 27C45 27 42 24 42 20Z" fill="url(#emblemGoldGrad)" filter="url(#goldGlow)" />
@@ -89,12 +90,12 @@ function NationalEmblem({ size = 72, className = '' }) {
         <circle cx="68" cy="58" r="2.2" fill="#1E293B" />
 
         {/* Lotus Bell Pedestal Base */}
-        <path d="M25 64C28 72 38 75 50 75C62 75 72 72 75 64H25Z" fill="url(#emblemGoldGrad)" opacity="0.8" />
+        <path d="M25 64C28 72 38 75 50 75C62 75 72 72 75 64H25Z" fill="url(#emblemGoldGrad)" opacity="0.85" />
         <path d="M30 75H70L66 79H34L30 75Z" fill="url(#emblemGoldGrad)" />
 
         {/* Satyameva Jayate Banner */}
         <rect x="16" y="84" width="68" height="12" rx="2" fill="#111827" stroke="url(#emblemGoldGrad)" strokeWidth="1" />
-        <text x="50" y="93" fill="#FFF2B2" fontSize="6.5" fontWeight="900" textAnchor="middle" letterSpacing="0.8" fontFamily="'Plus Jakarta Sans', sans-serif">
+        <text x="50" y="93" fill="#FFF4C2" fontSize="6.5" fontWeight="900" textAnchor="middle" letterSpacing="0.8" fontFamily="'Plus Jakarta Sans', sans-serif">
           सत्यमेव जयते
         </text>
       </svg>
@@ -225,79 +226,25 @@ export default function CitizenDashboard({
       {/* ========================================================================= */}
       {/* 1. GRAND GOVERNMENT HERO BANNER (INDIA.GOV.IN STYLE WITH RASHTRAPATI BG) */}
       {/* ========================================================================= */}
-      <div className="india-gov-hero-section">
+      <div 
+        className="india-gov-hero-section"
+        style={{
+          backgroundImage: `linear-gradient(180deg, rgba(10, 18, 35, 0.32) 0%, rgba(10, 18, 35, 0.48) 55%, rgba(10, 18, 35, 0.72) 100%), url(${govHeroBg})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center 28%',
+          backgroundRepeat: 'no-repeat'
+        }}
+      >
         
-        {/* Background Overlay & Decorative Elements */}
+        {/* Top Tricolour Accent Strip */}
         <div className="hero-backdrop-glow" />
-        
-        {/* Top Utility Accessibility Bar Inside Hero */}
-        <div className="hero-utility-bar">
-          <div className="hero-utility-left">
-            <span className="hero-utility-item" title="Screen Reader Accessible">
-              <Eye size={13} />
-              <span>Screen Reader</span>
-            </span>
-            <span className="hero-utility-divider">|</span>
-            <span className="hero-utility-item">
-              <Calendar size={13} />
-              <span>08 Oct 2026</span>
-            </span>
-            <span className="hero-utility-divider">|</span>
-            <span className="hero-utility-item font-resize-btns">
-              <button type="button" className="text-size-btn" title="Decrease Font">A-</button>
-              <button type="button" className="text-size-btn" title="Default Font">A</button>
-              <button type="button" className="text-size-btn" title="Increase Font">A+</button>
-            </span>
-          </div>
-
-          <div className="hero-utility-right">
-            {/* Language Selector */}
-            <div className="hero-lang-badge">
-              <Globe size={13} />
-              <select
-                value={lang}
-                onChange={(e) => setLang(e.target.value)}
-                className="hero-lang-select"
-                aria-label="Language Selector"
-              >
-                <option value="en">English</option>
-                <option value="hi">हिन्दी</option>
-                <option value="kn">ಕನ್ನಡ</option>
-                <option value="ta">தமிழ்</option>
-                <option value="te">తెలుగు</option>
-                <option value="ml">മലയാളം</option>
-                <option value="mr">मराठी</option>
-                <option value="gu">ગુજરાતી</option>
-                <option value="bn">বাংলা</option>
-                <option value="ur">اردو</option>
-              </select>
-            </div>
-
-            <span className="hero-utility-divider">|</span>
-
-            {/* Tricolour 3-line Menu Button in Top-Right Corner */}
-            <button
-              type="button"
-              className={`tricolour-menu-btn ${isSidebarOpen ? 'active' : ''}`}
-              onClick={onToggleSidebar}
-              title={isSidebarOpen ? "Close Navigation Sidebar" : "Open Navigation Sidebar"}
-              aria-label="Toggle Navigation Sidebar"
-            >
-              <div className="tricolour-icon">
-                <span className="tricolour-bar saffron-bar" />
-                <span className="tricolour-bar white-bar" />
-                <span className="tricolour-bar green-bar" />
-              </div>
-            </button>
-          </div>
-        </div>
 
         {/* Hero Main Core Content */}
         <div className="hero-center-content">
           
           {/* Emblem of India */}
           <div className="hero-emblem-container animate-float-subtle">
-            <NationalEmblem size={68} />
+            <NationalEmblem size={72} />
           </div>
 
           {/* Majestic Portal Title */}
