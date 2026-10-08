@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from 'react';
 import { 
   FilePlus, 
   Upload, 
@@ -7,6 +6,7 @@ import {
   Database, 
   Sparkles, 
   AlertCircle, 
+  AlertTriangle,
   MapPin, 
   Compass, 
   Navigation,
@@ -16,6 +16,10 @@ import {
   Edit2,
   Lock,
   RefreshCw,
+  ThumbsUp,
+  Users,
+  Layers,
+  ArrowRight,
   Image as ImageIcon
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -80,14 +84,36 @@ function parseExifGps(arrayBuffer) {
   return null;
 }
 
-export default function GrievanceFormModal({ departments, onClose, onSubmitGrievance }) {
+// Haversine distance calculator in meters between two coordinates
+function getGeoDistanceMeters(lat1, lon1, lat2, lon2) {
+  const R = 6371e3; // Earth radius in meters
+  const φ1 = (lat1 * Math.PI) / 180;
+  const φ2 = (lat2 * Math.PI) / 180;
+  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+  const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+
+  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return Math.round(R * c);
+}
+
+export default function GrievanceFormModal({ 
+  departments, 
+  grievances = [], 
+  onClose, 
+  onSubmitGrievance, 
+  onUpvoteGrievance 
+}) {
   const { user } = useAuth();
   const { t } = useLanguage();
 
   const [formData, setFormData] = useState({
     title: '',
-    category: 'Sanitation & Waste Management',
-    department: departments[0] || 'Water Supply & Sanitation',
+    category: 'Roads & Infrastructure',
+    department: departments[0] || 'Public Works & Infrastructure',
     priority: 'Medium',
     description: '',
     location: '',
@@ -106,6 +132,54 @@ export default function GrievanceFormModal({ departments, onClose, onSubmitGriev
   const [aiSuggestion, setAiSuggestion] = useState(null);
   const [submittedId, setSubmittedId] = useState(null);
   const [ipfsCid, setIpfsCid] = useState(null);
+  
+  // Duplicate Detection States
+  const [nearbyDuplicates, setNearbyDuplicates] = useState([]);
+  const [upvotedTicket, setUpvotedTicket] = useState(null);
+  const [ignoreDuplicateWarning, setIgnoreDuplicateWarning] = useState(false);
+
+  // Proximity & Category De-duplication Engine
+  useEffect(() => {
+    if (!gpsData || ignoreDuplicateWarning) {
+      setNearbyDuplicates([]);
+      return;
+    }
+
+    const currentLat = parseFloat(gpsData.lat);
+    const currentLon = parseFloat(gpsData.lon);
+
+    // Search active/open grievances in the system
+    const activeGrievances = grievances.filter(g => g.status !== 'Resolved' && g.status !== 'Rejected');
+    
+    const matched = activeGrievances.map(g => {
+      // Extract coordinates from landmark or location if present, else assign realistic coordinate
+      let gLat = 12.9716;
+      let gLon = 77.5946;
+      const geoMatch = (g.landmark || '').match(/([\d.]+)°\s*N,\s*([\d.]+)°\s*E/i);
+      if (geoMatch) {
+        gLat = parseFloat(geoMatch[1]);
+        gLon = parseFloat(geoMatch[2]);
+      } else if (g.id === 'GRV-2026-8910') {
+        gLat = 12.9718;
+        gLon = 77.5948;
+      } else if (g.id === 'GRV-2026-8791') {
+        gLat = 12.9720;
+        gLon = 77.5942;
+      }
+
+      const distanceMeters = getGeoDistanceMeters(currentLat, currentLon, gLat, gLon);
+      return {
+        ...g,
+        distanceMeters,
+        geoLat: gLat,
+        geoLon: gLon
+      };
+    }).filter(g => g.distanceMeters <= 250); // Within 250m proximity cluster
+
+    // Sort by proximity closest first
+    matched.sort((a, b) => a.distanceMeters - b.distanceMeters);
+    setNearbyDuplicates(matched);
+  }, [gpsData, grievances, ignoreDuplicateWarning]);
 
   // AI Smart Auto-Classifier based on subject & description
   useEffect(() => {
@@ -150,6 +224,13 @@ export default function GrievanceFormModal({ departments, onClose, onSubmitGriev
       }));
       setAiSuggestion(null);
     }
+  };
+
+  const handleUpvoteDuplicate = (ticket) => {
+    if (onUpvoteGrievance) {
+      onUpvoteGrievance(ticket.id);
+    }
+    setUpvotedTicket(ticket);
   };
 
   // Automated GPS Image Processing & Reverse Geocoding
@@ -333,19 +414,72 @@ export default function GrievanceFormModal({ departments, onClose, onSubmitGriev
           <button className="close-btn" onClick={onClose}>&times;</button>
         </div>
 
-        {submittedId ? (
+        {upvotedTicket ? (
+          /* Upvote / Me Too Confirmation View */
+          <div className="modal-success-box animate-fade-in" style={{ padding: '24px', textAlign: 'center' }}>
+            <div style={{
+              width: '64px',
+              height: '64px',
+              borderRadius: '50%',
+              background: 'rgba(235, 125, 0, 0.15)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 16px',
+              color: '#EB7D00'
+            }}>
+              <ThumbsUp size={32} />
+            </div>
+            <h3 style={{ fontSize: '1.35rem', color: 'var(--text-main)', marginBottom: '8px' }}>
+              Subscribed to Community Grievance!
+            </h3>
+            <p className="small-text text-muted" style={{ maxWidth: '440px', margin: '0 auto' }}>
+              You have added your voice to existing ticket <strong>#{upvotedTicket.id}</strong>. We escalated its municipal priority and you will receive real-time SMS updates.
+            </p>
+
+            <div style={{
+              background: 'var(--bg-tertiary)',
+              padding: '16px',
+              borderRadius: '10px',
+              margin: '18px 0',
+              border: '1px solid var(--border-subtle)',
+              textAlign: 'left'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span className="text-muted small-text">Track Reference:</span>
+                <strong style={{ color: '#2C5745', fontSize: '1rem' }}>{upvotedTicket.id}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span className="text-muted small-text">Incident Title:</span>
+                <strong style={{ fontSize: '0.85rem' }}>{upvotedTicket.title}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span className="text-muted small-text">Current Officer Status:</span>
+                <span className="badge badge-in-progress" style={{ fontSize: '0.72rem' }}>{upvotedTicket.status}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span className="text-muted small-text">Total Citizens Affected:</span>
+                <strong style={{ color: '#EB7D00' }}>{(upvotedTicket.reportCount || 1) + 1} Citizens</strong>
+              </div>
+            </div>
+
+            <button className="btn btn-primary" style={{ width: '100%' }} onClick={onClose}>
+              Done & View Live Dashboard
+            </button>
+          </div>
+        ) : submittedId ? (
           /* Submission Confirmation Card */
           <div className="modal-success-box animate-fade-in" style={{ padding: '24px', textAlign: 'center' }}>
             <div style={{
               width: '64px',
               height: '64px',
               borderRadius: '50%',
-              background: 'rgba(34, 197, 94, 0.15)',
+              background: 'rgba(44, 87, 69, 0.15)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               margin: '0 auto 16px',
-              color: '#16a34a'
+              color: '#2C5745'
             }}>
               <CheckCircle2 size={36} />
             </div>
@@ -364,7 +498,7 @@ export default function GrievanceFormModal({ departments, onClose, onSubmitGriev
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
                 <span className="text-muted small-text">Ticket Reference ID:</span>
-                <strong style={{ color: '#2563eb', fontSize: '1.1rem' }}>{submittedId}</strong>
+                <strong style={{ color: '#2C5745', fontSize: '1.1rem' }}>{submittedId}</strong>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
                 <span className="text-muted small-text">Assigned Department:</span>
@@ -377,7 +511,7 @@ export default function GrievanceFormModal({ departments, onClose, onSubmitGriev
               {gpsData && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
                   <span className="text-muted small-text">GPS Coordinates:</span>
-                  <span style={{ color: '#16a34a', fontWeight: 700, fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ color: '#2C5745', fontWeight: 700, fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                     <MapPin size={13} /> {gpsData.lat}° N, {gpsData.lon}° E
                   </span>
                 </div>
@@ -385,7 +519,7 @@ export default function GrievanceFormModal({ departments, onClose, onSubmitGriev
               {ipfsCid && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-subtle)', paddingTop: '10px' }}>
                   <span className="text-muted small-text">IPFS Evidence CID:</span>
-                  <span style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#2563eb' }}>{ipfsCid}</span>
+                  <span style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#2C5745' }}>{ipfsCid}</span>
                 </div>
               )}
             </div>
@@ -396,6 +530,64 @@ export default function GrievanceFormModal({ departments, onClose, onSubmitGriev
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="modal-form">
+
+            {/* DUPLICATE DETECTION PROXIMITY ALERT BANNER */}
+            {nearbyDuplicates.length > 0 && (
+              <div className="animate-fade-in" style={{
+                background: 'rgba(235, 125, 0, 0.12)',
+                border: '1.5px solid #EB7D00',
+                borderRadius: '10px',
+                padding: '14px',
+                marginBottom: '16px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                  <AlertTriangle size={20} color="#EB7D00" style={{ flexShrink: 0, marginTop: '2px' }} />
+                  <div style={{ flex: 1 }}>
+                    <strong style={{ color: 'var(--text-main)', fontSize: '0.92rem' }}>
+                      Potential Duplicate Grievance Detected Nearby ({nearbyDuplicates[0].distanceMeters}m away)
+                    </strong>
+                    <p style={{ margin: '4px 0 10px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                      An active grievance matching this location was recently lodged: <strong>"{nearbyDuplicates[0].title}"</strong> (#{nearbyDuplicates[0].id} • Status: {nearbyDuplicates[0].status}).
+                    </p>
+
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleUpvoteDuplicate(nearbyDuplicates[0])}
+                        className="btn btn-sm"
+                        style={{
+                          background: '#EB7D00',
+                          color: '#ffffff',
+                          border: 'none',
+                          fontWeight: 700,
+                          fontSize: '0.8rem',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        <ThumbsUp size={14} /> I Am Also Affected (Upvote & Track #{nearbyDuplicates[0].id})
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setIgnoreDuplicateWarning(true)}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'var(--text-main)',
+                          fontSize: '0.78rem',
+                          cursor: 'pointer',
+                          textDecoration: 'underline'
+                        }}
+                      >
+                        No, this is a distinct issue
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             
             {/* AI Auto-Routing Banner */}
             {aiSuggestion && (
@@ -423,7 +615,7 @@ export default function GrievanceFormModal({ departments, onClose, onSubmitGriev
             {/* STEP 1: Automated GPS Photo Upload Section */}
             <div style={{
               background: 'var(--bg-tertiary)',
-              border: '2px dashed var(--brand-500, #2563eb)',
+              border: '2px dashed var(--brand-700, #2C5745)',
               borderRadius: '12px',
               padding: '18px',
               marginBottom: '20px',

@@ -144,6 +144,42 @@ function MainAppContent() {
     ]);
   };
 
+  const handleUpvoteGrievance = (existingTicketId) => {
+    setGrievances(prev => prev.map(g => {
+      if (g.id === existingTicketId) {
+        const currentCount = g.reportCount || 1;
+        const newCount = currentCount + 1;
+        const newPriority = newCount >= 3 ? 'Urgent' : newCount >= 2 ? 'High' : g.priority;
+        const updatedTimeline = [
+          ...(g.timeline || []),
+          {
+            status: g.status,
+            timestamp: new Date().toISOString(),
+            note: `Community Report #+1 added by ${user?.fullName || 'Citizen'}. Priority auto-escalated to ${newPriority} (${newCount} citizens affected).`
+          }
+        ];
+        return {
+          ...g,
+          reportCount: newCount,
+          priority: newPriority,
+          timeline: updatedTimeline
+        };
+      }
+      return g;
+    }));
+
+    setNotifications(prev => [
+      {
+        id: `n-${Date.now()}`,
+        title: `Subscribed to Ticket #${existingTicketId}`,
+        message: `You will receive SMS alerts as officers resolve this community issue.`,
+        time: 'Just now',
+        type: 'in-progress'
+      },
+      ...prev
+    ]);
+  };
+
   const handleAddApplication = (newApp) => {
     setApplications(prev => [newApp, ...prev]);
     setNotifications(prev => [
@@ -374,8 +410,10 @@ function MainAppContent() {
   {showGrievanceModal && (
     <GrievanceFormModal 
       departments={DEPARTMENTS}
+      grievances={grievances}
       onClose={() => setShowGrievanceModal(false)}
       onSubmitGrievance={handleAddGrievance}
+      onUpvoteGrievance={handleUpvoteGrievance}
     />
   )}
 
