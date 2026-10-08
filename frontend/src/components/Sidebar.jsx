@@ -76,6 +76,7 @@ export default function Sidebar({
             className="sidebar-brand-left"
             onClick={() => {
               setActiveTab('overview');
+              if (onClose) onClose();
             }}
             title="JanSeva Governance Portal"
           >
@@ -109,6 +110,7 @@ export default function Sidebar({
               className="btn btn-primary sidebar-cta-btn" 
               onClick={() => {
                 openGrievanceModal();
+                if (onClose) onClose();
               }}
               title="Lodge New Grievance"
             >
@@ -134,6 +136,7 @@ export default function Sidebar({
                   onClick={() => {
                     setActivePortal('citizen');
                     setActiveTab(item.id);
+                    if (onClose) onClose();
                   }}
                   title={item.label}
                 >
@@ -152,6 +155,7 @@ export default function Sidebar({
                 onClick={() => {
                   setActivePortal('admin');
                   setActiveTab('admin-dashboard');
+                  if (onClose) onClose();
                 }}
                 title={t('nodalOfficerControl') || 'Admin Governance Center'}
               >
@@ -173,6 +177,7 @@ export default function Sidebar({
                     onClick={() => {
                       setActivePortal('citizen');
                       setActiveTab(item.id);
+                      if (onClose) onClose();
                     }}
                     title={item.label}
                   >
@@ -207,6 +212,7 @@ export default function Sidebar({
               className="sidebar-bottom-btn" 
               onClick={() => {
                 onOpenSettings();
+                if (onClose) onClose();
               }}
               title="Settings & Appearance"
             >
@@ -217,7 +223,10 @@ export default function Sidebar({
             <button 
               type="button" 
               className="sidebar-bottom-btn sidebar-logout-btn" 
-              onClick={logout}
+              onClick={() => {
+                logout();
+                if (onClose) onClose();
+              }}
               title="Sign Out"
             >
               <LogOut size={16} />

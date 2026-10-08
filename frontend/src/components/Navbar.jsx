@@ -32,7 +32,7 @@ export default function Navbar({
   const { lang, setLang, t } = useLanguage();
 
   const isCitizen = user?.role === 'CITIZEN';
-  const isHeroTab = activeTab === 'overview' || activeTab === 'services';
+  const isHeroTab = activeTab === 'overview';
 
   const getPageTitle = () => {
     switch (activeTab) {

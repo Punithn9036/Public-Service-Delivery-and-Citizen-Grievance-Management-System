@@ -425,6 +425,10 @@
   font-weight: 800;
   font-size: 1.25rem;
   letter-spacing: -0.02em;
+  color: var(--text-main);
+}
+
+.navbar-header.navbar-hero-merged .nav-brand-name {
   color: #FFFFFF;
 }
 
@@ -435,7 +439,10 @@
   color: #EB7D00;
   letter-spacing: -0.01em;
   margin-left: 2px;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.navbar-header.navbar-hero-merged .nav-brand-gov-plain {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 /* Back Navigation Buttons (Header & Sub-pages) */

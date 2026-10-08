@@ -511,6 +511,7 @@ function MainAppContent() {
                   navigateTo(activeTab, { closeModals: false });
                   setSelectedServiceModal(service);
                 }}
+                activeTab={activeTab}
                 setActiveTab={(tab) => navigateTo(tab)}
                 selectGrievanceToTrack={(id) => navigateTo('track', { trackId: id })}
                 searchQuery={searchQuery}
@@ -535,6 +536,7 @@ function MainAppContent() {
                   navigateTo(activeTab, { closeModals: false });
                   setSelectedServiceModal(service);
                 }}
+                activeTab={activeTab}
                 setActiveTab={(tab) => navigateTo(tab)}
                 selectGrievanceToTrack={(id) => navigateTo('track', { trackId: id })}
                 searchQuery={searchQuery}
