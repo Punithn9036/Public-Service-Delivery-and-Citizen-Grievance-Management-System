@@ -1,29 +1,27 @@
 import React from 'react';
 import { 
+  Building,
   Bell, 
   PlusCircle, 
-  ShieldCheck, 
-  UserCheck, 
   Search, 
   Globe,
   Settings,
-  Menu,
-  PanelLeftClose,
-  PanelLeftOpen
+  Menu
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function Navbar({ 
   activeTab, 
+  setActiveTab,
   unreadNotifications, 
   setShowNotifications, 
   openGrievanceModal,
   searchQuery,
   setSearchQuery,
   onOpenSettings,
-  isCollapsed,
-  onToggleCollapse
+  isSidebarOpen,
+  onToggleSidebar
 }) {
   const { user } = useAuth();
   const { lang, setLang, t } = useLanguage();
@@ -45,17 +43,38 @@ export default function Navbar({
     <header className="navbar-header">
       <div className="nav-container">
         
-        {/* Left: Sidebar Toggle & Page Title */}
+        {/* Left Section: 3-line Menu Button + JanSeva GOV Branding + Page Context */}
         <div className="nav-left-group">
+          {/* 3-line hamburger menu toggle button */}
           <button
             type="button"
-            className="icon-circle-btn nav-toggle-btn"
-            onClick={onToggleCollapse}
-            title={isCollapsed ? "Expand Sidebar Navigation" : "Retract Sidebar Navigation"}
+            className="hamburger-menu-btn"
+            onClick={onToggleSidebar}
+            title={isSidebarOpen ? "Close Navigation Sidebar" : "Open Navigation Sidebar"}
+            aria-label="Toggle Navigation Sidebar"
           >
-            {isCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+            <Menu size={22} />
           </button>
 
+          {/* JanSeva Official Brand Badge */}
+          <div 
+            className="nav-brand-badge" 
+            onClick={() => setActiveTab('overview')} 
+            style={{ cursor: 'pointer' }}
+            title="JanSeva Civic Portal Home"
+          >
+            <div className="nav-brand-icon-box">
+              <Building size={18} color="#ffffff" />
+            </div>
+            <div className="nav-brand-title-wrap">
+              <span className="nav-brand-name">JanSeva</span>
+              <span className="nav-brand-tag">GOV</span>
+            </div>
+          </div>
+
+          <div className="nav-vertical-divider" />
+
+          {/* Page Context Title */}
           <div className="nav-page-context">
             <h2 className="nav-page-heading">{getPageTitle()}</h2>
             <span className="nav-page-sub">Public Service Delivery & Citizen Grievance Portal</span>

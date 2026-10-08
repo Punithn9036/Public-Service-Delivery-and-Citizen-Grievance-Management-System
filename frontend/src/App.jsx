@@ -39,11 +39,7 @@ function MainAppContent() {
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'services' | 'track' | 'faqs' | 'admin-dashboard'
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTrackId, setSelectedTrackId] = useState('');
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem('janseva_sidebar_collapsed') === 'true');
-
-  useEffect(() => {
-    localStorage.setItem('janseva_sidebar_collapsed', isSidebarCollapsed);
-  }, [isSidebarCollapsed]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Initially closed by default as requested
 
   // Synchronize active portal with user role when user changes
   useEffect(() => {
@@ -235,7 +231,7 @@ function MainAppContent() {
     <div className="app-root">
       <div className="app-layout">
         
-        {/* Left Navigation Sidebar (Retractable) */}
+        {/* Left Navigation Sidebar (Retractable, initially closed) */}
         <Sidebar 
           activeTab={activeTab}
           setActiveTab={setActiveTab}
@@ -243,8 +239,8 @@ function MainAppContent() {
           setActivePortal={setActivePortal}
           openGrievanceModal={() => setShowGrievanceModal(true)}
           onOpenSettings={() => setShowSettingsModal(true)}
-          isCollapsed={isSidebarCollapsed}
-          onToggleCollapse={() => setIsSidebarCollapsed(prev => !prev)}
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
         />
 
         {/* Main Application Area */}
@@ -253,14 +249,15 @@ function MainAppContent() {
           {/* Top Navbar Header */}
           <Navbar 
             activeTab={activeTab}
+            setActiveTab={setActiveTab}
             unreadNotifications={notifications.length}
             setShowNotifications={setShowNotifications}
             openGrievanceModal={() => setShowGrievanceModal(true)}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             onOpenSettings={() => setShowSettingsModal(true)}
-            isCollapsed={isSidebarCollapsed}
-            onToggleCollapse={() => setIsSidebarCollapsed(prev => !prev)}
+            isSidebarOpen={isSidebarOpen}
+            onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
           />
 
           {/* Real-time Notifications Popover */}

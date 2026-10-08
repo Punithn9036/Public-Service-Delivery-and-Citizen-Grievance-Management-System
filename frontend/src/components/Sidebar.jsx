@@ -11,9 +11,7 @@ import {
   Settings, 
   LogOut,
   ChevronRight,
-  PanelLeftClose,
-  PanelLeftOpen,
-  ChevronLeft
+  X
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -25,8 +23,8 @@ export default function Sidebar({
   setActivePortal,
   openGrievanceModal,
   onOpenSettings,
-  isCollapsed,
-  onToggleCollapse
+  isOpen,
+  onClose
 }) {
   const { user, logout } = useAuth();
   const { t } = useLanguage();
@@ -61,109 +59,73 @@ export default function Sidebar({
   ];
 
   return (
-    <aside className={`app-sidebar ${isCollapsed ? 'collapsed' : ''}`}>
-      {/* Brand Header */}
-      <div className="sidebar-brand">
+    <>
+      {/* Backdrop overlay when sidebar is open on smaller screens / drawer mode */}
+      {isOpen && (
         <div 
-          className="sidebar-brand-left"
-          onClick={() => setActiveTab('overview')}
-          title="JanSeva Governance Portal"
-        >
-          <div className="sidebar-brand-icon">
-            <Building size={20} color="#ffffff" />
-          </div>
-          {!isCollapsed && (
+          className="sidebar-backdrop-overlay" 
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside className={`app-sidebar ${isOpen ? 'open' : 'closed'}`}>
+        {/* Top Header of Sidebar */}
+        <div className="sidebar-brand">
+          <div 
+            className="sidebar-brand-left"
+            onClick={() => {
+              setActiveTab('overview');
+            }}
+            title="JanSeva Governance Portal"
+          >
+            <div className="sidebar-brand-icon">
+              <Building size={20} color="#ffffff" />
+            </div>
             <div className="sidebar-brand-text">
               <div className="sidebar-brand-title">
                 <span className="brand-name">JanSeva</span>
                 <span className="sidebar-gov-tag">GOV</span>
               </div>
-              <span className="sidebar-brand-sub">Citizen Grievance Portal</span>
+              <span className="sidebar-brand-sub">Navigation Menu</span>
             </div>
-          )}
-        </div>
+          </div>
 
-        {/* Retractable Sidebar Toggle Button */}
-        <button
-          type="button"
-          className="sidebar-toggle-btn"
-          onClick={onToggleCollapse}
-          title={isCollapsed ? "Expand Sidebar" : "Retract Sidebar"}
-        >
-          {isCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
-        </button>
-      </div>
-
-      {/* Lodge Grievance Primary CTA Button for Citizens */}
-      {isCitizen && (
-        <div className="sidebar-cta-wrap">
-          <button 
-            type="button" 
-            className="btn btn-primary sidebar-cta-btn" 
-            onClick={openGrievanceModal}
-            title="Lodge New Grievance"
+          <button
+            type="button"
+            className="sidebar-close-icon-btn"
+            onClick={onClose}
+            title="Close Sidebar"
           >
-            <PlusCircle size={16} />
-            {!isCollapsed && <span>{t('lodgeGrievance') || 'Lodge Grievance'}</span>}
+            <X size={18} />
           </button>
         </div>
-      )}
 
-      {/* Main Navigation Links */}
-      <nav className="sidebar-nav">
-        {!isCollapsed && <div className="sidebar-section-label">MAIN NAVIGATION</div>}
-
-        {isCitizen ? (
-          navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
-                onClick={() => {
-                  setActivePortal('citizen');
-                  setActiveTab(item.id);
-                }}
-                title={item.label}
-              >
-                <Icon size={18} className="sidebar-nav-icon" />
-                {!isCollapsed && (
-                  <>
-                    <span className="sidebar-nav-label">{item.label}</span>
-                    {isActive && <ChevronRight size={14} className="sidebar-active-arrow" />}
-                  </>
-                )}
-              </button>
-            );
-          })
-        ) : (
-          /* Official Admin Navigation */
-          <>
-            <button
-              type="button"
-              className={`sidebar-nav-item ${activeTab === 'admin-dashboard' ? 'active' : ''}`}
+        {/* Lodge Grievance Primary CTA Button for Citizens */}
+        {isCitizen && (
+          <div className="sidebar-cta-wrap">
+            <button 
+              type="button" 
+              className="btn btn-primary sidebar-cta-btn" 
               onClick={() => {
-                setActivePortal('admin');
-                setActiveTab('admin-dashboard');
+                openGrievanceModal();
               }}
-              title={t('nodalOfficerControl') || 'Admin Governance Center'}
+              title="Lodge New Grievance"
             >
-              <ShieldCheck size={18} className="sidebar-nav-icon" />
-              {!isCollapsed && (
-                <>
-                  <span className="sidebar-nav-label">{t('nodalOfficerControl') || 'Admin Governance Center'}</span>
-                  {activeTab === 'admin-dashboard' && <ChevronRight size={14} className="sidebar-active-arrow" />}
-                </>
-              )}
+              <PlusCircle size={16} />
+              <span>{t('lodgeGrievance') || 'Lodge Grievance'}</span>
             </button>
+          </div>
+        )}
 
-            {/* Quick Switch for Admin to view Citizen Interface */}
-            {!isCollapsed && <div className="sidebar-section-label" style={{ marginTop: '16px' }}>CITIZEN VIEW</div>}
-            {navItems.map((item) => {
+        {/* Main Navigation Links */}
+        <nav className="sidebar-nav">
+          <div className="sidebar-section-label">SERVICES & NAVIGATION</div>
+
+          {isCitizen ? (
+            navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = activePortal === 'citizen' && activeTab === item.id;
+              const isActive = activeTab === item.id;
               return (
                 <button
                   key={item.id}
@@ -176,54 +138,94 @@ export default function Sidebar({
                   title={item.label}
                 >
                   <Icon size={18} className="sidebar-nav-icon" />
-                  {!isCollapsed && <span className="sidebar-nav-label">{item.label}</span>}
+                  <span className="sidebar-nav-label">{item.label}</span>
+                  {isActive && <ChevronRight size={14} className="sidebar-active-arrow" />}
                 </button>
               );
-            })}
-          </>
-        )}
-      </nav>
+            })
+          ) : (
+            /* Official Admin Navigation */
+            <>
+              <button
+                type="button"
+                className={`sidebar-nav-item ${activeTab === 'admin-dashboard' ? 'active' : ''}`}
+                onClick={() => {
+                  setActivePortal('admin');
+                  setActiveTab('admin-dashboard');
+                }}
+                title={t('nodalOfficerControl') || 'Admin Governance Center'}
+              >
+                <ShieldCheck size={18} className="sidebar-nav-icon" />
+                <span className="sidebar-nav-label">{t('nodalOfficerControl') || 'Admin Governance Center'}</span>
+                {activeTab === 'admin-dashboard' && <ChevronRight size={14} className="sidebar-active-arrow" />}
+              </button>
 
-      {/* Footer Navigation & User Profile */}
-      <div className="sidebar-footer">
-        {/* User Card */}
-        {user && (
-          <div className="sidebar-user-card" title={`${user.fullName || user.email} (${user.role})`}>
-            <div className="sidebar-user-avatar">
-              {isCitizen ? <UserCheck size={16} /> : <ShieldCheck size={16} />}
-            </div>
-            {!isCollapsed && (
+              {/* Quick Switch for Admin to view Citizen Interface */}
+              <div className="sidebar-section-label" style={{ marginTop: '16px' }}>CITIZEN VIEW</div>
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = activePortal === 'citizen' && activeTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
+                    onClick={() => {
+                      setActivePortal('citizen');
+                      setActiveTab(item.id);
+                    }}
+                    title={item.label}
+                  >
+                    <Icon size={18} className="sidebar-nav-icon" />
+                    <span className="sidebar-nav-label">{item.label}</span>
+                  </button>
+                );
+              })}
+            </>
+          )}
+        </nav>
+
+        {/* Footer Navigation & User Profile */}
+        <div className="sidebar-footer">
+          {/* User Card */}
+          {user && (
+            <div className="sidebar-user-card" title={`${user.fullName || user.email} (${user.role})`}>
+              <div className="sidebar-user-avatar">
+                {isCitizen ? <UserCheck size={16} /> : <ShieldCheck size={16} />}
+              </div>
               <div className="sidebar-user-info">
                 <span className="sidebar-user-name">{user.fullName || user.email}</span>
                 <span className="sidebar-user-role">{user.role} {user.department ? `• ${user.department}` : ''}</span>
               </div>
-            )}
+            </div>
+          )}
+
+          {/* Bottom Options: Settings & Sign Out */}
+          <div className="sidebar-action-buttons">
+            <button 
+              type="button" 
+              className="sidebar-bottom-btn" 
+              onClick={() => {
+                onOpenSettings();
+              }}
+              title="Settings & Appearance"
+            >
+              <Settings size={16} />
+              <span>Settings</span>
+            </button>
+
+            <button 
+              type="button" 
+              className="sidebar-bottom-btn sidebar-logout-btn" 
+              onClick={logout}
+              title="Sign Out"
+            >
+              <LogOut size={16} />
+              <span>Sign Out</span>
+            </button>
           </div>
-        )}
-
-        {/* Bottom Options: Settings & Sign Out */}
-        <div className={`sidebar-action-buttons ${isCollapsed ? 'collapsed-actions' : ''}`}>
-          <button 
-            type="button" 
-            className="sidebar-bottom-btn" 
-            onClick={onOpenSettings}
-            title="Settings & Appearance"
-          >
-            <Settings size={16} />
-            {!isCollapsed && <span>Settings</span>}
-          </button>
-
-          <button 
-            type="button" 
-            className="sidebar-bottom-btn sidebar-logout-btn" 
-            onClick={logout}
-            title="Sign Out"
-          >
-            <LogOut size={16} />
-            {!isCollapsed && <span>Sign Out</span>}
-          </button>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 }

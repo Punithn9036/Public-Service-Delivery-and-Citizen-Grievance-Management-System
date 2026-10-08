@@ -12,19 +12,45 @@
   background-color: var(--bg-primary);
 }
 
-/* Sidebar Styles */
+/* Sidebar Styles - Off-canvas Retractable Drawer */
+.sidebar-backdrop-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(74, 74, 74, 0.4);
+  backdrop-filter: blur(3px);
+  z-index: 998;
+  animation: fadeIn 0.2s ease-out;
+}
+
 .app-sidebar {
-  width: 270px;
-  min-width: 270px;
+  width: 280px;
+  min-width: 280px;
   background: var(--bg-secondary);
   border-right: 1px solid var(--border-subtle);
   display: flex;
   flex-direction: column;
-  position: sticky;
+  position: fixed;
+  left: 0;
   top: 0;
+  bottom: 0;
   height: 100vh;
-  z-index: 950;
-  transition: all var(--transition-normal);
+  z-index: 1000;
+  box-shadow: 0 10px 30px rgba(74, 74, 74, 0.2);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s ease, visibility 0.28s;
+}
+
+.app-sidebar.closed {
+  transform: translateX(-100%);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.app-sidebar.open {
+  transform: translateX(0);
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
 }
 
 .sidebar-brand {
@@ -44,9 +70,9 @@
   min-width: 0;
 }
 
-.sidebar-toggle-btn {
-  width: 28px;
-  height: 28px;
+.sidebar-close-icon-btn {
+  width: 30px;
+  height: 30px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-subtle);
   background: var(--bg-tertiary);
@@ -56,57 +82,35 @@
   justify-content: center;
   cursor: pointer;
   transition: all var(--transition-fast);
-  flex-shrink: 0;
 }
 
-.sidebar-toggle-btn:hover {
+.sidebar-close-icon-btn:hover {
   background: var(--brand-500);
   border-color: var(--brand-600);
 }
 
-/* Collapsed Retracted Sidebar Styles */
-.app-sidebar.collapsed {
-  width: 72px;
-  min-width: 72px;
+.sidebar-brand-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: var(--brand-700);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-.app-sidebar.collapsed .sidebar-brand {
-  padding: 14px 10px;
-  justify-content: center;
+.sidebar-brand-text {
+  display: flex;
   flex-direction: column;
-  gap: 10px;
+  min-width: 0;
 }
 
-.app-sidebar.collapsed .sidebar-cta-wrap {
-  padding: 12px 10px 6px;
-}
-
-.app-sidebar.collapsed .sidebar-cta-btn {
-  padding: 10px 0;
-  justify-content: center;
-}
-
-.app-sidebar.collapsed .sidebar-nav {
-  padding: 10px 8px;
-}
-
-.app-sidebar.collapsed .sidebar-nav-item {
-  justify-content: center;
-  padding: 12px 0;
-}
-
-.app-sidebar.collapsed .sidebar-user-card {
-  padding: 6px;
-  justify-content: center;
-}
-
-.app-sidebar.collapsed .collapsed-actions {
-  flex-direction: column;
-}
-
-.app-sidebar.collapsed .sidebar-bottom-btn {
-  padding: 8px 0;
-  justify-content: center;
+.sidebar-brand-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .sidebar-brand-icon {
@@ -362,12 +366,81 @@
 .nav-left-group {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
+  flex-shrink: 0;
 }
 
-.nav-toggle-btn {
-  width: 36px;
-  height: 36px;
+.hamburger-menu-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-tertiary);
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.hamburger-menu-btn:hover {
+  background: var(--brand-500);
+  border-color: var(--brand-600);
+  color: #4A4A4A;
+}
+
+.nav-brand-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.nav-brand-icon-box {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: var(--brand-700);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.nav-brand-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.nav-brand-name {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 1.2rem;
+  letter-spacing: -0.02em;
+  color: var(--text-main);
+}
+
+.nav-brand-tag {
+  font-size: 0.65rem;
+  font-weight: 800;
+  background: var(--brand-100);
+  color: var(--brand-700);
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.08em;
+}
+
+.nav-vertical-divider {
+  width: 1px;
+  height: 28px;
+  background: var(--border-subtle);
+  margin: 0 4px;
 }
 
 .nav-page-context {
@@ -376,7 +449,7 @@
 }
 
 .nav-page-heading {
-  font-size: 1.25rem;
+  font-size: 1.15rem;
   font-weight: 800;
   margin: 0;
   line-height: 1.2;
@@ -384,7 +457,7 @@
 }
 
 .nav-page-sub {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: var(--text-muted);
 }
 
