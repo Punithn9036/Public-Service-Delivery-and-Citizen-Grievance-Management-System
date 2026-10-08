@@ -43,7 +43,7 @@ export default function Navbar({
     <header className="navbar-header">
       <div className="nav-container">
         
-        {/* Left Section: 3-line Menu Button + JanSeva GOV Branding + Page Context */}
+        {/* Left Section: 3-line Menu Button + JanSeva Brand Heading */}
         <div className="nav-left-group">
           {/* 3-line hamburger menu toggle button */}
           <button
@@ -56,7 +56,7 @@ export default function Navbar({
             <Menu size={22} />
           </button>
 
-          {/* JanSeva Official Brand Badge */}
+          {/* JanSeva Official Brand Badge & Portal Title */}
           <div 
             className="nav-brand-badge" 
             onClick={() => setActiveTab('overview')} 
@@ -64,7 +64,7 @@ export default function Navbar({
             title="JanSeva Civic Portal Home"
           >
             <div className="nav-brand-icon-box">
-              <Building size={18} color="#ffffff" />
+              <Building size={20} color="#ffffff" />
             </div>
             <div className="nav-brand-title-wrap">
               <span className="nav-brand-name">JanSeva</span>
@@ -74,10 +74,9 @@ export default function Navbar({
 
           <div className="nav-vertical-divider" />
 
-          {/* Page Context Title */}
+          {/* Clean Portal Subtitle */}
           <div className="nav-page-context">
-            <h2 className="nav-page-heading">{getPageTitle()}</h2>
-            <span className="nav-page-sub">Public Service Delivery & Citizen Grievance Portal</span>
+            <span className="nav-page-sub-main">Public Service Delivery & Citizen Grievance Portal</span>
           </div>
         </div>
 
