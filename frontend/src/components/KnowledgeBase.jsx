@@ -43,19 +43,19 @@ export default function KnowledgeBase({ faqs, searchQuery }) {
       const lower = text.toLowerCase();
 
       if (lower.includes('grv-2026-8910')) {
-        botResponse = "📋 Ticket #GRV-2026-8910 Status: 'In Progress'. Assigned to Er. Rajesh Varma (Sanitation). Dredging team dispatched. SLA Target: 24 Hours.";
+        botResponse = "Ticket #GRV-2026-8910 Status: 'In Progress'. Assigned to Er. Rajesh Varma (Sanitation). Dredging team dispatched. SLA Target: 24 Hours.";
       } else if (lower.includes('grv-2026-8904')) {
-        botResponse = "📋 Ticket #GRV-2026-8904 Status: 'Assigned'. Assigned to Vikram Singh (Public Works). Field technician team dispatched for streetlight LED repair.";
+        botResponse = "Ticket #GRV-2026-8904 Status: 'Assigned'. Assigned to Vikram Singh (Public Works). Field technician team dispatched for streetlight LED repair.";
       } else if (lower.includes('water') || lower.includes('sewer') || lower.includes('drain') || lower.includes('पानी') || lower.includes('ನೀರು')) {
-        botResponse = "💧 Water & Drainage issues: Standard SLA is 24-48 hours. Please lodge a complaint under 'Water Supply & Sanitation' with Ward details.";
+        botResponse = "Water & Drainage issues: Standard SLA is 24-48 hours. Please lodge a complaint under 'Water Supply & Sanitation' with Ward details.";
       } else if (lower.includes('birth') || lower.includes('certificate') || lower.includes('जन्म') || lower.includes('ಜನನ')) {
-        botResponse = "📜 Birth Certificates take 7 SLA working days. Documents needed: (1) Hospital birth card, (2) Parents' Aadhaar Card, (3) Address proof.";
+        botResponse = "Birth Certificates take 7 SLA working days. Documents needed: (1) Hospital birth card, (2) Parents' Aadhaar Card, (3) Address proof.";
       } else if (lower.includes('urgent') || lower.includes('emergency') || lower.includes('आपात') || lower.includes('ತುರ್ತು')) {
-        botResponse = "🚨 For urgent public safety hazards (flooding, exposed high-voltage cables), set Priority to 'Urgent' or call 24x7 Helpline: 1800-425-GOV.";
+        botResponse = "For urgent public safety hazards (flooding, exposed high-voltage cables), set Priority to 'Urgent' or call 24x7 Helpline: 1800-425-GOV.";
       } else if (lower.includes('reopen') || lower.includes('not fixed')) {
-        botResponse = "🔄 If your ticket was marked resolved but the problem persists, go to 'Track Status', enter your ticket ID, and click 'Issue Not Fixed? Re-open Ticket'.";
+        botResponse = "If your ticket was marked resolved but the problem persists, go to 'Track Status', enter your ticket ID, and click 'Issue Not Fixed? Re-open Ticket'.";
       } else if (lower.includes('track')) {
-        botResponse = "🔍 To track any request, navigate to the 'Track Status & Resolution' tab and enter your Ticket Reference ID.";
+        botResponse = "To track any request, navigate to the 'Track Status & Resolution' tab and enter your Ticket Reference ID.";
       }
 
       setChatMessages(prev => [...prev, { sender: 'bot', text: botResponse }]);

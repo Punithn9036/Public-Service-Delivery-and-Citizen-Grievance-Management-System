@@ -323,7 +323,7 @@ export default function CitizenDashboard({
                 <div className="g-card-footer">
                   {item.feedback ? (
                     <span className="feedback-done-tag">
-                      <MessageSquareCheck size={14} /> Citizen Feedback Submitted ({item.feedback.rating}/5 ★)
+                      <MessageSquareCheck size={14} /> Citizen Feedback Submitted ({item.feedback.rating}/5 Stars)
                     </span>
                   ) : (
                     <span className="g-sla-info">SLA Target Date: <strong>{new Date(item.slaDeadline).toLocaleDateString()}</strong></span>

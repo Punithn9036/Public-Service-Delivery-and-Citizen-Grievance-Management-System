@@ -26,11 +26,11 @@
   width: 42px;
   height: 42px;
   border-radius: var(--radius-md);
-  background: linear-gradient(135deg, #1d4ed8, #2563eb);
+  background: var(--brand-700);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  color: #ffffff;
 }
 
 .brand-title-row {
@@ -79,7 +79,7 @@
 .nav-search-input {
   width: 100%;
   padding: 8px 14px 8px 36px;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-subtle);
   background: var(--bg-tertiary);
   color: var(--text-main);
@@ -91,7 +91,7 @@
 .nav-search-input:focus {
   border-color: var(--brand-500);
   background: var(--bg-secondary);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
 }
 
 .nav-actions {
@@ -104,7 +104,7 @@
   display: flex;
   background: var(--bg-tertiary);
   padding: 3px;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-subtle);
 }
 
@@ -113,7 +113,7 @@
   align-items: center;
   gap: 6px;
   padding: 6px 14px;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-sm);
   font-size: 0.8rem;
   font-weight: 600;
   border: none;
@@ -126,7 +126,7 @@
 .portal-btn.active {
   background: var(--bg-secondary);
   color: var(--text-main);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 
 .icon-circle-btn {
@@ -209,24 +209,26 @@
 
 /* Hero Banner */
 .hero-banner {
-  padding: 36px;
+  padding: 32px;
   margin-bottom: 24px;
   display: grid;
   grid-template-columns: 1fr 300px;
   gap: 30px;
   align-items: center;
-  background: linear-gradient(135deg, rgba(37, 99, 235, 0.05), rgba(59, 130, 246, 0.12));
-  border: 1px solid rgba(37, 99, 235, 0.2);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
 }
 
 .hero-pill {
   display: inline-block;
-  padding: 4px 12px;
-  background: var(--brand-100);
+  padding: 4px 10px;
+  background: var(--brand-50);
   color: var(--brand-700);
   font-size: 0.75rem;
   font-weight: 700;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--brand-100);
   margin-bottom: 12px;
 }
 
@@ -387,8 +389,8 @@
   font-weight: 700;
   background: var(--bg-tertiary);
   color: var(--text-main);
-  padding: 4px 10px;
-  border-radius: var(--radius-full);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
 }
 
 .service-card h3 {
@@ -565,7 +567,7 @@
   background: var(--bg-tertiary);
   border: 1px solid var(--border-subtle);
   padding: 3px 10px;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-sm);
   font-size: 0.75rem;
   cursor: pointer;
   color: var(--text-main);
@@ -790,9 +792,9 @@
   align-items: center;
   gap: 6px;
   padding: 4px 10px;
-  background: rgba(37, 99, 235, 0.15);
-  color: var(--brand-600);
-  border-radius: var(--radius-full);
+  background: rgba(37, 99, 235, 0.12);
+  color: var(--brand-700);
+  border-radius: var(--radius-sm);
   font-size: 0.75rem;
   font-weight: 700;
   margin-bottom: 8px;
@@ -853,17 +855,17 @@
 }
 
 .bar-track {
-  height: 10px;
+  height: 8px;
   background: var(--bg-tertiary);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
 .bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--brand-500), var(--brand-700));
-  border-radius: var(--radius-full);
-  transition: width 0.5s ease-out;
+  background: var(--brand-600);
+  border-radius: var(--radius-sm);
+  transition: width 0.4s ease-out;
 }
 
 .admin-table-card {
@@ -1271,9 +1273,9 @@
 }
 
 .auth-toggle-btn.active {
-  background: linear-gradient(135deg, #1d4ed8, #2563eb) !important;
+  background: var(--brand-700) !important;
   color: #ffffff !important;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .auth-role-select-btn {

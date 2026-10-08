@@ -8,6 +8,8 @@ import GrievanceFormModal from './components/GrievanceFormModal';
 import ServiceApplicationModal from './components/ServiceApplicationModal';
 import NotificationsDrawer from './components/NotificationsDrawer';
 import SettingsModal from './components/SettingsModal';
+import PrivacyPolicyModal from './components/PrivacyPolicyModal';
+import TermsOfServiceModal from './components/TermsOfServiceModal';
 import AuthScreen from './components/AuthScreen';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
@@ -83,6 +85,8 @@ function MainAppContent() {
   const [showGrievanceModal, setShowGrievanceModal] = useState(false);
   const [selectedServiceModal, setSelectedServiceModal] = useState(null);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
 
   // Sync Theme to document root
   useEffect(() => {
@@ -344,19 +348,41 @@ function MainAppContent() {
         />
       )}
 
+      {/* Privacy Policy Modal */}
+      {showPrivacyModal && (
+        <PrivacyPolicyModal onClose={() => setShowPrivacyModal(false)} />
+      )}
+
+      {/* Terms of Governance Modal */}
+      {showTermsModal && (
+        <TermsOfServiceModal onClose={() => setShowTermsModal(false)} />
+      )}
+
       {/* Footer */}
       <footer className="footer glass-card" style={{ borderRadius: 0, marginTop: '50px', borderBottom: 0, borderLeft: 0, borderRight: 0 }}>
         <div className="main-app-container flex-between flex-wrap gap-4" style={{ margin: 0, padding: '20px' }}>
           <div>
             <strong style={{ fontFamily: 'var(--font-heading)' }}>JanSeva Public Service & Grievance Governance Portal</strong>
-            <p className="small-text text-muted">Ministry of Governance & Administrative Reforms • Government Platform</p>
+            <p className="small-text text-muted">Ministry of Governance & Administrative Reforms - Government Platform</p>
           </div>
           <div className="flex-align-center gap-3 text-muted small-text">
             <span>24x7 Citizen Helpline: <strong>1800-425-GOV</strong></span>
-            <span>•</span>
-            <span>Privacy Policy</span>
-            <span>•</span>
-            <span>Terms of Governance</span>
+            <span>-</span>
+            <button 
+              type="button"
+              onClick={() => setShowPrivacyModal(true)} 
+              style={{ background: 'none', border: 'none', color: 'var(--brand-600)', cursor: 'pointer', padding: 0, fontSize: 'inherit', fontWeight: 600, textDecoration: 'underline' }}
+            >
+              Privacy Policy
+            </button>
+            <span>-</span>
+            <button 
+              type="button"
+              onClick={() => setShowTermsModal(true)} 
+              style={{ background: 'none', border: 'none', color: 'var(--brand-600)', cursor: 'pointer', padding: 0, fontSize: 'inherit', fontWeight: 600, textDecoration: 'underline' }}
+            >
+              Terms of Governance
+            </button>
           </div>
         </div>
       </footer>

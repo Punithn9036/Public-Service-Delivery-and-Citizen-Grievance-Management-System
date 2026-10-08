@@ -483,8 +483,9 @@ export default function TrackingView({
                 </div>
               </div>
 
-              <p className="small-text text-muted" style={{ margin: '16px 0 0', textAlign: 'center' }}>
-                🔒 Cryptographically signed by State Governance Authority nodes. Tamper-evident ledger integrity guaranteed.
+              <p className="small-text text-muted" style={{ margin: '16px 0 0', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                <ShieldCheck size={14} style={{ color: '#16a34a' }} />
+                <span>Cryptographically signed by State Governance Authority nodes. Tamper-evident ledger integrity guaranteed.</span>
               </p>
             </div>
 

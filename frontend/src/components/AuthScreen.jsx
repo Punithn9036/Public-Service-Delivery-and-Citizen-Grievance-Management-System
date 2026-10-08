@@ -345,27 +345,27 @@ export default function AuthScreen() {
           <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
             <button
               type="button"
-              className="btn btn-sm btn-secondary demo-pill-btn"
+              className="btn btn-sm btn-secondary"
               onClick={() => handleQuickLogin('CITIZEN')}
-              style={{ fontSize: '0.78rem', padding: '6px 12px', fontWeight: 600 }}
+              style={{ fontSize: '0.78rem', padding: '6px 12px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
-              👤 Citizen (Aarav)
+              <User size={14} /> Citizen (Aarav)
             </button>
             <button
               type="button"
-              className="btn btn-sm btn-secondary demo-pill-btn"
+              className="btn btn-sm btn-secondary"
               onClick={() => handleQuickLogin('OFFICER')}
-              style={{ fontSize: '0.78rem', padding: '6px 12px', fontWeight: 600 }}
+              style={{ fontSize: '0.78rem', padding: '6px 12px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
-              🛡️ Officer (Rajesh)
+              <ShieldCheck size={14} /> Officer (Rajesh)
             </button>
             <button
               type="button"
-              className="btn btn-sm btn-secondary demo-pill-btn"
+              className="btn btn-sm btn-secondary"
               onClick={() => handleQuickLogin('ADMIN')}
-              style={{ fontSize: '0.78rem', padding: '6px 12px', fontWeight: 600 }}
+              style={{ fontSize: '0.78rem', padding: '6px 12px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
-              🏛️ Admin (Kavitha)
+              <Building size={14} /> Admin (Kavitha)
             </button>
           </div>
         </div>

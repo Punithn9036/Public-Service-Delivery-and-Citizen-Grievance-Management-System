@@ -183,7 +183,7 @@ export default function GrievanceFormModal({ departments, onClose, onSubmitGriev
 
         // Automatic Reverse Geocoding to exact Street, Ward, and City
         let resolvedAddress = `100 Feet Road, Ward 14, Indiranagar, Bengaluru, Karnataka 560038`;
-        let resolvedLandmark = `📍 Geotag: ${coords.lat}° N, ${coords.lon}° E (Indiranagar Metro Pillar #82)`;
+        let resolvedLandmark = `Geotag: ${coords.lat}° N, ${coords.lon}° E (Indiranagar Metro Pillar #82)`;
 
         try {
           const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.lat}&lon=${coords.lon}`, {
@@ -193,7 +193,7 @@ export default function GrievanceFormModal({ departments, onClose, onSubmitGriev
           if (geoData && geoData.display_name) {
             const parts = geoData.display_name.split(',');
             resolvedAddress = parts.slice(0, 4).join(',').trim();
-            resolvedLandmark = `📍 GPS: ${coords.lat}° N, ${coords.lon}° E (${geoData.address?.suburb || geoData.address?.neighbourhood || 'Ward 14'})`;
+            resolvedLandmark = `GPS: ${coords.lat}° N, ${coords.lon}° E (${geoData.address?.suburb || geoData.address?.neighbourhood || 'Ward 14'})`;
           }
         } catch (apiErr) {
           // Fallback to municipal ward
@@ -238,7 +238,7 @@ export default function GrievanceFormModal({ departments, onClose, onSubmitGriev
         const lat = pos.coords.latitude.toFixed(4);
         const lon = pos.coords.longitude.toFixed(4);
         const liveAddress = `Ward 14, Main Market Road, Indiranagar, Bengaluru 560038`;
-        const liveLandmark = `📍 Live Device GPS: ${lat}° N, ${lon}° E (Accuracy: ±${Math.round(pos.coords.accuracy || 10)}m)`;
+        const liveLandmark = `Live Device GPS: ${lat}° N, ${lon}° E (Accuracy: ±${Math.round(pos.coords.accuracy || 10)}m)`;
 
         setFormData(prev => ({
           ...prev,
@@ -264,13 +264,13 @@ export default function GrievanceFormModal({ departments, onClose, onSubmitGriev
         setFormData(prev => ({
           ...prev,
           location: fallbackAddress,
-          landmark: `📍 Municipal GPS: 12.9716° N, 77.5946° E`
+          landmark: `Municipal GPS: 12.9716° N, 77.5946° E`
         }));
         setGpsData({
           lat: '12.9716',
           lon: '77.5946',
           address: fallbackAddress,
-          landmark: `📍 Municipal GPS: 12.9716° N, 77.5946° E`,
+          landmark: `Municipal GPS: 12.9716° N, 77.5946° E`,
           fileName: 'Municipal Ward GPS',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         });
@@ -377,8 +377,8 @@ export default function GrievanceFormModal({ departments, onClose, onSubmitGriev
               {gpsData && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
                   <span className="text-muted small-text">GPS Coordinates:</span>
-                  <span style={{ color: '#16a34a', fontWeight: 700, fontSize: '0.85rem' }}>
-                    📍 {gpsData.lat}° N, {gpsData.lon}° E
+                  <span style={{ color: '#16a34a', fontWeight: 700, fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <MapPin size={13} /> {gpsData.lat}° N, {gpsData.lon}° E
                   </span>
                 </div>
               )}
@@ -558,8 +558,9 @@ export default function GrievanceFormModal({ departments, onClose, onSubmitGriev
                       </label>
                     </div>
 
-                    <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-main)', lineHeight: '1.3' }}>
-                      📍 {formData.location || 'Locating street & ward...'}
+                    <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-main)', lineHeight: '1.3', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <MapPin size={13} style={{ flexShrink: 0, color: '#2563eb' }} />
+                      <span>{formData.location || 'Locating street & ward...'}</span>
                     </div>
 
                     {gpsData && (
