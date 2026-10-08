@@ -41,6 +41,130 @@ function MainAppContent() {
   const [selectedTrackId, setSelectedTrackId] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Initially closed by default as requested
 
+  // Navigation History Stack for Complete Step-by-Step Back Navigation
+  const [navHistory, setNavHistory] = useState([]);
+
+  // Centralized Navigation Controller that pushes snapshot to history
+  const navigateTo = (newTab, options = {}) => {
+    // Save snapshot of current view before transitioning
+    const snapshot = {
+      activePortal,
+      activeTab,
+      selectedTrackId,
+      showGrievanceModal,
+      selectedServiceModal,
+      showSettingsModal,
+      showPrivacyModal,
+      showTermsModal,
+      scrollPosition: window.scrollY
+    };
+
+    // Prevent duplicate consecutive entries in history
+    const isSameState = activeTab === newTab && 
+      activePortal === (options.portal || activePortal) &&
+      selectedTrackId === (options.trackId !== undefined ? options.trackId : selectedTrackId) &&
+      !showGrievanceModal && !selectedServiceModal && !showSettingsModal && !showPrivacyModal && !showTermsModal;
+
+    if (!isSameState) {
+      setNavHistory(prev => [...prev, snapshot]);
+      // Update browser URL hash / history
+      try {
+        window.history.pushState({ tab: newTab, portal: options.portal || activePortal, trackId: options.trackId }, '', '#' + newTab);
+      } catch (e) {}
+    }
+
+    if (options.portal) setActivePortal(options.portal);
+    if (newTab) setActiveTab(newTab);
+    if (options.trackId !== undefined) setSelectedTrackId(options.trackId);
+    if (options.closeModals !== false) {
+      setShowGrievanceModal(false);
+      setSelectedServiceModal(null);
+      setShowSettingsModal(false);
+      setShowPrivacyModal(false);
+      setShowTermsModal(false);
+    }
+  };
+
+  // Step-by-step Go Back Handler
+  const handleGoBack = () => {
+    // 1. If any modal is open, closing it is the immediate step back
+    if (showGrievanceModal || selectedServiceModal || showSettingsModal || showPrivacyModal || showTermsModal) {
+      setShowGrievanceModal(false);
+      setSelectedServiceModal(null);
+      setShowSettingsModal(false);
+      setShowPrivacyModal(false);
+      setShowTermsModal(false);
+      return;
+    }
+
+    // 2. If history has previous views, pop the last one
+    if (navHistory.length > 0) {
+      const historyCopy = [...navHistory];
+      const previousState = historyCopy.pop();
+      setNavHistory(historyCopy);
+
+      if (previousState) {
+        setActivePortal(previousState.activePortal || 'citizen');
+        setActiveTab(previousState.activeTab || 'overview');
+        setSelectedTrackId(previousState.selectedTrackId || '');
+        setShowGrievanceModal(Boolean(previousState.showGrievanceModal));
+        setSelectedServiceModal(previousState.selectedServiceModal || null);
+        setShowSettingsModal(Boolean(previousState.showSettingsModal));
+        setShowPrivacyModal(Boolean(previousState.showPrivacyModal));
+        setShowTermsModal(Boolean(previousState.showTermsModal));
+
+        if (previousState.scrollPosition !== undefined) {
+          setTimeout(() => {
+            window.scrollTo({ top: previousState.scrollPosition, behavior: 'smooth' });
+          }, 40);
+        }
+      }
+      return;
+    }
+
+    // 3. Fallback: If no history but on a sub-view, return to overview dashboard
+    if (activeTab !== 'overview') {
+      setActiveTab('overview');
+      setActivePortal('citizen');
+    }
+  };
+
+  // Synchronize with Browser's Native Back / Forward Buttons
+  useEffect(() => {
+    const onPopState = (event) => {
+      if (event.state && event.state.tab) {
+        setActiveTab(event.state.tab);
+        if (event.state.portal) setActivePortal(event.state.portal);
+        if (event.state.trackId !== undefined) setSelectedTrackId(event.state.trackId);
+      } else {
+        handleGoBack();
+      }
+    };
+
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [navHistory, showGrievanceModal, selectedServiceModal, showSettingsModal, showPrivacyModal, showTermsModal]);
+
+  const canGoBack = navHistory.length > 0 || activeTab !== 'overview' || showGrievanceModal || Boolean(selectedServiceModal) || showSettingsModal || showPrivacyModal || showTermsModal;
+
+  const getPreviousPageTitle = () => {
+    if (showGrievanceModal || selectedServiceModal || showSettingsModal || showPrivacyModal || showTermsModal) {
+      return 'Current Page';
+    }
+    if (navHistory.length > 0) {
+      const last = navHistory[navHistory.length - 1];
+      switch (last.activeTab) {
+        case 'overview': return 'Overview Dashboard';
+        case 'services': return 'Public Services';
+        case 'track': return 'Track Status';
+        case 'faqs': return 'Knowledge Base';
+        case 'admin-dashboard': return 'Admin Governance';
+        default: return 'Previous Page';
+      }
+    }
+    return activeTab !== 'overview' ? 'Overview Dashboard' : '';
+  };
+
   // Synchronize active portal with user role when user changes
   useEffect(() => {
     if (user) {
@@ -280,11 +404,17 @@ function MainAppContent() {
         {/* Left Navigation Sidebar (Retractable, initially closed) */}
         <Sidebar 
           activeTab={activeTab}
-          setActiveTab={setActiveTab}
+          setActiveTab={(tab) => navigateTo(tab)}
           activePortal={activePortal}
-          setActivePortal={setActivePortal}
-          openGrievanceModal={() => setShowGrievanceModal(true)}
-          onOpenSettings={() => setShowSettingsModal(true)}
+          setActivePortal={(portal) => navigateTo(activeTab, { portal })}
+          openGrievanceModal={() => {
+            navigateTo(activeTab, { closeModals: false });
+            setShowGrievanceModal(true);
+          }}
+          onOpenSettings={() => {
+            navigateTo(activeTab, { closeModals: false });
+            setShowSettingsModal(true);
+          }}
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
         />
@@ -295,13 +425,23 @@ function MainAppContent() {
           {/* Top Navbar Header */}
           <Navbar 
             activeTab={activeTab}
-            setActiveTab={setActiveTab}
+            setActiveTab={(tab) => navigateTo(tab)}
+            onNavigate={(tab) => navigateTo(tab)}
+            canGoBack={canGoBack}
+            onGoBack={handleGoBack}
+            previousPageTitle={getPreviousPageTitle()}
             unreadNotifications={notifications.length}
             setShowNotifications={setShowNotifications}
-            openGrievanceModal={() => setShowGrievanceModal(true)}
+            openGrievanceModal={() => {
+              navigateTo(activeTab, { closeModals: false });
+              setShowGrievanceModal(true);
+            }}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
-            onOpenSettings={() => setShowSettingsModal(true)}
+            onOpenSettings={() => {
+              navigateTo(activeTab, { closeModals: false });
+              setShowSettingsModal(true);
+            }}
             isSidebarOpen={isSidebarOpen}
             onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
           />
@@ -315,8 +455,7 @@ function MainAppContent() {
               onSelectNotification={(n) => {
                 const match = n.title.match(/#(GRV-[\w-]+|APP-[\w-]+)/i);
                 if (match && match[1]) {
-                  setSelectedTrackId(match[1]);
-                  setActiveTab('track');
+                  navigateTo('track', { trackId: match[1] });
                 }
               }}
             />
@@ -333,6 +472,8 @@ function MainAppContent() {
             departments={DEPARTMENTS}
             onUpdateGrievanceStatus={handleUpdateGrievanceStatus}
             onAssignOfficer={handleUpdateGrievanceStatus}
+            onGoBack={handleGoBack}
+            canGoBack={canGoBack}
           />
         ) : (
           /* Citizen View Tabs */
@@ -342,14 +483,22 @@ function MainAppContent() {
                 grievances={grievances}
                 services={INITIAL_SERVICES}
                 applications={applications}
-                openGrievanceModal={() => setShowGrievanceModal(true)}
-                openServiceModal={(service) => setSelectedServiceModal(service)}
-                setActiveTab={setActiveTab}
-                selectGrievanceToTrack={(id) => setSelectedTrackId(id)}
+                openGrievanceModal={() => {
+                  navigateTo(activeTab, { closeModals: false });
+                  setShowGrievanceModal(true);
+                }}
+                openServiceModal={(service) => {
+                  navigateTo(activeTab, { closeModals: false });
+                  setSelectedServiceModal(service);
+                }}
+                setActiveTab={(tab) => navigateTo(tab)}
+                selectGrievanceToTrack={(id) => navigateTo('track', { trackId: id })}
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
                 isSidebarOpen={isSidebarOpen}
                 onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
+                onGoBack={handleGoBack}
+                canGoBack={canGoBack}
               />
             )}
 
@@ -358,14 +507,22 @@ function MainAppContent() {
                 grievances={grievances}
                 services={INITIAL_SERVICES}
                 applications={applications}
-                openGrievanceModal={() => setShowGrievanceModal(true)}
-                openServiceModal={(service) => setSelectedServiceModal(service)}
-                setActiveTab={setActiveTab}
-                selectGrievanceToTrack={(id) => setSelectedTrackId(id)}
+                openGrievanceModal={() => {
+                  navigateTo(activeTab, { closeModals: false });
+                  setShowGrievanceModal(true);
+                }}
+                openServiceModal={(service) => {
+                  navigateTo(activeTab, { closeModals: false });
+                  setSelectedServiceModal(service);
+                }}
+                setActiveTab={(tab) => navigateTo(tab)}
+                selectGrievanceToTrack={(id) => navigateTo('track', { trackId: id })}
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
                 isSidebarOpen={isSidebarOpen}
                 onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
+                onGoBack={handleGoBack}
+                canGoBack={canGoBack}
               />
             )}
 
@@ -376,6 +533,9 @@ function MainAppContent() {
                 selectedTrackId={selectedTrackId}
                 onSubmitFeedback={handleSubmitFeedback}
                 onReopenGrievance={handleReopenGrievance}
+                onGoBack={handleGoBack}
+                canGoBack={canGoBack}
+                previousPageTitle={getPreviousPageTitle()}
               />
             )}
 
@@ -383,6 +543,9 @@ function MainAppContent() {
               <KnowledgeBase 
                 faqs={FAQ_ARTICLES}
                 searchQuery={searchQuery}
+                onGoBack={handleGoBack}
+                canGoBack={canGoBack}
+                previousPageTitle={getPreviousPageTitle()}
               />
             )}
           </>
@@ -402,7 +565,10 @@ function MainAppContent() {
             <span>-</span>
             <button 
               type="button"
-              onClick={() => setShowPrivacyModal(true)} 
+              onClick={() => {
+                navigateTo(activeTab, { closeModals: false });
+                setShowPrivacyModal(true);
+              }} 
               style={{ background: 'none', border: 'none', color: 'var(--brand-700)', cursor: 'pointer', padding: 0, fontSize: 'inherit', fontWeight: 600, textDecoration: 'underline' }}
             >
               Privacy Policy
@@ -410,7 +576,10 @@ function MainAppContent() {
             <span>-</span>
             <button 
               type="button"
-              onClick={() => setShowTermsModal(true)} 
+              onClick={() => {
+                navigateTo(activeTab, { closeModals: false });
+                setShowTermsModal(true);
+              }} 
               style={{ background: 'none', border: 'none', color: 'var(--brand-700)', cursor: 'pointer', padding: 0, fontSize: 'inherit', fontWeight: 600, textDecoration: 'underline' }}
             >
               Terms of Governance
@@ -427,7 +596,7 @@ function MainAppContent() {
     <GrievanceFormModal 
       departments={DEPARTMENTS}
       grievances={grievances}
-      onClose={() => setShowGrievanceModal(false)}
+      onClose={() => handleGoBack()}
       onSubmitGrievance={handleAddGrievance}
       onUpvoteGrievance={handleUpvoteGrievance}
     />
@@ -437,7 +606,7 @@ function MainAppContent() {
   {selectedServiceModal && (
     <ServiceApplicationModal 
       service={selectedServiceModal}
-      onClose={() => setSelectedServiceModal(null)}
+      onClose={() => handleGoBack()}
       onSubmitApplication={handleAddApplication}
     />
   )}
@@ -445,7 +614,7 @@ function MainAppContent() {
   {/* Portal & User Settings Modal */}
   {showSettingsModal && (
     <SettingsModal 
-      onClose={() => setShowSettingsModal(false)}
+      onClose={() => handleGoBack()}
       theme={theme}
       toggleTheme={toggleTheme}
     />
@@ -453,21 +622,21 @@ function MainAppContent() {
 
   {/* Privacy Policy Modal */}
   {showPrivacyModal && (
-    <PrivacyPolicyModal onClose={() => setShowPrivacyModal(false)} />
+    <PrivacyPolicyModal onClose={() => handleGoBack()} />
   )}
 
   {/* Terms of Governance Modal */}
   {showTermsModal && (
-    <TermsOfServiceModal onClose={() => setShowTermsModal(false)} />
+    <TermsOfServiceModal onClose={() => handleGoBack()} />
   )}
 
   {/* Movable Floating AI Redressal Bot */}
   <FloatingAiChatBot 
-    onTrackTicket={(id) => {
-      setSelectedTrackId(id);
-      setActiveTab('track');
+    onTrackTicket={(id) => navigateTo('track', { trackId: id })}
+    onOpenGrievanceModal={() => {
+      navigateTo(activeTab, { closeModals: false });
+      setShowGrievanceModal(true);
     }}
-    onOpenGrievanceModal={() => setShowGrievanceModal(true)}
   />
 
 </div>

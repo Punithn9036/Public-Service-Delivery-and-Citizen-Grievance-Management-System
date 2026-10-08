@@ -20,7 +20,8 @@ import {
   Printer, 
   Layers, 
   X,
-  FileText
+  FileText,
+  ArrowLeft
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -29,7 +30,10 @@ export default function TrackingView({
   applications,
   selectedTrackId, 
   onSubmitFeedback,
-  onReopenGrievance
+  onReopenGrievance,
+  onGoBack,
+  canGoBack,
+  previousPageTitle
 }) {
   const { t } = useLanguage();
   const gList = Array.isArray(grievances) ? grievances : [];
@@ -103,6 +107,20 @@ export default function TrackingView({
   return (
     <div className="tracking-container animate-fade-in">
       
+      {/* Top Contextual Back Bar & Breadcrumb */}
+      <div className="subpage-back-bar">
+        <button 
+          type="button" 
+          className="subpage-back-btn" 
+          onClick={onGoBack}
+          title={previousPageTitle ? `Back to ${previousPageTitle}` : "Back to previous page"}
+        >
+          <ArrowLeft size={16} />
+          <span>Back to {previousPageTitle || 'Previous Page'}</span>
+        </button>
+        <span className="subpage-breadcrumb">JanSeva &gt; Track Status &amp; Redressal</span>
+      </div>
+
       {/* Search Header */}
       <div className="track-search-card glass-card">
         <h2>{t('trackTitle')}</h2>

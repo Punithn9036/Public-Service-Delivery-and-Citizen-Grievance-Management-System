@@ -28,7 +28,8 @@ import {
   ChevronRight,
   ChevronDown,
   TrendingUp,
-  Layers
+  Layers,
+  ArrowLeft
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -194,12 +195,15 @@ export default function CitizenDashboard({
   applications,
   openGrievanceModal,
   openServiceModal,
+  activeTab,
   setActiveTab,
   selectGrievanceToTrack,
   searchQuery,
   setSearchQuery,
   isSidebarOpen,
-  onToggleSidebar
+  onToggleSidebar,
+  onGoBack,
+  canGoBack
 }) {
   const { user } = useAuth();
   const { lang, setLang, t } = useLanguage();
@@ -465,6 +469,22 @@ export default function CitizenDashboard({
 
       {/* Main Inner Container for Dashboard Sections */}
       <div className="dashboard-inner-wrap" style={{ padding: '24px 20px', maxWidth: '1400px', margin: '0 auto' }}>
+
+        {/* Top Contextual Back Bar & Breadcrumb (when on Services Tab) */}
+        {canGoBack && activeTab === 'services' && (
+          <div className="subpage-back-bar" style={{ marginBottom: '20px' }}>
+            <button 
+              type="button" 
+              className="subpage-back-btn" 
+              onClick={onGoBack}
+              title="Return to Overview Dashboard"
+            >
+              <ArrowLeft size={16} />
+              <span>Back to Overview Dashboard</span>
+            </button>
+            <span className="subpage-breadcrumb">JanSeva &gt; Public Services Catalog</span>
+          </div>
+        )}
 
         {/* Quick Statutory SLA Compliance Alert Card */}
         <div className="gov-sla-bar-strip">
