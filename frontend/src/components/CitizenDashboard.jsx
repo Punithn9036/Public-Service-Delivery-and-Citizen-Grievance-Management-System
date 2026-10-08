@@ -229,9 +229,10 @@ export default function CitizenDashboard({
       <div 
         className="india-gov-hero-section"
         style={{
-          backgroundImage: `linear-gradient(180deg, rgba(10, 18, 35, 0.28) 0%, rgba(10, 18, 35, 0.45) 55%, rgba(10, 18, 35, 0.72) 100%), url(${govHeroBg})`,
+          backgroundImage: `linear-gradient(180deg, rgba(10, 18, 35, 0.25) 0%, rgba(10, 18, 35, 0.42) 50%, rgba(10, 18, 35, 0.70) 100%), url(${govHeroBg})`,
+          backgroundAttachment: 'fixed',
           backgroundSize: 'cover',
-          backgroundPosition: 'center 28%',
+          backgroundPosition: 'center 30%',
           backgroundRepeat: 'no-repeat'
         }}
       >
@@ -343,81 +344,25 @@ export default function CitizenDashboard({
 
         </div>
 
-        {/* Floating Bottom Statistics Bar (India.gov.in Pill Style) */}
-        <div className="hero-floating-stats-container">
-          <div className="hero-floating-stats-bar">
-            
-            <div className="hero-stat-pill-item">
-              <div className="hero-stat-icon-circle bg-orange-soft">
-                <FileText size={18} />
-              </div>
-              <div className="hero-stat-info">
-                <strong className="hero-stat-number">13,876</strong>
-                <span className="hero-stat-label">Online Services</span>
-              </div>
+        {/* Scroll Down Arrow Indicator Button */}
+        <div className="hero-scroll-down-container">
+          <button 
+            type="button" 
+            className="hero-scroll-down-btn"
+            onClick={() => {
+              const target = document.getElementById('citizen-services-section') || document.getElementById('citizen-grievances-section');
+              if (target) {
+                target.scrollIntoView({ behavior: 'smooth' });
+              }
+            }}
+            aria-label="Scroll down to services and grievance registry"
+            title="Scroll down to explore services & grievances"
+          >
+            <div className="scroll-arrow-circle">
+              <ChevronDown size={26} className="bouncing-arrow" />
             </div>
-
-            <div className="hero-stat-divider" />
-
-            <div className="hero-stat-pill-item">
-              <div className="hero-stat-icon-circle bg-green-soft">
-                <CheckCircle size={18} />
-              </div>
-              <div className="hero-stat-info">
-                <strong className="hero-stat-number">{resolvedCount || '3,182'}</strong>
-                <span className="hero-stat-label">Resolved On-Time</span>
-              </div>
-            </div>
-
-            <div className="hero-stat-divider" />
-
-            <div className="hero-stat-pill-item">
-              <div className="hero-stat-icon-circle bg-amber-soft">
-                <UserCheck size={18} />
-              </div>
-              <div className="hero-stat-info">
-                <strong className="hero-stat-number">5,060</strong>
-                <span className="hero-stat-label">Citizen Engagements</span>
-              </div>
-            </div>
-
-            <div className="hero-stat-divider" />
-
-            <div className="hero-stat-pill-item">
-              <div className="hero-stat-icon-circle bg-blue-soft">
-                <MapPin size={18} />
-              </div>
-              <div className="hero-stat-info">
-                <strong className="hero-stat-number">100%</strong>
-                <span className="hero-stat-label">Geo-Tagged Proof</span>
-              </div>
-            </div>
-
-            <div className="hero-stat-divider" />
-
-            <div className="hero-stat-pill-item">
-              <div className="hero-stat-icon-circle bg-purple-soft">
-                <Clock size={18} />
-              </div>
-              <div className="hero-stat-info">
-                <strong className="hero-stat-number">24 Hrs</strong>
-                <span className="hero-stat-label">Avg First Response</span>
-              </div>
-            </div>
-
-            <div className="hero-stat-divider" />
-
-            <div className="hero-stat-pill-item">
-              <div className="hero-stat-icon-circle bg-teal-soft">
-                <Building2 size={18} />
-              </div>
-              <div className="hero-stat-info">
-                <strong className="hero-stat-number">18</strong>
-                <span className="hero-stat-label">Nodal Departments</span>
-              </div>
-            </div>
-
-          </div>
+            <span className="scroll-arrow-label">Explore Services & Grievances</span>
+          </button>
         </div>
 
       </div>
@@ -451,7 +396,7 @@ export default function CitizenDashboard({
         {/* ========================================================================= */}
         {/* 2. POPULAR PUBLIC SERVICES CATALOG */}
         {/* ========================================================================= */}
-        <div className="section-block" style={{ marginTop: '28px' }}>
+        <div className="section-block" id="citizen-services-section" style={{ marginTop: '28px' }}>
           <div className="section-header">
             <div>
               <h2>{t('popularServices')}</h2>
