@@ -41,8 +41,55 @@ function MainAppContent() {
   const [selectedTrackId, setSelectedTrackId] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Initially closed by default as requested
 
+  // Modals state
+  const [showGrievanceModal, setShowGrievanceModal] = useState(false);
+  const [selectedServiceModal, setSelectedServiceModal] = useState(null);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+
   // Navigation History Stack for Complete Step-by-Step Back Navigation
   const [navHistory, setNavHistory] = useState([]);
+
+  // Data State with API + LocalStorage Fallback
+  const [grievances, setGrievances] = useState(() => {
+    try {
+      const saved = localStorage.getItem('janseva_grievances');
+      return saved ? JSON.parse(saved) : INITIAL_GRIEVANCES;
+    } catch (e) {
+      console.warn("Failed to parse grievances from storage:", e);
+      return INITIAL_GRIEVANCES;
+    }
+  });
+
+  const [applications, setApplications] = useState(() => {
+    try {
+      const saved = localStorage.getItem('janseva_applications');
+      return saved ? JSON.parse(saved) : INITIAL_APPLICATIONS;
+    } catch (e) {
+      console.warn("Failed to parse applications from storage:", e);
+      return INITIAL_APPLICATIONS;
+    }
+  });
+
+  // Notifications State
+  const [notifications, setNotifications] = useState([
+    {
+      id: 'n-1',
+      title: 'Status Update on Ticket #GRV-2026-8910',
+      message: 'Field dredging team dispatched by Senior Engineer.',
+      time: '10 mins ago',
+      type: 'in-progress'
+    },
+    {
+      id: 'n-2',
+      title: 'Service Approved #APP-2026-1049',
+      message: 'Birth Certificate digital copy is ready for download.',
+      time: '1 hour ago',
+      type: 'resolved'
+    }
+  ]);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   // Centralized Navigation Controller that pushes snapshot to history
   const navigateTo = (newTab, options = {}) => {
@@ -177,53 +224,6 @@ function MainAppContent() {
       }
     }
   }, [user]);
-
-  // Data State with API + LocalStorage Fallback
-  const [grievances, setGrievances] = useState(() => {
-    try {
-      const saved = localStorage.getItem('janseva_grievances');
-      return saved ? JSON.parse(saved) : INITIAL_GRIEVANCES;
-    } catch (e) {
-      console.warn("Failed to parse grievances from storage:", e);
-      return INITIAL_GRIEVANCES;
-    }
-  });
-
-  const [applications, setApplications] = useState(() => {
-    try {
-      const saved = localStorage.getItem('janseva_applications');
-      return saved ? JSON.parse(saved) : INITIAL_APPLICATIONS;
-    } catch (e) {
-      console.warn("Failed to parse applications from storage:", e);
-      return INITIAL_APPLICATIONS;
-    }
-  });
-
-  // Notifications State
-  const [notifications, setNotifications] = useState([
-    {
-      id: 'n-1',
-      title: 'Status Update on Ticket #GRV-2026-8910',
-      message: 'Field dredging team dispatched by Senior Engineer.',
-      time: '10 mins ago',
-      type: 'in-progress'
-    },
-    {
-      id: 'n-2',
-      title: 'Service Approved #APP-2026-1049',
-      message: 'Birth Certificate digital copy is ready for download.',
-      time: '1 hour ago',
-      type: 'resolved'
-    }
-  ]);
-  const [showNotifications, setShowNotifications] = useState(false);
-
-  // Modals state
-  const [showGrievanceModal, setShowGrievanceModal] = useState(false);
-  const [selectedServiceModal, setSelectedServiceModal] = useState(null);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
-  const [showTermsModal, setShowTermsModal] = useState(false);
 
   // Sync Theme to document root
   useEffect(() => {
