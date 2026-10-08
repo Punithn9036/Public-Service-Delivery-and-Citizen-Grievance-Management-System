@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
 import CitizenDashboard from './components/CitizenDashboard';
 import TrackingView from './components/TrackingView';
@@ -7,6 +8,10 @@ import KnowledgeBase from './components/KnowledgeBase';
 import GrievanceFormModal from './components/GrievanceFormModal';
 import ServiceApplicationModal from './components/ServiceApplicationModal';
 import NotificationsDrawer from './components/NotificationsDrawer';
+import SettingsModal from './components/SettingsModal';
+import PrivacyPolicyModal from './components/PrivacyPolicyModal';
+import TermsOfServiceModal from './components/TermsOfServiceModal';
+import FloatingAiChatBot from './components/FloatingAiChatBot';
 import AuthScreen from './components/AuthScreen';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
@@ -34,6 +39,7 @@ function MainAppContent() {
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'services' | 'track' | 'faqs' | 'admin-dashboard'
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTrackId, setSelectedTrackId] = useState('');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Initially closed by default as requested
 
   // Synchronize active portal with user role when user changes
   useEffect(() => {
@@ -50,13 +56,23 @@ function MainAppContent() {
 
   // Data State with API + LocalStorage Fallback
   const [grievances, setGrievances] = useState(() => {
-    const saved = localStorage.getItem('janseva_grievances');
-    return saved ? JSON.parse(saved) : INITIAL_GRIEVANCES;
+    try {
+      const saved = localStorage.getItem('janseva_grievances');
+      return saved ? JSON.parse(saved) : INITIAL_GRIEVANCES;
+    } catch (e) {
+      console.warn("Failed to parse grievances from storage:", e);
+      return INITIAL_GRIEVANCES;
+    }
   });
 
   const [applications, setApplications] = useState(() => {
-    const saved = localStorage.getItem('janseva_applications');
-    return saved ? JSON.parse(saved) : INITIAL_APPLICATIONS;
+    try {
+      const saved = localStorage.getItem('janseva_applications');
+      return saved ? JSON.parse(saved) : INITIAL_APPLICATIONS;
+    } catch (e) {
+      console.warn("Failed to parse applications from storage:", e);
+      return INITIAL_APPLICATIONS;
+    }
   });
 
   // Notifications State
@@ -81,6 +97,9 @@ function MainAppContent() {
   // Modals state
   const [showGrievanceModal, setShowGrievanceModal] = useState(false);
   const [selectedServiceModal, setSelectedServiceModal] = useState(null);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
 
   // Sync Theme to document root
   useEffect(() => {
@@ -130,6 +149,42 @@ function MainAppContent() {
         message: `Routed to ${newGrievance.department}. SLA deadline: 3 Days.`,
         time: 'Just now',
         type: 'submitted'
+      },
+      ...prev
+    ]);
+  };
+
+  const handleUpvoteGrievance = (existingTicketId) => {
+    setGrievances(prev => prev.map(g => {
+      if (g.id === existingTicketId) {
+        const currentCount = g.reportCount || 1;
+        const newCount = currentCount + 1;
+        const newPriority = newCount >= 3 ? 'Urgent' : newCount >= 2 ? 'High' : g.priority;
+        const updatedTimeline = [
+          ...(g.timeline || []),
+          {
+            status: g.status,
+            timestamp: new Date().toISOString(),
+            note: `Community Report #+1 added by ${user?.fullName || 'Citizen'}. Priority auto-escalated to ${newPriority} (${newCount} citizens affected).`
+          }
+        ];
+        return {
+          ...g,
+          reportCount: newCount,
+          priority: newPriority,
+          timeline: updatedTimeline
+        };
+      }
+      return g;
+    }));
+
+    setNotifications(prev => [
+      {
+        id: `n-${Date.now()}`,
+        title: `Subscribed to Ticket #${existingTicketId}`,
+        message: `You will receive SMS alerts as officers resolve this community issue.`,
+        time: 'Just now',
+        type: 'in-progress'
       },
       ...prev
     ]);
@@ -220,40 +275,55 @@ function MainAppContent() {
 
   return (
     <div className="app-root">
-      
-      {/* Top Navbar Header */}
-      <Navbar 
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        activePortal={activePortal}
-        setActivePortal={setActivePortal}
-        theme={theme}
-        toggleTheme={toggleTheme}
-        unreadNotifications={notifications.length}
-        setShowNotifications={setShowNotifications}
-        openGrievanceModal={() => setShowGrievanceModal(true)}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-      />
-
-      {/* Real-time Notifications Popover */}
-      {showNotifications && (
-        <NotificationsDrawer 
-          notifications={notifications}
-          onClose={() => setShowNotifications(false)}
-          onClearAll={() => setNotifications([])}
-          onSelectNotification={(n) => {
-            const match = n.title.match(/#(GRV-[\w-]+|APP-[\w-]+)/i);
-            if (match && match[1]) {
-              setSelectedTrackId(match[1]);
-              setActiveTab('track');
-            }
-          }}
+      <div className="app-layout">
+        
+        {/* Left Navigation Sidebar (Retractable, initially closed) */}
+        <Sidebar 
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          activePortal={activePortal}
+          setActivePortal={setActivePortal}
+          openGrievanceModal={() => setShowGrievanceModal(true)}
+          onOpenSettings={() => setShowSettingsModal(true)}
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
         />
-      )}
 
-      {/* Main App Page View Switcher */}
-      <main className="main-app-container">
+        {/* Main Application Area */}
+        <div className="app-main-wrapper">
+          
+          {/* Top Navbar Header */}
+          <Navbar 
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            unreadNotifications={notifications.length}
+            setShowNotifications={setShowNotifications}
+            openGrievanceModal={() => setShowGrievanceModal(true)}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            onOpenSettings={() => setShowSettingsModal(true)}
+            isSidebarOpen={isSidebarOpen}
+            onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
+          />
+
+          {/* Real-time Notifications Popover */}
+          {showNotifications && (
+            <NotificationsDrawer 
+              notifications={notifications}
+              onClose={() => setShowNotifications(false)}
+              onClearAll={() => setNotifications([])}
+              onSelectNotification={(n) => {
+                const match = n.title.match(/#(GRV-[\w-]+|APP-[\w-]+)/i);
+                if (match && match[1]) {
+                  setSelectedTrackId(match[1]);
+                  setActiveTab('track');
+                }
+              }}
+            />
+          )}
+
+          {/* Main App Page View Switcher */}
+          <main className="main-app-container">
         
         {/* Official / Admin Portal View */}
         {!isCitizen && activePortal === 'admin' ? (
@@ -277,6 +347,9 @@ function MainAppContent() {
                 setActiveTab={setActiveTab}
                 selectGrievanceToTrack={(id) => setSelectedTrackId(id)}
                 searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                isSidebarOpen={isSidebarOpen}
+                onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
               />
             )}
 
@@ -290,6 +363,9 @@ function MainAppContent() {
                 setActiveTab={setActiveTab}
                 selectGrievanceToTrack={(id) => setSelectedTrackId(id)}
                 searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                isSidebarOpen={isSidebarOpen}
+                onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
               />
             )}
 
@@ -314,43 +390,88 @@ function MainAppContent() {
 
       </main>
 
-      {/* Grievance Lodge Modal */}
-      {showGrievanceModal && (
-        <GrievanceFormModal 
-          departments={DEPARTMENTS}
-          onClose={() => setShowGrievanceModal(false)}
-          onSubmitGrievance={handleAddGrievance}
-        />
-      )}
-
-      {/* Service Application Modal */}
-      {selectedServiceModal && (
-        <ServiceApplicationModal 
-          service={selectedServiceModal}
-          onClose={() => setSelectedServiceModal(null)}
-          onSubmitApplication={handleAddApplication}
-        />
-      )}
-
       {/* Footer */}
       <footer className="footer glass-card" style={{ borderRadius: 0, marginTop: '50px', borderBottom: 0, borderLeft: 0, borderRight: 0 }}>
         <div className="main-app-container flex-between flex-wrap gap-4" style={{ margin: 0, padding: '20px' }}>
           <div>
             <strong style={{ fontFamily: 'var(--font-heading)' }}>JanSeva Public Service & Grievance Governance Portal</strong>
-            <p className="small-text text-muted">Ministry of Governance & Administrative Reforms • Government Platform</p>
+            <p className="small-text text-muted">Ministry of Governance & Administrative Reforms - Government Platform</p>
           </div>
           <div className="flex-align-center gap-3 text-muted small-text">
             <span>24x7 Citizen Helpline: <strong>1800-425-GOV</strong></span>
-            <span>•</span>
-            <span>Privacy Policy</span>
-            <span>•</span>
-            <span>Terms of Governance</span>
+            <span>-</span>
+            <button 
+              type="button"
+              onClick={() => setShowPrivacyModal(true)} 
+              style={{ background: 'none', border: 'none', color: 'var(--brand-700)', cursor: 'pointer', padding: 0, fontSize: 'inherit', fontWeight: 600, textDecoration: 'underline' }}
+            >
+              Privacy Policy
+            </button>
+            <span>-</span>
+            <button 
+              type="button"
+              onClick={() => setShowTermsModal(true)} 
+              style={{ background: 'none', border: 'none', color: 'var(--brand-700)', cursor: 'pointer', padding: 0, fontSize: 'inherit', fontWeight: 600, textDecoration: 'underline' }}
+            >
+              Terms of Governance
+            </button>
           </div>
         </div>
       </footer>
 
     </div>
-  );
+  </div>
+
+  {/* Grievance Lodge Modal */}
+  {showGrievanceModal && (
+    <GrievanceFormModal 
+      departments={DEPARTMENTS}
+      grievances={grievances}
+      onClose={() => setShowGrievanceModal(false)}
+      onSubmitGrievance={handleAddGrievance}
+      onUpvoteGrievance={handleUpvoteGrievance}
+    />
+  )}
+
+  {/* Service Application Modal */}
+  {selectedServiceModal && (
+    <ServiceApplicationModal 
+      service={selectedServiceModal}
+      onClose={() => setSelectedServiceModal(null)}
+      onSubmitApplication={handleAddApplication}
+    />
+  )}
+
+  {/* Portal & User Settings Modal */}
+  {showSettingsModal && (
+    <SettingsModal 
+      onClose={() => setShowSettingsModal(false)}
+      theme={theme}
+      toggleTheme={toggleTheme}
+    />
+  )}
+
+  {/* Privacy Policy Modal */}
+  {showPrivacyModal && (
+    <PrivacyPolicyModal onClose={() => setShowPrivacyModal(false)} />
+  )}
+
+  {/* Terms of Governance Modal */}
+  {showTermsModal && (
+    <TermsOfServiceModal onClose={() => setShowTermsModal(false)} />
+  )}
+
+  {/* Movable Floating AI Redressal Bot */}
+  <FloatingAiChatBot 
+    onTrackTicket={(id) => {
+      setSelectedTrackId(id);
+      setActiveTab('track');
+    }}
+    onOpenGrievanceModal={() => setShowGrievanceModal(true)}
+  />
+
+</div>
+);
 }
 
 export default function App() {

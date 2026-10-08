@@ -1,155 +1,97 @@
 import React from 'react';
 import { 
-  Building, 
-  Moon, 
-  Sun, 
+  Building,
   Bell, 
   PlusCircle, 
-  ShieldCheck, 
-  UserCheck, 
-  Search,
-  LogOut,
-  Globe
+  Search, 
+  Globe,
+  Settings,
+  Menu
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function Navbar({ 
   activeTab, 
-  setActiveTab, 
-  activePortal, 
-  setActivePortal, 
-  theme, 
-  toggleTheme, 
+  setActiveTab,
   unreadNotifications, 
   setShowNotifications, 
   openGrievanceModal,
   searchQuery,
-  setSearchQuery
+  setSearchQuery,
+  onOpenSettings,
+  isSidebarOpen,
+  onToggleSidebar
 }) {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { lang, setLang, t } = useLanguage();
 
   const isCitizen = user?.role === 'CITIZEN';
+  const isHeroTab = activeTab === 'overview' || activeTab === 'services';
+
+  const getPageTitle = () => {
+    switch (activeTab) {
+      case 'overview': return t('overviewTab') || 'Dashboard Overview';
+      case 'services': return t('servicesTab') || 'Public Services Catalog';
+      case 'track': return t('trackTab') || 'Track Status & Resolution';
+      case 'faqs': return t('faqsTab') || 'Knowledge Base & AI Guide';
+      case 'admin-dashboard': return t('nodalOfficerControl') || 'Admin Governance Center';
+      default: return 'JanSeva Portal';
+    }
+  };
 
   return (
-    <header className="navbar-header glass-card" style={{ borderRadius: 0, borderTop: 0, borderLeft: 0, borderRight: 0, sticky: 'top', zIndex: 900 }}>
+    <header className={`navbar-header ${isHeroTab ? 'navbar-hero-merged' : ''}`}>
       <div className="nav-container">
         
-        {/* Left: Branding */}
-        <div className="nav-brand" onClick={() => setActiveTab('overview')} style={{ cursor: 'pointer' }}>
-          <div className="brand-icon-box">
-            <Building className="brand-icon" size={24} color="#ffffff" />
-          </div>
-          <div>
-            <div className="brand-title-row">
-              <span className="brand-name">JanSeva</span>
-              <span className="brand-tagline">{t('brandTagline')}</span>
+        {/* Left Section: JanSeva Brand Heading */}
+        <div className="nav-left-group">
+          {/* JanSeva Official Brand Badge & Portal Title */}
+          <div 
+            className="nav-brand-badge" 
+            onClick={() => setActiveTab('overview')} 
+            style={{ cursor: 'pointer' }}
+            title="JanSeva Civic Portal Home"
+          >
+            <div className="nav-brand-title-wrap">
+              <span className="nav-brand-name">JanSeva</span>
+              <span className="nav-brand-gov-plain">gov</span>
             </div>
-            <p className="brand-sub">{t('brandSubtitle')}</p>
           </div>
         </div>
 
-        {/* Search bar */}
-        <div className="nav-search-box">
-          <Search size={16} className="search-icon" />
-          <input 
-            type="text" 
-            placeholder={t('searchPlaceholder')} 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="nav-search-input"
-          />
-        </div>
-
-        {/* Middle/Right Navigation Controls */}
+        {/* Right Controls */}
         <div className="nav-actions">
 
           {/* Regional Languages Dropdown Selector */}
-          <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              background: 'var(--bg-tertiary, rgba(255,255,255,0.06))',
-              borderRadius: '20px',
-              padding: '4px 10px',
-              border: '1px solid var(--border-subtle, rgba(255,255,255,0.1))',
-              gap: '6px'
-            }}>
-              <Globe size={14} style={{ color: 'var(--brand-500, #2563eb)' }} />
-              <select
-                value={lang}
-                onChange={(e) => setLang(e.target.value)}
-                style={{
-                  background: 'transparent',
-                  color: 'var(--text-main, #ffffff)',
-                  border: 'none',
-                  outline: 'none',
-                  fontSize: '0.8rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  paddingRight: '4px'
-                }}
-                aria-label="Select State Language"
-                title="Select Regional Language"
-              >
-                <option value="en" style={{ background: '#1e293b', color: '#fff' }}>English (Official)</option>
-                <option value="hi" style={{ background: '#1e293b', color: '#fff' }}>हिन्दी (North & Central)</option>
-                <option value="kn" style={{ background: '#1e293b', color: '#fff' }}>ಕನ್ನಡ (Karnataka)</option>
-                <option value="ta" style={{ background: '#1e293b', color: '#fff' }}>தமிழ் (Tamil Nadu)</option>
-                <option value="te" style={{ background: '#1e293b', color: '#fff' }}>తెలుగు (AP & Telangana)</option>
-                <option value="ml" style={{ background: '#1e293b', color: '#fff' }}>മലയാളം (Kerala)</option>
-                <option value="mr" style={{ background: '#1e293b', color: '#fff' }}>मराठी (Maharashtra)</option>
-                <option value="gu" style={{ background: '#1e293b', color: '#fff' }}>ગુજરાતી (Gujarat)</option>
-                <option value="bn" style={{ background: '#1e293b', color: '#fff' }}>বাংলা (West Bengal)</option>
-                <option value="or" style={{ background: '#1e293b', color: '#fff' }}>ଓଡ଼ିଆ (Odisha)</option>
-                <option value="pa" style={{ background: '#1e293b', color: '#fff' }}>ਪੰਜਾਬੀ (Punjab)</option>
-                <option value="as" style={{ background: '#1e293b', color: '#fff' }}>অসমীয়া (Assam)</option>
-                <option value="ur" style={{ background: '#1e293b', color: '#fff' }}>اردو (J&K, Telangana, UP)</option>
-              </select>
-            </div>
+          <div className="language-selector-pill">
+            <Globe size={15} style={{ flexShrink: 0, color: 'var(--brand-700)' }} />
+            <select
+              value={lang}
+              onChange={(e) => setLang(e.target.value)}
+              className="language-select-dropdown"
+              aria-label="Select State Language"
+              title="Select Regional Language"
+            >
+              <option value="en">English (Official)</option>
+              <option value="hi">हिन्दी (North & Central)</option>
+              <option value="kn">ಕನ್ನಡ (Karnataka)</option>
+              <option value="ta">தமிழ் (Tamil Nadu)</option>
+              <option value="te">తెలుగు (AP & Telangana)</option>
+              <option value="ml">മലയാളം (Kerala)</option>
+              <option value="mr">मराठी (Maharashtra)</option>
+              <option value="gu">ગુજરાતી (Gujarat)</option>
+              <option value="bn">বাংলা (West Bengal)</option>
+              <option value="or">ଓଡ଼ିଆ (Odisha)</option>
+              <option value="pa">ਪੰਜਾਬੀ (Punjab)</option>
+              <option value="as">অসমীয়া (Assam)</option>
+              <option value="ur">اردو (J&K, Telangana, UP)</option>
+            </select>
           </div>
-
-          {/* User Role Badge */}
-          {user && (
-            <div className="user-badge-chip flex-align-center gap-2" style={{
-              background: isCitizen ? 'rgba(34, 197, 94, 0.1)' : 'rgba(26, 86, 219, 0.1)',
-              padding: '6px 12px',
-              borderRadius: '20px',
-              border: `1px solid ${isCitizen ? 'rgba(34, 197, 94, 0.3)' : 'rgba(26, 86, 219, 0.3)'}`
-            }}>
-              {isCitizen ? <UserCheck size={14} color="#22c55e" /> : <ShieldCheck size={14} color="#1a56db" />}
-              <span className="small-text font-bold" style={{ fontSize: '0.82rem', color: 'var(--text-primary)' }}>
-                {user.fullName || user.email}
-              </span>
-              <span style={{
-                fontSize: '0.7rem',
-                padding: '2px 6px',
-                borderRadius: '10px',
-                background: isCitizen ? '#22c55e' : '#1a56db',
-                color: '#ffffff',
-                fontWeight: '700'
-              }}>
-                {user.role}
-              </span>
-              {user.department && (
-                <span className="small-text text-muted" style={{ fontSize: '0.75rem' }}>
-                  • {user.department}
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* Lodge Grievance quick button for Citizen */}
-          {isCitizen && (
-            <button className="btn btn-primary btn-sm" onClick={openGrievanceModal}>
-              <PlusCircle size={16} />
-              <span>{t('lodgeGrievance')}</span>
-            </button>
-          )}
 
           {/* Notifications */}
           <button 
+            type="button"
             className="icon-circle-btn" 
             onClick={() => setShowNotifications(prev => !prev)}
             title="Notifications"
@@ -160,60 +102,24 @@ export default function Navbar({
             )}
           </button>
 
-          {/* Theme Toggle */}
-          <button 
-            className="icon-circle-btn" 
-            onClick={toggleTheme} 
-            title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
+          {/* Tricolour 3-line Hamburger Menu Button in Top-Right Corner */}
+          <button
+            type="button"
+            className={`tricolour-menu-btn ${isSidebarOpen ? 'active' : ''}`}
+            onClick={onToggleSidebar}
+            title={isSidebarOpen ? "Close Navigation Sidebar" : "Open Navigation Sidebar"}
+            aria-label="Toggle Navigation Sidebar"
           >
-            {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+            <div className="tricolour-icon">
+              <span className="tricolour-bar saffron-bar" />
+              <span className="tricolour-bar white-bar" />
+              <span className="tricolour-bar green-bar" />
+            </div>
           </button>
 
-          {/* Logout Button */}
-          {user && (
-            <button
-              onClick={logout}
-              className="btn btn-secondary btn-sm"
-              title="Sign Out of Portal"
-              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-            >
-              <LogOut size={14} />
-              <span>{t('signOut')}</span>
-            </button>
-          )}
         </div>
 
       </div>
-
-      {/* Navigation Sub-bar for Citizens */}
-      {isCitizen && (
-        <div className="nav-subtabs">
-          <button 
-            className={`subtab ${activeTab === 'overview' ? 'active' : ''}`} 
-            onClick={() => setActiveTab('overview')}
-          >
-            {t('overviewTab')}
-          </button>
-          <button 
-            className={`subtab ${activeTab === 'services' ? 'active' : ''}`} 
-            onClick={() => setActiveTab('services')}
-          >
-            {t('servicesTab')}
-          </button>
-          <button 
-            className={`subtab ${activeTab === 'track' ? 'active' : ''}`} 
-            onClick={() => setActiveTab('track')}
-          >
-            {t('trackTab')}
-          </button>
-          <button 
-            className={`subtab ${activeTab === 'faqs' ? 'active' : ''}`} 
-            onClick={() => setActiveTab('faqs')}
-          >
-            {t('faqsTab')}
-          </button>
-        </div>
-      )}
     </header>
   );
 }

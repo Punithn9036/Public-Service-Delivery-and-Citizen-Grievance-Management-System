@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Building, ShieldCheck, UserCheck, Lock, Mail, Phone, User, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Building, ShieldCheck, UserCheck, Lock, Mail, Phone, User, ArrowRight, AlertCircle, CheckCircle2, Globe } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function AuthScreen() {
   const { login, register, quickDemoLogin } = useAuth();
+  const { lang, setLang, t } = useLanguage();
   const [isRegister, setIsRegister] = useState(false);
   const [role, setRole] = useState('CITIZEN'); // 'CITIZEN' | 'OFFICER' | 'ADMIN'
   const [email, setEmail] = useState('');
@@ -76,29 +78,75 @@ export default function AuthScreen() {
       alignItems: 'center',
       justifyContent: 'center',
       padding: '24px',
-      background: 'radial-gradient(circle at 50% 10%, rgba(37, 99, 235, 0.08), transparent 70%), var(--bg-primary)'
+      background: 'var(--bg-primary)'
     }}>
       <div className="glass-card" style={{
         maxWidth: '520px',
         width: '100%',
         padding: '36px',
-        boxShadow: '0 20px 40px rgba(0,0,0,0.12)',
+        boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
         border: '1px solid var(--border-subtle)',
-        borderRadius: '16px'
+        borderRadius: 'var(--radius-md)',
+        position: 'relative'
       }}>
         
+        {/* Top Right Regional Language Selector */}
+        <div style={{
+          position: 'absolute',
+          top: '18px',
+          right: '18px',
+          display: 'inline-flex',
+          alignItems: 'center',
+          background: 'var(--bg-tertiary)',
+          borderRadius: 'var(--radius-sm)',
+          padding: '3px 8px',
+          border: '1px solid var(--border-subtle)',
+          gap: '4px'
+        }}>
+          <Globe size={13} style={{ color: 'var(--brand-700)' }} />
+          <select
+            value={lang}
+            onChange={(e) => setLang(e.target.value)}
+            style={{
+              background: 'transparent',
+              color: 'var(--text-main, #ffffff)',
+              border: 'none',
+              outline: 'none',
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+            aria-label="Select State Language"
+            title="Select Regional Language"
+          >
+            <option value="en" style={{ background: '#1e293b', color: '#fff' }}>English (Official)</option>
+            <option value="hi" style={{ background: '#1e293b', color: '#fff' }}>हिन्दी (North & Central)</option>
+            <option value="kn" style={{ background: '#1e293b', color: '#fff' }}>ಕನ್ನಡ (Karnataka)</option>
+            <option value="ta" style={{ background: '#1e293b', color: '#fff' }}>தமிழ் (Tamil Nadu)</option>
+            <option value="te" style={{ background: '#1e293b', color: '#fff' }}>తెలుగు (AP & Telangana)</option>
+            <option value="ml" style={{ background: '#1e293b', color: '#fff' }}>മലയാളം (Kerala)</option>
+            <option value="mr" style={{ background: '#1e293b', color: '#fff' }}>मराठी (Maharashtra)</option>
+            <option value="gu" style={{ background: '#1e293b', color: '#fff' }}>ગુજરાતી (Gujarat)</option>
+            <option value="bn" style={{ background: '#1e293b', color: '#fff' }}>বাংলা (West Bengal)</option>
+            <option value="or" style={{ background: '#1e293b', color: '#fff' }}>ଓଡ଼ିଆ (Odisha)</option>
+            <option value="pa" style={{ background: '#1e293b', color: '#fff' }}>ਪੰਜਾਬੀ (Punjab)</option>
+            <option value="as" style={{ background: '#1e293b', color: '#fff' }}>অসমীয়া (Assam)</option>
+            <option value="ur" style={{ background: '#1e293b', color: '#fff' }}>اردو (J&K, Telangana, UP)</option>
+          </select>
+        </div>
+
         {/* Header Branding */}
         <div style={{ textAlign: 'center', marginBottom: '28px' }}>
           <div style={{
             width: '56px',
             height: '56px',
-            borderRadius: '14px',
-            background: 'linear-gradient(135deg, #1d4ed8, #2563eb)',
+            borderRadius: 'var(--radius-md)',
+            background: 'var(--brand-700)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             margin: '0 auto 16px',
-            boxShadow: '0 4px 14px rgba(37, 99, 235, 0.35)'
+            boxShadow: '0 2px 8px rgba(74, 74, 74, 0.1)'
           }}>
             <Building size={30} color="#ffffff" />
           </div>
@@ -106,7 +154,7 @@ export default function AuthScreen() {
             JanSeva Governance Portal
           </h2>
           <p className="small-text" style={{ margin: 0, color: 'var(--text-muted)' }}>
-            Unified Public Service Delivery & Grievance Redressal System
+            {t('brandSubtitle')}
           </p>
         </div>
 
@@ -124,14 +172,14 @@ export default function AuthScreen() {
             className={`auth-toggle-btn ${!isRegister ? 'active' : ''}`}
             onClick={() => { setIsRegister(false); setError(null); }}
           >
-            Sign In
+            {t('signIn')}
           </button>
           <button
             type="button"
             className={`auth-toggle-btn ${isRegister ? 'active' : ''}`}
             onClick={() => { setIsRegister(true); setError(null); }}
           >
-            Create Account
+            {t('createAccount')}
           </button>
         </div>
 
@@ -184,7 +232,7 @@ export default function AuthScreen() {
                     onClick={() => setRole('CITIZEN')}
                     className={`auth-role-select-btn ${role === 'CITIZEN' ? 'selected' : ''}`}
                   >
-                    <UserCheck size={16} color={role === 'CITIZEN' ? '#2563eb' : 'currentColor'} />
+                    <UserCheck size={16} color={role === 'CITIZEN' ? 'var(--brand-700)' : 'currentColor'} />
                     <span className="small-text font-bold">Citizen</span>
                   </button>
                   <button
@@ -192,7 +240,7 @@ export default function AuthScreen() {
                     onClick={() => setRole('OFFICER')}
                     className={`auth-role-select-btn ${role === 'OFFICER' ? 'selected' : ''}`}
                   >
-                    <ShieldCheck size={16} color={role === 'OFFICER' ? '#2563eb' : 'currentColor'} />
+                    <ShieldCheck size={16} color={role === 'OFFICER' ? 'var(--brand-700)' : 'currentColor'} />
                     <span className="small-text font-bold">Gov Officer</span>
                   </button>
                 </div>
@@ -297,27 +345,27 @@ export default function AuthScreen() {
           <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
             <button
               type="button"
-              className="btn btn-sm btn-secondary demo-pill-btn"
+              className="btn btn-sm btn-secondary"
               onClick={() => handleQuickLogin('CITIZEN')}
-              style={{ fontSize: '0.78rem', padding: '6px 12px', fontWeight: 600 }}
+              style={{ fontSize: '0.78rem', padding: '6px 12px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
-              👤 Citizen (Aarav)
+              <User size={14} /> Citizen (Aarav)
             </button>
             <button
               type="button"
-              className="btn btn-sm btn-secondary demo-pill-btn"
+              className="btn btn-sm btn-secondary"
               onClick={() => handleQuickLogin('OFFICER')}
-              style={{ fontSize: '0.78rem', padding: '6px 12px', fontWeight: 600 }}
+              style={{ fontSize: '0.78rem', padding: '6px 12px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
-              🛡️ Officer (Rajesh)
+              <ShieldCheck size={14} /> Officer (Rajesh)
             </button>
             <button
               type="button"
-              className="btn btn-sm btn-secondary demo-pill-btn"
+              className="btn btn-sm btn-secondary"
               onClick={() => handleQuickLogin('ADMIN')}
-              style={{ fontSize: '0.78rem', padding: '6px 12px', fontWeight: 600 }}
+              style={{ fontSize: '0.78rem', padding: '6px 12px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
-              🏛️ Admin (Kavitha)
+              <Building size={14} /> Admin (Kavitha)
             </button>
           </div>
         </div>

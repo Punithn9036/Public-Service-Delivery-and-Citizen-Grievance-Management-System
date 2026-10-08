@@ -20,6 +20,12 @@ export default class ErrorBoundary extends React.Component {
     window.location.reload();
   };
 
+  handleResetStorage = () => {
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.reload();
+  };
+
   render() {
     if (this.state.hasError) {
       return (
@@ -39,7 +45,8 @@ export default class ErrorBoundary extends React.Component {
             border: '1px solid rgba(239, 68, 68, 0.3)',
             borderRadius: '16px',
             padding: '2.5rem',
-            maxWidth: '540px',
+            maxWidth: '620px',
+            width: '100%',
             boxShadow: '0 20px 40px rgba(0,0,0,0.3)'
           }}>
             <div style={{
@@ -58,28 +65,61 @@ export default class ErrorBoundary extends React.Component {
             <h2 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '0.75rem' }}>
               Something went wrong in the portal
             </h2>
-            <p style={{ color: 'var(--text-secondary, #94a3b8)', fontSize: '0.9rem', marginBottom: '1.5rem', lineHeight: '1.5' }}>
-              The portal encountered an unexpected runtime state. You can refresh the application to restore clean session state.
+            <p style={{ color: 'var(--text-secondary, #94a3b8)', fontSize: '0.9rem', marginBottom: '1rem', lineHeight: '1.5' }}>
+              {this.state.error ? this.state.error.toString() : 'The portal encountered an unexpected runtime state.'}
             </p>
-            <button
-              onClick={this.handleReload}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                background: '#2563eb',
-                color: '#ffffff',
-                border: 'none',
-                padding: '10px 20px',
-                borderRadius: '8px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontSize: '0.9rem'
-              }}
-            >
-              <RefreshCw size={16} />
-              Reload JanSeva Portal
-            </button>
+
+            {this.state.errorInfo && (
+              <details style={{ textAlign: 'left', background: 'rgba(0,0,0,0.3)', padding: '10px', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.75rem', color: '#f87171', maxHeight: '180px', overflowY: 'auto' }}>
+                <summary style={{ cursor: 'pointer', fontWeight: 700 }}>View Error Stack</summary>
+                <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all', marginTop: '6px' }}>
+                  {this.state.error?.stack}
+                  {'\n'}
+                  {this.state.errorInfo?.componentStack}
+                </pre>
+              </details>
+            )}
+
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button
+                onClick={this.handleReload}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  background: 'var(--brand-700, #2C5745)',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '10px 18px',
+                  borderRadius: '8px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontSize: '0.9rem'
+                }}
+              >
+                <RefreshCw size={16} />
+                Reload Portal
+              </button>
+
+              <button
+                onClick={this.handleResetStorage}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  background: '#ef4444',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '10px 18px',
+                  borderRadius: '8px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontSize: '0.9rem'
+                }}
+              >
+                Reset Session & Storage
+              </button>
+            </div>
           </div>
         </div>
       );
