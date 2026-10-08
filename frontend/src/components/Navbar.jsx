@@ -27,6 +27,7 @@ export default function Navbar({
   const { lang, setLang, t } = useLanguage();
 
   const isCitizen = user?.role === 'CITIZEN';
+  const isHeroTab = activeTab === 'overview' || activeTab === 'services';
 
   const getPageTitle = () => {
     switch (activeTab) {
@@ -40,7 +41,7 @@ export default function Navbar({
   };
 
   return (
-    <header className="navbar-header">
+    <header className={`navbar-header ${isHeroTab ? 'navbar-hero-merged' : ''}`}>
       <div className="nav-container">
         
         {/* Left Section: JanSeva Brand Heading & Context */}

@@ -229,15 +229,12 @@ export default function CitizenDashboard({
       <div 
         className="india-gov-hero-section"
         style={{
-          backgroundImage: `linear-gradient(180deg, rgba(10, 18, 35, 0.32) 0%, rgba(10, 18, 35, 0.48) 55%, rgba(10, 18, 35, 0.72) 100%), url(${govHeroBg})`,
+          backgroundImage: `linear-gradient(180deg, rgba(10, 18, 35, 0.28) 0%, rgba(10, 18, 35, 0.45) 55%, rgba(10, 18, 35, 0.72) 100%), url(${govHeroBg})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center 28%',
           backgroundRepeat: 'no-repeat'
         }}
       >
-        
-        {/* Top Tricolour Accent Strip */}
-        <div className="hero-backdrop-glow" />
 
         {/* Hero Main Core Content */}
         <div className="hero-center-content">

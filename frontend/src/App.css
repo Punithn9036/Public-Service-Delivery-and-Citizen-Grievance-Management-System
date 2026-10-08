@@ -344,20 +344,33 @@
   min-width: 0;
   width: 100%;
   background: var(--bg-primary);
+  position: relative;
 }
 
 .navbar-header {
-  padding: 10px 20px;
-  background: rgba(15, 23, 42, 0.88);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 12px 20px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-subtle);
   position: sticky;
   top: 0;
   z-index: 900;
   width: 100%;
+  color: var(--text-main);
+  transition: all var(--transition-fast);
+}
+
+.navbar-header.navbar-hero-merged {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-bottom: none !important;
+  box-shadow: none !important;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 900;
   color: #ffffff;
-  transition: all var(--transition-normal);
 }
 
 .nav-container {
@@ -903,27 +916,16 @@
 .india-gov-hero-section {
   position: relative;
   width: 100%;
-  min-height: 520px;
-  background: linear-gradient(180deg, rgba(10, 18, 35, 0.32) 0%, rgba(10, 18, 35, 0.48) 55%, rgba(10, 18, 35, 0.72) 100%), 
+  min-height: 560px;
+  background: linear-gradient(180deg, rgba(10, 18, 35, 0.28) 0%, rgba(10, 18, 35, 0.45) 55%, rgba(10, 18, 35, 0.72) 100%), 
               url('./assets/gov-hero-bg.png') center top / cover no-repeat;
   color: #FFFFFF;
-  padding: 24px 24px 80px;
+  padding: 72px 24px 80px;
   border-bottom: 3.5px solid #EB7D00;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   overflow: visible;
-}
-
-.hero-backdrop-glow {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #FF9933 0%, #FFFFFF 50%, #138808 100%);
-  box-shadow: 0 0 10px rgba(235, 125, 0, 0.5);
-  z-index: 5;
 }
 
 /* Top Utility Accessibility Bar Inside Hero */
