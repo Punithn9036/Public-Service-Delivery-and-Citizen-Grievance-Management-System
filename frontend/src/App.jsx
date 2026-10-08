@@ -56,13 +56,23 @@ function MainAppContent() {
 
   // Data State with API + LocalStorage Fallback
   const [grievances, setGrievances] = useState(() => {
-    const saved = localStorage.getItem('janseva_grievances');
-    return saved ? JSON.parse(saved) : INITIAL_GRIEVANCES;
+    try {
+      const saved = localStorage.getItem('janseva_grievances');
+      return saved ? JSON.parse(saved) : INITIAL_GRIEVANCES;
+    } catch (e) {
+      console.warn("Failed to parse grievances from storage:", e);
+      return INITIAL_GRIEVANCES;
+    }
   });
 
   const [applications, setApplications] = useState(() => {
-    const saved = localStorage.getItem('janseva_applications');
-    return saved ? JSON.parse(saved) : INITIAL_APPLICATIONS;
+    try {
+      const saved = localStorage.getItem('janseva_applications');
+      return saved ? JSON.parse(saved) : INITIAL_APPLICATIONS;
+    } catch (e) {
+      console.warn("Failed to parse applications from storage:", e);
+      return INITIAL_APPLICATIONS;
+    }
   });
 
   // Notifications State

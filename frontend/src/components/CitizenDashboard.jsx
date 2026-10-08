@@ -124,15 +124,18 @@ export default function CitizenDashboard({
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [localSearch, setLocalSearch] = useState(searchQuery || '');
 
-  // Compute Statistics
-  const totalGrievances = grievances.length;
-  const resolvedCount = grievances.filter(g => g.status === 'Resolved').length;
-  const inProgressCount = grievances.filter(g => g.status === 'In Progress' || g.status === 'Assigned').length;
-  const urgentCount = grievances.filter(g => g.priority === 'Urgent' && g.status !== 'Resolved').length;
+  // Compute Statistics safely
+  const grievanceList = Array.isArray(grievances) ? grievances : [];
+  const serviceList = Array.isArray(services) ? services : [];
+  const totalGrievances = grievanceList.length;
+  const resolvedCount = grievanceList.filter(g => g && g.status === 'Resolved').length;
+  const inProgressCount = grievanceList.filter(g => g && (g.status === 'In Progress' || g.status === 'Assigned')).length;
+  const urgentCount = grievanceList.filter(g => g && g.priority === 'Urgent' && g.status !== 'Resolved').length;
   const resolutionRate = totalGrievances > 0 ? Math.round((resolvedCount / totalGrievances) * 100) : 0;
 
-  // Filtered grievances list
-  const filteredGrievances = grievances.filter(item => {
+  // Filtered grievances list safely
+  const filteredGrievances = grievanceList.filter(item => {
+    if (!item) return false;
     if (viewScope === 'my' && user) {
       const matchName = item.citizenName && user.fullName && item.citizenName.toLowerCase().includes(user.fullName.toLowerCase());
       const matchPhone = item.citizenPhone && user.phone && item.citizenPhone === user.phone;
@@ -140,14 +143,17 @@ export default function CitizenDashboard({
     }
     const matchesStatus = statusFilter === 'All' || item.status === statusFilter;
     const matchesDepartment = departmentFilter === 'All' || item.department === departmentFilter;
-    const effectiveSearch = searchQuery || localSearch;
-    const matchesSearch = !effectiveSearch || 
-      item.title.toLowerCase().includes(effectiveSearch.toLowerCase()) ||
-      item.id.toLowerCase().includes(effectiveSearch.toLowerCase()) ||
-      item.category.toLowerCase().includes(effectiveSearch.toLowerCase()) ||
-      item.department.toLowerCase().includes(effectiveSearch.toLowerCase()) ||
-      item.location.toLowerCase().includes(effectiveSearch.toLowerCase());
-    return matchesStatus && matchesDepartment && matchesSearch;
+    const effectiveSearch = (searchQuery || localSearch || '').toLowerCase().trim();
+    if (!effectiveSearch) return matchesStatus && matchesDepartment;
+
+    const matchId = item.id ? String(item.id).toLowerCase().includes(effectiveSearch) : false;
+    const matchTitle = item.title ? String(item.title).toLowerCase().includes(effectiveSearch) : false;
+    const matchCategory = item.category ? String(item.category).toLowerCase().includes(effectiveSearch) : false;
+    const matchDept = item.department ? String(item.department).toLowerCase().includes(effectiveSearch) : false;
+    const matchLoc = item.location ? String(item.location).toLowerCase().includes(effectiveSearch) : false;
+    const matchDesc = item.description ? String(item.description).toLowerCase().includes(effectiveSearch) : false;
+
+    return matchesStatus && matchesDepartment && (matchId || matchTitle || matchCategory || matchDept || matchLoc || matchDesc);
   });
 
   const handleHeroSearchSubmit = (e) => {
@@ -166,21 +172,21 @@ export default function CitizenDashboard({
 
   const handleTrendingClick = (term, directAction = null) => {
     if (directAction === 'modal-grievance') {
-      openGrievanceModal();
+      openGrievanceModal && openGrievanceModal();
       return;
     }
     if (directAction === 'tab-track') {
-      setActiveTab('track');
+      setActiveTab && setActiveTab('track');
       return;
     }
     if (directAction === 'tab-services') {
-      setActiveTab('services');
+      setActiveTab && setActiveTab('services');
       return;
     }
     if (directAction === 'modal-birth') {
-      const birthService = services.find(s => s.id === 'srv-1');
+      const birthService = serviceList.find(s => s && s.id === 'srv-1');
       if (birthService) {
-        openServiceModal(birthService);
+        openServiceModal && openServiceModal(birthService);
         return;
       }
     }
@@ -195,9 +201,10 @@ export default function CitizenDashboard({
   };
 
   const getSlaBadge = (item) => {
-    if (!item.slaDeadline) return null;
+    if (!item || !item.slaDeadline) return null;
     if (item.status === 'Resolved') return null;
     const deadline = new Date(item.slaDeadline).getTime();
+    if (isNaN(deadline)) return null;
     const diffHours = Math.round((deadline - Date.now()) / (1000 * 60 * 60));
 
     if (diffHours < 0) {
@@ -402,22 +409,22 @@ export default function CitizenDashboard({
               <h2>{t('popularServices')}</h2>
               <p>Direct online applications with guaranteed Service Level Agreements (SLAs)</p>
             </div>
-            <button className="btn btn-outline btn-sm" onClick={() => setActiveTab('services')}>
-              View All Services ({services.length})
+            <button className="btn btn-outline btn-sm" onClick={() => setActiveTab && setActiveTab('services')}>
+              View All Services ({serviceList.length})
               <ChevronRight size={14} />
             </button>
           </div>
 
           <div className="services-grid">
-            {services.filter(s => s.popular).map(service => {
-              const IconComponent = ICON_MAP[service.icon] || FileText;
+            {serviceList.filter(s => s && s.popular).map(service => {
+              const IconComponent = (service && service.icon && ICON_MAP[service.icon]) || FileText;
               return (
-                <div key={service.id} className="service-card glass-card">
+                <div key={service.id || Math.random()} className="service-card glass-card">
                   <div className="service-header">
                     <div className="service-icon-box">
                       <IconComponent size={22} />
                     </div>
-                    <span className="sla-pill">{service.slaDays} Days SLA</span>
+                    <span className="sla-pill">{service.slaDays || 3} Days SLA</span>
                   </div>
                   <h3>{service.name}</h3>
                   <p className="service-dept">{service.department}</p>

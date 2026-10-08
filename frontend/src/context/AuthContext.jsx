@@ -38,8 +38,13 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('janseva_user');
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = localStorage.getItem('janseva_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      console.warn("Failed to parse user from storage:", e);
+      return null;
+    }
   });
   const [token, setToken] = useState(() => localStorage.getItem('janseva_token') || null);
   const [loading, setLoading] = useState(false);
