@@ -2367,19 +2367,306 @@
   border-top: 1px solid var(--border-subtle);
 }
 
-/* Responsiveness */
-@media (max-width: 900px) {
-  .hero-banner {
-    grid-template-columns: 1fr;
+/* ========================================================================= */
+/* COMPREHENSIVE RESPONSIVE DESIGN SUITE (MOBILE, TABLET, DESKTOP) */
+/* ========================================================================= */
+
+/* 1. Large Tablets & Small Laptops (<= 1024px) */
+@media (max-width: 1024px) {
+  .app-main-wrapper {
+    margin-left: 0 !important;
+    width: 100% !important;
   }
+
+  .dashboard-inner-wrap {
+    padding: 20px 16px !important;
+  }
+
+  .services-grid {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)) !important;
+  }
+
+  .admin-metrics-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
   .track-result-grid, .kb-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
   }
+}
+
+/* 2. Tablets & Medium Screens (<= 768px) */
+@media (max-width: 768px) {
+  /* Hero Banner */
+  .india-gov-hero-section {
+    padding: 85px 16px 65px !important;
+    background-attachment: scroll !important; /* Prevents mobile scroll jitter */
+  }
+
+  .hero-center-content {
+    transform: translateY(24px) !important;
+    max-width: 100% !important;
+  }
+
+  .hero-portal-title {
+    font-size: clamp(2.4rem, 6vw, 3rem) !important;
+  }
+
+  .hero-emblem-img {
+    width: 95px !important;
+  }
+
+  .hero-search-wrapper {
+    max-width: 100% !important;
+  }
+
+  .hero-trending-row {
+    font-size: 0.8rem !important;
+    gap: 8px !important;
+  }
+
+  .trending-chip {
+    font-size: 0.78rem !important;
+    padding: 5px 10px !important;
+  }
+
+  /* Navigation Header */
+  .nav-container {
+    padding: 0 14px !important;
+  }
+
+  .language-select-dropdown {
+    max-width: 130px !important;
+    font-size: 0.78rem !important;
+  }
+
+  /* Statutory SLA Strip */
+  .gov-sla-bar-strip {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 14px !important;
+    padding: 14px !important;
+  }
+
+  .gov-sla-strip-left {
+    align-items: flex-start !important;
+  }
+
+  .gov-sla-strip-right {
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+  }
+
+  /* Section Header */
+  .section-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+  }
+
+  .section-header > div:last-child {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  /* Grievance Stream Card */
+  .grievance-card {
+    padding: 16px !important;
+  }
+
+  .g-meta-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .g-card-footer {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+
+  .g-card-footer button {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* Tracking View */
+  .track-search-card {
+    padding: 20px 16px !important;
+  }
+
+  .track-form {
+    flex-direction: column !important;
+  }
+
+  .track-form button {
+    width: 100% !important;
+  }
+
   .stepper-bar {
-    overflow-x: auto;
+    overflow-x: auto !important;
+    padding-bottom: 8px !important;
   }
-  .nav-search-box {
-    display: none;
+
+  /* Admin & Modals */
+  .admin-table-container {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .modal-content {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    max-height: 92vh !important;
+    padding: 18px 14px !important;
+    margin: 10px !important;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* 3. Mobile Phones (<= 480px) */
+@media (max-width: 480px) {
+  /* Hero Banner */
+  .india-gov-hero-section {
+    padding: 75px 12px 55px !important;
+  }
+
+  .hero-center-content {
+    transform: translateY(12px) !important;
+  }
+
+  .hero-emblem-img {
+    width: 82px !important;
+  }
+
+  .hero-portal-title {
+    font-size: 2.2rem !important;
+    margin-bottom: 14px !important;
+  }
+
+  .hero-search-wrapper {
+    flex-direction: column !important;
+    border-radius: 8px !important;
+  }
+
+  .hero-search-input-box {
+    padding: 4px 12px !important;
+    border-bottom: 1px solid #E2E8F0 !important;
+  }
+
+  .hero-search-input {
+    padding: 12px 0 !important;
+    font-size: 0.92rem !important;
+  }
+
+  .hero-search-cat-dropdown {
+    border-left: none !important;
+    border-bottom: 1px solid #E2E8F0 !important;
+    padding: 6px 12px !important;
+  }
+
+  .hero-category-select {
+    width: 100% !important;
+    font-size: 0.85rem !important;
+  }
+
+  .hero-search-submit-btn {
+    width: 100% !important;
+    padding: 12px !important;
+    font-size: 0.95rem !important;
+  }
+
+  .hero-trending-row {
+    margin-top: 14px !important;
+    font-size: 0.75rem !important;
+    gap: 6px !important;
+  }
+
+  .trending-chip {
+    font-size: 0.72rem !important;
+    padding: 4px 8px !important;
+  }
+
+  .hero-scroll-down-container {
+    bottom: 12px !important;
+  }
+
+  .scroll-arrow-circle {
+    width: 38px !important;
+    height: 38px !important;
+  }
+
+  .scroll-arrow-label {
+    font-size: 0.75rem !important;
+  }
+
+  /* Services Grid */
+  .services-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Grievance Card */
+  .g-card-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+
+  .g-meta-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  /* Top Navbar */
+  .nav-brand-name {
+    font-size: 1.1rem !important;
+  }
+
+  .nav-brand-gov-plain {
+    font-size: 1rem !important;
+  }
+
+  .language-selector-pill {
+    padding: 3px 6px !important;
+  }
+
+  .language-select-dropdown {
+    max-width: 95px !important;
+    font-size: 0.72rem !important;
+  }
+
+  .tricolour-menu-btn {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  /* Admin Dashboard */
+  .admin-metrics-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Floating Chatbot */
+  .floating-bot-window {
+    width: calc(100vw - 20px) !important;
+    right: 10px !important;
+    bottom: 10px !important;
+    max-height: 78vh !important;
+  }
+
+  /* Footer */
+  footer .main-app-container {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
   }
 }
 
