@@ -854,99 +854,520 @@
   width: 100%;
   max-width: 100%;
   margin: 0;
-  padding: 16px 20px 40px 20px;
+  padding: 0 0 40px 0;
   box-sizing: border-box;
 }
 
-/* Institutional Public Service Banner */
-.gov-service-header-panel {
-  padding: 24px;
-  margin-bottom: 20px;
-  display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: 24px;
+/* ========================================================================= */
+/* TRICOLOUR 3-LINE MENU BUTTON (TOP-RIGHT CORNER) */
+/* ========================================================================= */
+.tricolour-menu-btn {
+  display: flex;
   align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+}
+
+.tricolour-menu-btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.tricolour-menu-btn.active {
+  background: rgba(44, 87, 69, 0.35);
+  border-color: var(--brand-500);
+}
+
+.tricolour-icon {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 22px;
+  height: 15px;
+}
+
+.tricolour-bar {
+  width: 100%;
+  height: 3px;
+  border-radius: 2px;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+.saffron-bar {
+  background: #FF9933; /* Indian Saffron */
+  box-shadow: 0 0 5px rgba(255, 153, 51, 0.7);
+}
+
+.white-bar {
+  background: #FFFFFF; /* Pure White */
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
+}
+
+.green-bar {
+  background: #138808; /* Indian National Green */
+  box-shadow: 0 0 5px rgba(19, 136, 8, 0.7);
+}
+
+/* ========================================================================= */
+/* GRAND INDIA.GOV.IN STYLE HERO SECTION (RASHTRAPATI BHAVAN BACKGROUND) */
+/* ========================================================================= */
+.india-gov-hero-section {
+  position: relative;
+  width: 100%;
+  min-height: 520px;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.82) 0%, rgba(15, 23, 42, 0.94) 100%), 
+              url('/gov-hero-bg.png') center top / cover no-repeat;
+  color: #FFFFFF;
+  padding: 16px 24px 80px;
+  border-bottom: 3.5px solid #EB7D00;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: visible;
+}
+
+.hero-backdrop-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #FF9933 0%, #FFFFFF 50%, #138808 100%);
+  box-shadow: 0 0 10px rgba(235, 125, 0, 0.5);
+  z-index: 5;
+}
+
+/* Top Utility Accessibility Bar Inside Hero */
+.hero-utility-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.82);
+  z-index: 10;
+  position: relative;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.hero-utility-left, .hero-utility-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hero-utility-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+}
+
+.hero-utility-divider {
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 0.85rem;
+}
+
+.font-resize-btns {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.text-size-btn {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #FFFFFF;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.text-size-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  color: #FFF2B2;
+}
+
+.hero-lang-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+  padding: 2px 8px;
+  color: #FFFFFF;
+}
+
+.hero-lang-select {
+  background: transparent;
+  border: none;
+  color: #FFFFFF;
+  font-size: 0.75rem;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+}
+
+.hero-lang-select option {
+  background: #0f172a;
+  color: #FFFFFF;
+}
+
+/* Hero Center Content */
+.hero-center-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin: 18px auto 30px;
+  max-width: 900px;
+  width: 100%;
+  z-index: 10;
+  position: relative;
+}
+
+.hero-emblem-container {
+  margin-bottom: 8px;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4));
+}
+
+.hero-portal-title {
+  font-family: var(--font-heading);
+  font-size: 2.75rem;
+  font-weight: 900;
+  color: #FFFFFF;
+  margin: 0;
+  letter-spacing: -0.03em;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+}
+
+.hero-gov-dot {
+  color: #FF9933;
+  font-weight: 900;
+}
+
+.hero-portal-sub {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #FFF2B2;
+  margin: 4px 0 2px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.hero-tagline-quote {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0 0 22px;
+  font-weight: 500;
+}
+
+/* Central India.gov.in Style Search Bar */
+.hero-search-wrapper {
+  display: flex;
+  width: 100%;
+  max-width: 780px;
+  background: #FFFFFF;
+  border-radius: 8px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  transition: all var(--transition-normal);
+}
+
+.hero-search-wrapper:focus-within {
+  border-color: #EB7D00;
+  box-shadow: 0 14px 36px rgba(235, 125, 0, 0.35), 0 0 0 3px rgba(235, 125, 0, 0.2);
+}
+
+.hero-search-input-box {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  padding: 0 14px;
+  background: #FFFFFF;
+}
+
+.hero-search-icon {
+  color: #64748B;
+  flex-shrink: 0;
+  margin-right: 10px;
+}
+
+.hero-search-input {
+  width: 100%;
+  border: none;
+  outline: none;
+  font-size: 0.95rem;
+  color: #1E293B;
+  font-weight: 500;
+  padding: 14px 0;
+}
+
+.hero-search-input::placeholder {
+  color: #94A3B8;
+  font-size: 0.9rem;
+}
+
+.hero-search-cat-dropdown {
+  border-left: 1px solid #E2E8F0;
+  background: #F8FAFC;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+}
+
+.hero-category-select {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.85rem;
+  color: #334155;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 10px 4px;
+}
+
+.hero-search-submit-btn {
+  background: #EB7D00;
+  color: #FFFFFF;
+  border: none;
+  padding: 0 28px;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-search-submit-btn:hover {
+  background: #D96F00;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.15);
+}
+
+/* Trending Searches Row */
+.hero-trending-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+  font-size: 0.82rem;
+}
+
+.trending-label {
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 700;
+  margin-right: 4px;
+}
+
+.trending-chips-wrap {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+
+.trending-chip {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #FFFFFF;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.trending-chip:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+  color: #FFF2B2;
+}
+
+.trending-chip.highlight-chip {
+  background: rgba(235, 125, 0, 0.35);
+  border-color: #EB7D00;
+  color: #FFF2B2;
+  font-weight: 700;
+}
+
+.trending-chip.highlight-chip:hover {
+  background: #EB7D00;
+  color: #FFFFFF;
+}
+
+/* Floating Bottom Statistics Bar (India.gov.in Floating Card Style) */
+.hero-floating-stats-container {
+  position: relative;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  z-index: 20;
+}
+
+.hero-floating-stats-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background: #FFFFFF;
+  border-radius: 12px;
+  padding: 16px 20px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(216, 206, 149, 0.6);
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: -50px;
+}
+
+[data-theme='dark'] .hero-floating-stats-bar {
+  background: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5);
+}
+
+.hero-stat-pill-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 8px;
+}
+
+.hero-stat-icon-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.bg-orange-soft { background: rgba(235, 125, 0, 0.12); color: #EB7D00; }
+.bg-green-soft { background: rgba(34, 197, 94, 0.12); color: #16A34A; }
+.bg-amber-soft { background: rgba(217, 119, 6, 0.12); color: #D97706; }
+.bg-blue-soft { background: rgba(37, 99, 235, 0.12); color: #2563EB; }
+.bg-purple-soft { background: rgba(147, 51, 234, 0.12); color: #9333EA; }
+.bg-teal-soft { background: rgba(13, 148, 136, 0.12); color: #0D9488; }
+
+.hero-stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.hero-stat-number {
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #0F172A;
+  line-height: 1.1;
+}
+
+[data-theme='dark'] .hero-stat-number {
+  color: #F8FAFC;
+}
+
+.hero-stat-label {
+  font-size: 0.72rem;
+  color: #64748B;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+[data-theme='dark'] .hero-stat-label {
+  color: #94A3B8;
+}
+
+.hero-stat-divider {
+  width: 1px;
+  height: 36px;
+  background: #E2E8F0;
+}
+
+[data-theme='dark'] .hero-stat-divider {
+  background: #334155;
+}
+
+/* Statutory SLA Quick Bar Strip */
+.gov-sla-bar-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
   background: var(--bg-secondary);
   border: 1px solid var(--border-subtle);
-  border-top: 3px solid var(--brand-700);
+  border-left: 4px solid var(--brand-700);
   border-radius: var(--radius-md);
+  margin-top: 36px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 16px;
   box-shadow: var(--shadow-subtle);
 }
 
-.gov-official-tag {
-  display: inline-flex;
+.gov-sla-strip-left {
+  display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 3px 8px;
+  gap: 12px;
+}
+
+.text-brand-green {
+  color: var(--brand-700);
+}
+
+.gov-sla-strip-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.sla-rate-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   background: var(--bg-tertiary);
-  color: var(--brand-700);
-  font-size: 0.75rem;
-  font-weight: 700;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-subtle);
-  margin-bottom: 8px;
-}
-
-.gov-header-info h1 {
-  font-size: 1.65rem;
-  font-weight: 800;
-  line-height: 1.25;
-  color: var(--text-main);
-  margin-bottom: 6px;
-}
-
-.gov-header-info p {
-  color: var(--text-muted);
-  font-size: 0.9rem;
-  line-height: 1.45;
-  margin-bottom: 16px;
-  max-width: 720px;
-}
-
-.gov-header-cta-group {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.gov-sla-summary-box {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  background: var(--bg-primary);
-  padding: 14px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-subtle);
-}
-
-.gov-summary-stat {
-  display: flex;
-  flex-direction: column;
-  padding: 8px 10px;
-  background: var(--bg-secondary);
+  padding: 6px 12px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-subtle);
 }
 
-.stat-label {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+/* Subtle Government Floating Animation */
+@keyframes subtleFloat {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-4px); }
+  100% { transform: translateY(0px); }
 }
 
-.stat-val-highlight {
-  font-family: var(--font-heading);
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: var(--brand-700);
-  line-height: 1.2;
-}
-
-.stat-desc {
-  font-size: 0.725rem;
-  color: var(--text-muted);
+.animate-float-subtle {
+  animation: subtleFloat 4s ease-in-out infinite;
 }
 
 /* Stats Summary Cards Grid */
@@ -1227,6 +1648,11 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
+  padding: 24px 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .track-search-card {
@@ -1484,6 +1910,19 @@
   display: flex;
   flex-direction: column;
   gap: 18px;
+  padding: 24px 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.knowledge-container {
+  padding: 24px 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .admin-header {

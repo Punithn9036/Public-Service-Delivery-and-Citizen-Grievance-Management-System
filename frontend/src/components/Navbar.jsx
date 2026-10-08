@@ -43,19 +43,8 @@ export default function Navbar({
     <header className="navbar-header">
       <div className="nav-container">
         
-        {/* Left Section: 3-line Menu Button + JanSeva Brand Heading */}
+        {/* Left Section: JanSeva Brand Heading & Context */}
         <div className="nav-left-group">
-          {/* 3-line hamburger menu toggle button */}
-          <button
-            type="button"
-            className="hamburger-menu-btn"
-            onClick={onToggleSidebar}
-            title={isSidebarOpen ? "Close Navigation Sidebar" : "Open Navigation Sidebar"}
-            aria-label="Toggle Navigation Sidebar"
-          >
-            <Menu size={22} />
-          </button>
-
           {/* JanSeva Official Brand Badge & Portal Title */}
           <div 
             className="nav-brand-badge" 
@@ -132,6 +121,21 @@ export default function Navbar({
             {unreadNotifications > 0 && (
               <span className="notification-badge">{unreadNotifications}</span>
             )}
+          </button>
+
+          {/* Tricolour 3-line Hamburger Menu Button in Top-Right Corner */}
+          <button
+            type="button"
+            className={`tricolour-menu-btn ${isSidebarOpen ? 'active' : ''}`}
+            onClick={onToggleSidebar}
+            title={isSidebarOpen ? "Close Navigation Sidebar" : "Open Navigation Sidebar"}
+            aria-label="Toggle Navigation Sidebar"
+          >
+            <div className="tricolour-icon">
+              <span className="tricolour-bar saffron-bar" />
+              <span className="tricolour-bar white-bar" />
+              <span className="tricolour-bar green-bar" />
+            </div>
           </button>
 
         </div>

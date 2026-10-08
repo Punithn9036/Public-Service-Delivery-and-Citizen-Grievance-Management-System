@@ -337,6 +337,9 @@ function MainAppContent() {
                 setActiveTab={setActiveTab}
                 selectGrievanceToTrack={(id) => setSelectedTrackId(id)}
                 searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                isSidebarOpen={isSidebarOpen}
+                onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
               />
             )}
 
@@ -350,6 +353,9 @@ function MainAppContent() {
                 setActiveTab={setActiveTab}
                 selectGrievanceToTrack={(id) => setSelectedTrackId(id)}
                 searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                isSidebarOpen={isSidebarOpen}
+                onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
               />
             )}
 

@@ -17,7 +17,17 @@ import {
   MessageSquareCheck,
   Database,
   Flame,
-  UserCheck
+  UserCheck,
+  Calendar,
+  Globe,
+  HelpCircle,
+  Eye,
+  Sparkles,
+  MapPin,
+  ShieldCheck,
+  ChevronRight,
+  TrendingUp,
+  Layers
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -31,6 +41,67 @@ const ICON_MAP = {
   Zap: Zap
 };
 
+// Majestic Vector Representation of State Emblem of India (Ashoka Lion Capital & Satyameva Jayate)
+function NationalEmblem({ size = 72, className = '' }) {
+  return (
+    <div className={`national-emblem-wrap ${className}`} style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
+      <svg width={size} height={size * 1.15} viewBox="0 0 100 115" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="State Emblem of India">
+        <defs>
+          <linearGradient id="emblemGoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#FFF2B2" />
+            <stop offset="50%" stopColor="#E6C665" />
+            <stop offset="100%" stopColor="#B38B29" />
+          </linearGradient>
+          <filter id="goldGlow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="rgba(235, 125, 0, 0.4)" />
+          </filter>
+        </defs>
+
+        {/* Outer Glow Halo */}
+        <circle cx="50" cy="46" r="38" fill="url(#emblemGoldGrad)" opacity="0.08" />
+
+        {/* Center Lion Head */}
+        <path d="M42 20C42 15 45 10 50 10C55 10 58 15 58 20C58 24 55 27 50 27C45 27 42 24 42 20Z" fill="url(#emblemGoldGrad)" filter="url(#goldGlow)" />
+        <path d="M44 26C38 28 36 34 38 41C40 46 45 48 50 48C55 48 60 46 62 41C64 34 62 28 56 26" stroke="url(#emblemGoldGrad)" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+        
+        {/* Left Lion Profile */}
+        <path d="M28 26C24 28 22 34 25 40C28 45 34 47 38 45" stroke="url(#emblemGoldGrad)" strokeWidth="2.2" strokeLinecap="round" fill="none" />
+        <path d="M31 22C28 22 25 24 25 28C25 31 28 33 32 32" stroke="url(#emblemGoldGrad)" strokeWidth="2" strokeLinecap="round" fill="none" />
+
+        {/* Right Lion Profile */}
+        <path d="M72 26C76 28 78 34 75 40C72 45 66 47 62 45" stroke="url(#emblemGoldGrad)" strokeWidth="2.2" strokeLinecap="round" fill="none" />
+        <path d="M69 22C72 22 75 24 75 28C75 31 72 33 68 32" stroke="url(#emblemGoldGrad)" strokeWidth="2" strokeLinecap="round" fill="none" />
+
+        {/* Lion Chest & Manes */}
+        <path d="M46 36L44 44M54 36L56 44M50 34V46M35 34L32 42M65 34L68 42" stroke="url(#emblemGoldGrad)" strokeWidth="1.5" strokeLinecap="round" />
+        
+        {/* Abacus Platform Base */}
+        <rect x="20" y="52" width="60" height="12" rx="3" fill="url(#emblemGoldGrad)" opacity="0.9" />
+        
+        {/* Central Ashoka Chakra in Abacus */}
+        <circle cx="50" cy="58" r="4.5" stroke="#1E293B" strokeWidth="1.2" fill="#FFFFFF" />
+        <circle cx="50" cy="58" r="1.2" fill="#1E293B" />
+        {/* Chakra Spokes */}
+        <path d="M50 53.5V62.5M45.5 58H54.5M47 55L53 61M47 61L53 55" stroke="#1E293B" strokeWidth="0.8" />
+
+        {/* Bull on Left, Horse on Right (Stylized) */}
+        <circle cx="32" cy="58" r="2.2" fill="#1E293B" />
+        <circle cx="68" cy="58" r="2.2" fill="#1E293B" />
+
+        {/* Lotus Bell Pedestal Base */}
+        <path d="M25 64C28 72 38 75 50 75C62 75 72 72 75 64H25Z" fill="url(#emblemGoldGrad)" opacity="0.8" />
+        <path d="M30 75H70L66 79H34L30 75Z" fill="url(#emblemGoldGrad)" />
+
+        {/* Satyameva Jayate Banner */}
+        <rect x="16" y="84" width="68" height="12" rx="2" fill="#111827" stroke="url(#emblemGoldGrad)" strokeWidth="1" />
+        <text x="50" y="93" fill="#FFF2B2" fontSize="6.5" fontWeight="900" textAnchor="middle" letterSpacing="0.8" fontFamily="'Plus Jakarta Sans', sans-serif">
+          सत्यमेव जयते
+        </text>
+      </svg>
+    </div>
+  );
+}
+
 export default function CitizenDashboard({
   grievances,
   services,
@@ -39,13 +110,18 @@ export default function CitizenDashboard({
   openServiceModal,
   setActiveTab,
   selectGrievanceToTrack,
-  searchQuery
+  searchQuery,
+  setSearchQuery,
+  isSidebarOpen,
+  onToggleSidebar
 }) {
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { lang, setLang, t } = useLanguage();
   const [viewScope, setViewScope] = useState('all'); // 'all' | 'my'
   const [statusFilter, setStatusFilter] = useState('All');
   const [departmentFilter, setDepartmentFilter] = useState('All');
+  const [selectedCategory, setSelectedCategory] = useState('All Categories');
+  const [localSearch, setLocalSearch] = useState(searchQuery || '');
 
   // Compute Statistics
   const totalGrievances = grievances.length;
@@ -63,12 +139,59 @@ export default function CitizenDashboard({
     }
     const matchesStatus = statusFilter === 'All' || item.status === statusFilter;
     const matchesDepartment = departmentFilter === 'All' || item.department === departmentFilter;
-    const matchesSearch = !searchQuery || 
-      item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.category.toLowerCase().includes(searchQuery.toLowerCase());
+    const effectiveSearch = searchQuery || localSearch;
+    const matchesSearch = !effectiveSearch || 
+      item.title.toLowerCase().includes(effectiveSearch.toLowerCase()) ||
+      item.id.toLowerCase().includes(effectiveSearch.toLowerCase()) ||
+      item.category.toLowerCase().includes(effectiveSearch.toLowerCase()) ||
+      item.department.toLowerCase().includes(effectiveSearch.toLowerCase()) ||
+      item.location.toLowerCase().includes(effectiveSearch.toLowerCase());
     return matchesStatus && matchesDepartment && matchesSearch;
   });
+
+  const handleHeroSearchSubmit = (e) => {
+    e.preventDefault();
+    if (setSearchQuery) {
+      setSearchQuery(localSearch);
+    }
+    // Scroll down smoothly to search results if searching
+    if (localSearch.trim()) {
+      const resultsElem = document.getElementById('citizen-grievances-section');
+      if (resultsElem) {
+        resultsElem.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
+
+  const handleTrendingClick = (term, directAction = null) => {
+    if (directAction === 'modal-grievance') {
+      openGrievanceModal();
+      return;
+    }
+    if (directAction === 'tab-track') {
+      setActiveTab('track');
+      return;
+    }
+    if (directAction === 'tab-services') {
+      setActiveTab('services');
+      return;
+    }
+    if (directAction === 'modal-birth') {
+      const birthService = services.find(s => s.id === 'srv-1');
+      if (birthService) {
+        openServiceModal(birthService);
+        return;
+      }
+    }
+    setLocalSearch(term);
+    if (setSearchQuery) {
+      setSearchQuery(term);
+    }
+    const resultsElem = document.getElementById('citizen-grievances-section');
+    if (resultsElem) {
+      resultsElem.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   const getSlaBadge = (item) => {
     if (!item.slaDeadline) return null;
@@ -97,258 +220,485 @@ export default function CitizenDashboard({
   };
 
   return (
-    <div className="dashboard-content">
+    <div className="dashboard-content animate-fade-in" style={{ padding: 0 }}>
 
-      {/* Institutional Public Service Banner */}
-      <div className="gov-service-header-panel">
-        <div className="gov-header-info">
-          <div className="gov-official-tag">
-            <Building2 size={14} />
-            <span>Digital Public Service & Citizen Redressal System</span>
+      {/* ========================================================================= */}
+      {/* 1. GRAND GOVERNMENT HERO BANNER (INDIA.GOV.IN STYLE WITH RASHTRAPATI BG) */}
+      {/* ========================================================================= */}
+      <div className="india-gov-hero-section">
+        
+        {/* Background Overlay & Decorative Elements */}
+        <div className="hero-backdrop-glow" />
+        
+        {/* Top Utility Accessibility Bar Inside Hero */}
+        <div className="hero-utility-bar">
+          <div className="hero-utility-left">
+            <span className="hero-utility-item" title="Screen Reader Accessible">
+              <Eye size={13} />
+              <span>Screen Reader</span>
+            </span>
+            <span className="hero-utility-divider">|</span>
+            <span className="hero-utility-item">
+              <Calendar size={13} />
+              <span>08 Oct 2026</span>
+            </span>
+            <span className="hero-utility-divider">|</span>
+            <span className="hero-utility-item font-resize-btns">
+              <button type="button" className="text-size-btn" title="Decrease Font">A-</button>
+              <button type="button" className="text-size-btn" title="Default Font">A</button>
+              <button type="button" className="text-size-btn" title="Increase Font">A+</button>
+            </span>
           </div>
-          <h1>Public Service Delivery & Citizen Grievances</h1>
-          <p>
-            Submit complaints, track certificate requests, and monitor time-bound SLA fulfillment by designated municipal and state nodal officers.
+
+          <div className="hero-utility-right">
+            {/* Language Selector */}
+            <div className="hero-lang-badge">
+              <Globe size={13} />
+              <select
+                value={lang}
+                onChange={(e) => setLang(e.target.value)}
+                className="hero-lang-select"
+                aria-label="Language Selector"
+              >
+                <option value="en">English</option>
+                <option value="hi">हिन्दी</option>
+                <option value="kn">ಕನ್ನಡ</option>
+                <option value="ta">தமிழ்</option>
+                <option value="te">తెలుగు</option>
+                <option value="ml">മലയാളം</option>
+                <option value="mr">मराठी</option>
+                <option value="gu">ગુજરાતી</option>
+                <option value="bn">বাংলা</option>
+                <option value="ur">اردو</option>
+              </select>
+            </div>
+
+            <span className="hero-utility-divider">|</span>
+
+            {/* Tricolour 3-line Menu Button in Top-Right Corner */}
+            <button
+              type="button"
+              className={`tricolour-menu-btn ${isSidebarOpen ? 'active' : ''}`}
+              onClick={onToggleSidebar}
+              title={isSidebarOpen ? "Close Navigation Sidebar" : "Open Navigation Sidebar"}
+              aria-label="Toggle Navigation Sidebar"
+            >
+              <div className="tricolour-icon">
+                <span className="tricolour-bar saffron-bar" />
+                <span className="tricolour-bar white-bar" />
+                <span className="tricolour-bar green-bar" />
+              </div>
+            </button>
+          </div>
+        </div>
+
+        {/* Hero Main Core Content */}
+        <div className="hero-center-content">
+          
+          {/* Emblem of India */}
+          <div className="hero-emblem-container animate-float-subtle">
+            <NationalEmblem size={68} />
+          </div>
+
+          {/* Majestic Portal Title */}
+          <h1 className="hero-portal-title">
+            janseva<span className="hero-gov-dot">.gov.in</span>
+          </h1>
+          <p className="hero-portal-sub">
+            National Public Service Delivery & Citizen Grievance Portal
           </p>
-          <div className="gov-header-cta-group">
-            <button className="btn btn-primary" onClick={openGrievanceModal}>
-              <FilePlus size={16} />
+          <p className="hero-tagline-quote">
+            Where Citizen Public Services & Time-Bound Grievance Redressal Converge
+          </p>
+
+          {/* Central India.gov.in Style Search Bar */}
+          <form onSubmit={handleHeroSearchSubmit} className="hero-search-wrapper">
+            <div className="hero-search-input-box">
+              <Search size={18} className="hero-search-icon" />
+              <input 
+                type="text" 
+                placeholder={t('searchPlaceholder') || 'Search for public services, schemes, ticket status, or municipal wards...'} 
+                value={localSearch}
+                onChange={(e) => {
+                  setLocalSearch(e.target.value);
+                  if (setSearchQuery) setSearchQuery(e.target.value);
+                }}
+                className="hero-search-input"
+              />
+            </div>
+
+            <div className="hero-search-cat-dropdown">
+              <select 
+                value={selectedCategory} 
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="hero-category-select"
+              >
+                <option value="All Categories">All Categories</option>
+                <option value="Grievances">Citizen Grievances</option>
+                <option value="Public Services">Public Services</option>
+                <option value="Certificates">Certificates & Revenue</option>
+                <option value="Municipal">Municipal & Roads</option>
+                <option value="Health">Water & Sanitation</option>
+              </select>
+            </div>
+
+            <button type="submit" className="hero-search-submit-btn">
+              <span>Search</span>
+            </button>
+          </form>
+
+          {/* Trending / Fast-Track Searches Row */}
+          <div className="hero-trending-row">
+            <span className="trending-label">Trending Searches:</span>
+            <div className="trending-chips-wrap">
+              <button 
+                type="button" 
+                className="trending-chip highlight-chip"
+                onClick={() => handleTrendingClick('', 'modal-grievance')}
+              >
+                <FilePlus size={12} />
+                <span>+ Lodge Grievance</span>
+              </button>
+
+              <button 
+                type="button" 
+                className="trending-chip"
+                onClick={() => handleTrendingClick('', 'tab-track')}
+              >
+                <Clock size={12} />
+                <span>Track Ticket</span>
+              </button>
+
+              <button 
+                type="button" 
+                className="trending-chip"
+                onClick={() => handleTrendingClick('pothole')}
+              >
+                <span>Pothole Repair</span>
+              </button>
+
+              <button 
+                type="button" 
+                className="trending-chip"
+                onClick={() => handleTrendingClick('water')}
+              >
+                <span>Water Supply</span>
+              </button>
+
+              <button 
+                type="button" 
+                className="trending-chip"
+                onClick={() => handleTrendingClick('', 'modal-birth')}
+              >
+                <span>Birth Certificate</span>
+              </button>
+
+              <button 
+                type="button" 
+                className="trending-chip"
+                onClick={() => handleTrendingClick('streetlight')}
+              >
+                <span>Streetlight Outage</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Floating Bottom Statistics Bar (India.gov.in Pill Style) */}
+        <div className="hero-floating-stats-container">
+          <div className="hero-floating-stats-bar">
+            
+            <div className="hero-stat-pill-item">
+              <div className="hero-stat-icon-circle bg-orange-soft">
+                <FileText size={18} />
+              </div>
+              <div className="hero-stat-info">
+                <strong className="hero-stat-number">13,876</strong>
+                <span className="hero-stat-label">Online Services</span>
+              </div>
+            </div>
+
+            <div className="hero-stat-divider" />
+
+            <div className="hero-stat-pill-item">
+              <div className="hero-stat-icon-circle bg-green-soft">
+                <CheckCircle size={18} />
+              </div>
+              <div className="hero-stat-info">
+                <strong className="hero-stat-number">{resolvedCount || '3,182'}</strong>
+                <span className="hero-stat-label">Resolved On-Time</span>
+              </div>
+            </div>
+
+            <div className="hero-stat-divider" />
+
+            <div className="hero-stat-pill-item">
+              <div className="hero-stat-icon-circle bg-amber-soft">
+                <UserCheck size={18} />
+              </div>
+              <div className="hero-stat-info">
+                <strong className="hero-stat-number">5,060</strong>
+                <span className="hero-stat-label">Citizen Engagements</span>
+              </div>
+            </div>
+
+            <div className="hero-stat-divider" />
+
+            <div className="hero-stat-pill-item">
+              <div className="hero-stat-icon-circle bg-blue-soft">
+                <MapPin size={18} />
+              </div>
+              <div className="hero-stat-info">
+                <strong className="hero-stat-number">100%</strong>
+                <span className="hero-stat-label">Geo-Tagged Proof</span>
+              </div>
+            </div>
+
+            <div className="hero-stat-divider" />
+
+            <div className="hero-stat-pill-item">
+              <div className="hero-stat-icon-circle bg-purple-soft">
+                <Clock size={18} />
+              </div>
+              <div className="hero-stat-info">
+                <strong className="hero-stat-number">24 Hrs</strong>
+                <span className="hero-stat-label">Avg First Response</span>
+              </div>
+            </div>
+
+            <div className="hero-stat-divider" />
+
+            <div className="hero-stat-pill-item">
+              <div className="hero-stat-icon-circle bg-teal-soft">
+                <Building2 size={18} />
+              </div>
+              <div className="hero-stat-info">
+                <strong className="hero-stat-number">18</strong>
+                <span className="hero-stat-label">Nodal Departments</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      {/* Main Inner Container for Dashboard Sections */}
+      <div className="dashboard-inner-wrap" style={{ padding: '24px 20px', maxWidth: '1400px', margin: '0 auto' }}>
+
+        {/* Quick Statutory SLA Compliance Alert Card */}
+        <div className="gov-sla-bar-strip">
+          <div className="gov-sla-strip-left">
+            <ShieldCheck size={20} className="text-brand-green" />
+            <div>
+              <strong>Time-Bound Public Service Delivery Act (GIGW 3.0 Standard)</strong>
+              <p className="text-muted small-text" style={{ margin: 0 }}>
+                Every grievance is assigned a statutory SLA deadline. Breached cases auto-escalate directly to Senior Zonal Commissioners.
+              </p>
+            </div>
+          </div>
+          <div className="gov-sla-strip-right">
+            <div className="sla-rate-pill">
+              <span className="small-text">SLA Redressal Rate:</span>
+              <strong style={{ fontSize: '1.05rem', color: 'var(--brand-700)' }}>{resolutionRate}%</strong>
+            </div>
+            <button className="btn btn-primary btn-sm" onClick={openGrievanceModal}>
+              <FilePlus size={15} />
               <span>{t('lodgeGrievance')}</span>
             </button>
-            <button className="btn btn-secondary" onClick={() => setActiveTab('services')}>
-              <span>{t('popularServices')}</span>
-              <ArrowRight size={15} />
+          </div>
+        </div>
+
+        {/* ========================================================================= */}
+        {/* 2. POPULAR PUBLIC SERVICES CATALOG */}
+        {/* ========================================================================= */}
+        <div className="section-block" style={{ marginTop: '28px' }}>
+          <div className="section-header">
+            <div>
+              <h2>{t('popularServices')}</h2>
+              <p>Direct online applications with guaranteed Service Level Agreements (SLAs)</p>
+            </div>
+            <button className="btn btn-outline btn-sm" onClick={() => setActiveTab('services')}>
+              View All Services ({services.length})
+              <ChevronRight size={14} />
             </button>
           </div>
-        </div>
 
-        <div className="gov-sla-summary-box">
-          <div className="gov-summary-stat">
-            <span className="stat-label">{t('slaCompliance')}</span>
-            <strong className="stat-val-highlight">{resolutionRate}%</strong>
-            <span className="stat-desc">Statutory resolution timeline</span>
-          </div>
-          <div className="gov-summary-stat">
-            <span className="stat-label">{t('resolvedThisMonth')}</span>
-            <strong className="stat-val-highlight">{resolvedCount}</strong>
-            <span className="stat-desc">Verified closed cases</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Stats Cards Row */}
-      <div className="stats-grid">
-        <div className="stat-card glass-card">
-          <div className="stat-icon-box bg-blue">
-            <FileText size={22} color="#2563eb" />
-          </div>
-          <div>
-            <span className="stat-title">{t('totalLodged')}</span>
-            <h3 className="stat-value">{totalGrievances}</h3>
-            <span className="stat-sub">Across all municipal wards</span>
-          </div>
-        </div>
-
-        <div className="stat-card glass-card">
-          <div className="stat-icon-box bg-amber">
-            <Clock size={22} color="#d97706" />
-          </div>
-          <div>
-            <span className="stat-title">{t('inProgress')}</span>
-            <h3 className="stat-value">{inProgressCount}</h3>
-            <span className="stat-sub">Assigned to field officers</span>
-          </div>
-        </div>
-
-        <div className="stat-card glass-card">
-          <div className="stat-icon-box bg-emerald">
-            <CheckCircle size={22} color="#16a34a" />
-          </div>
-          <div>
-            <span className="stat-title">{t('resolvedCases')}</span>
-            <h3 className="stat-value">{resolvedCount}</h3>
-            <span className="stat-sub">{resolutionRate}% resolution efficiency</span>
-          </div>
-        </div>
-
-        <div className="stat-card glass-card">
-          <div className="stat-icon-box bg-rose">
-            <AlertTriangle size={22} color="#e11d48" />
-          </div>
-          <div>
-            <span className="stat-title">{t('urgentAlerts')}</span>
-            <h3 className="stat-value">{urgentCount}</h3>
-            <span className="stat-sub">High priority intervention</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Popular Public Services Section */}
-      <div className="section-block">
-        <div className="section-header">
-          <div>
-            <h2>{t('popularServices')}</h2>
-            <p>Direct online applications with guaranteed Service Level Agreements (SLAs)</p>
-          </div>
-          <button className="btn btn-outline btn-sm" onClick={() => setActiveTab('services')}>
-            View All Services ({services.length})
-          </button>
-        </div>
-
-        <div className="services-grid">
-          {services.filter(s => s.popular).map(service => {
-            const IconComponent = ICON_MAP[service.icon] || FileText;
-            return (
-              <div key={service.id} className="service-card glass-card">
-                <div className="service-header">
-                  <div className="service-icon-box">
-                    <IconComponent size={24} />
+          <div className="services-grid">
+            {services.filter(s => s.popular).map(service => {
+              const IconComponent = ICON_MAP[service.icon] || FileText;
+              return (
+                <div key={service.id} className="service-card glass-card">
+                  <div className="service-header">
+                    <div className="service-icon-box">
+                      <IconComponent size={22} />
+                    </div>
+                    <span className="sla-pill">{service.slaDays} Days SLA</span>
                   </div>
-                  <span className="sla-pill">{service.slaDays} Days SLA</span>
+                  <h3>{service.name}</h3>
+                  <p className="service-dept">{service.department}</p>
+                  <p className="service-desc">{service.description}</p>
+                  <div className="service-footer">
+                    <span className="service-fee">Fee: <strong>{service.fee}</strong></span>
+                    <button className="btn btn-primary btn-sm" onClick={() => openServiceModal(service)}>
+                      {t('applyNow')}
+                    </button>
+                  </div>
                 </div>
-                <h3>{service.name}</h3>
-                <p className="service-dept">{service.department}</p>
-                <p className="service-desc">{service.description}</p>
-                <div className="service-footer">
-                  <span className="service-fee">Fee: <strong>{service.fee}</strong></span>
-                  <button className="btn btn-primary btn-sm" onClick={() => openServiceModal(service)}>
-                    {t('applyNow')}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Recent Grievances List & Filter */}
-      <div className="section-block">
-        <div className="section-header">
-          <div>
-            <h2>{t('recentSubmissions')}</h2>
-            <p>Track grievances submitted by citizens and monitor action taken by department officers</p>
+              );
+            })}
           </div>
+        </div>
 
-          {/* Scope Toggle: All Wards vs My Grievances */}
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <div style={{ display: 'flex', background: 'var(--bg-tertiary)', padding: '3px', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
-              <button
-                type="button"
-                className={`btn-sm ${viewScope === 'all' ? 'btn btn-primary' : 'btn'}`}
-                style={{ borderRadius: '6px', fontSize: '0.75rem', padding: '4px 10px', border: 'none' }}
-                onClick={() => setViewScope('all')}
-              >
-                {t('allWards')} ({grievances.length})
-              </button>
-              <button
-                type="button"
-                className={`btn-sm ${viewScope === 'my' ? 'btn btn-primary' : 'btn'}`}
-                style={{ borderRadius: '6px', fontSize: '0.75rem', padding: '4px 10px', border: 'none' }}
-                onClick={() => setViewScope('my')}
-              >
-                {t('mySubmissions')}
-              </button>
+        {/* ========================================================================= */}
+        {/* 3. RECENT CITIZEN GRIEVANCES & LIVE RESOLUTION REGISTRY */}
+        {/* ========================================================================= */}
+        <div className="section-block" id="citizen-grievances-section" style={{ marginTop: '36px' }}>
+          <div className="section-header">
+            <div>
+              <h2>{t('recentSubmissions')}</h2>
+              <p>Track grievances submitted across municipal wards and inspect officer resolution updates</p>
             </div>
 
-            {/* Filters */}
-            <div className="filter-controls">
-              <div className="select-wrapper">
-                <Filter size={14} className="select-icon" />
-                <select 
-                  value={statusFilter} 
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="filter-select"
+            {/* Scope Toggle: All Wards vs My Grievances */}
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', background: 'var(--bg-tertiary)', padding: '3px', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+                <button
+                  type="button"
+                  className={`btn-sm ${viewScope === 'all' ? 'btn btn-primary' : 'btn'}`}
+                  style={{ borderRadius: '6px', fontSize: '0.75rem', padding: '4px 10px', border: 'none' }}
+                  onClick={() => setViewScope('all')}
                 >
-                  <option value="All">{t('allStatuses')}</option>
-                  <option value="Submitted">Submitted</option>
-                  <option value="Under Review">Under Review</option>
-                  <option value="Assigned">Assigned</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Resolved">Resolved</option>
-                </select>
+                  {t('allWards')} ({grievances.length})
+                </button>
+                <button
+                  type="button"
+                  className={`btn-sm ${viewScope === 'my' ? 'btn btn-primary' : 'btn'}`}
+                  style={{ borderRadius: '6px', fontSize: '0.75rem', padding: '4px 10px', border: 'none' }}
+                  onClick={() => setViewScope('my')}
+                >
+                  {t('mySubmissions')}
+                </button>
+              </div>
+
+              {/* Status Filter */}
+              <div className="filter-controls">
+                <div className="select-wrapper">
+                  <Filter size={14} className="select-icon" />
+                  <select 
+                    value={statusFilter} 
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="filter-select"
+                  >
+                    <option value="All">{t('allStatuses')}</option>
+                    <option value="Submitted">Submitted</option>
+                    <option value="Under Review">Under Review</option>
+                    <option value="Assigned">Assigned</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Resolved">Resolved</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>
+
+          {/* Grievance Table / Cards */}
+          {filteredGrievances.length === 0 ? (
+            <div className="empty-state glass-card" style={{ padding: '36px', textAlign: 'center' }}>
+              <FileText size={48} className="empty-icon" style={{ margin: '0 auto 12px', opacity: 0.5 }} />
+              <h3>No matching grievances found</h3>
+              <p className="text-muted small-text">Try adjusting your search query or status filters above.</p>
+              <button 
+                className="btn btn-secondary btn-sm" 
+                style={{ marginTop: '12px' }}
+                onClick={() => {
+                  setLocalSearch('');
+                  if (setSearchQuery) setSearchQuery('');
+                  setStatusFilter('All');
+                }}
+              >
+                Clear Filters
+              </button>
+            </div>
+          ) : (
+            <div className="grievance-cards-list">
+              {filteredGrievances.map(item => (
+                <div key={item.id} className="grievance-card glass-card">
+                  <div className="g-card-header">
+                    <div className="g-id-badge">
+                      <span className="g-id-bold">{item.id}</span>
+                      <span className={`priority-tag priority-${item.priority.toLowerCase()}`}>
+                        {item.priority} Priority
+                      </span>
+                      {getSlaBadge(item)}
+                      {item.reportCount > 1 && (
+                        <span style={{ fontSize: '0.7rem', background: 'rgba(235,125,0,0.12)', color: '#eb7d00', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
+                          +{item.reportCount - 1} Citizens Affected
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {item.ipfsDocumentCid && (
+                        <span style={{ fontSize: '0.7rem', color: '#2563eb', background: 'rgba(37,99,235,0.08)', padding: '2px 6px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <Database size={11} /> IPFS Proof
+                        </span>
+                      )}
+                      <span className={`badge badge-${item.status.toLowerCase().replace(/\s+/g, '-')}`}>
+                        <span className="pulse-dot" />
+                        {item.status}
+                      </span>
+                    </div>
+                  </div>
+
+                  <h3 className="g-title">{item.title}</h3>
+                  <p className="g-desc">{item.description}</p>
+
+                  <div className="g-meta-grid">
+                    <div>
+                      <span className="meta-label">Department</span>
+                      <span className="meta-value">{item.department}</span>
+                    </div>
+                    <div>
+                      <span className="meta-label">Location / Ward</span>
+                      <span className="meta-value">{item.location}</span>
+                    </div>
+                    <div>
+                      <span className="meta-label">Officer Assigned</span>
+                      <span className="meta-value">{item.assignedOfficer || 'Pending Dispatch'}</span>
+                    </div>
+                    <div>
+                      <span className="meta-label">Submitted On</span>
+                      <span className="meta-value">{new Date(item.createdAt).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+
+                  <div className="g-card-footer">
+                    {item.feedback ? (
+                      <span className="feedback-done-tag">
+                        <MessageSquareCheck size={14} /> Citizen Feedback Submitted ({item.feedback.rating}/5 Stars)
+                      </span>
+                    ) : (
+                      <span className="g-sla-info">SLA Target Date: <strong>{new Date(item.slaDeadline).toLocaleDateString()}</strong></span>
+                    )}
+
+                    <button 
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => {
+                        selectGrievanceToTrack(item.id);
+                        setActiveTab('track');
+                      }}
+                    >
+                      {t('trackProgress')}
+                      <ExternalLink size={14} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Grievance Table / Cards */}
-        {filteredGrievances.length === 0 ? (
-          <div className="empty-state glass-card">
-            <FileText size={48} className="empty-icon" />
-            <h3>No grievances found</h3>
-            <p>Try adjusting your search query or status filter.</p>
-          </div>
-        ) : (
-          <div className="grievance-cards-list">
-            {filteredGrievances.map(item => (
-              <div key={item.id} className="grievance-card glass-card">
-                <div className="g-card-header">
-                  <div className="g-id-badge">
-                    <span>{item.id}</span>
-                    <span className={`priority-tag priority-${item.priority.toLowerCase()}`}>
-                      {item.priority} Priority
-                    </span>
-                    {getSlaBadge(item)}
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {item.ipfsDocumentCid && (
-                      <span style={{ fontSize: '0.7rem', color: '#2563eb', background: 'rgba(37,99,235,0.08)', padding: '2px 6px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                        <Database size={11} /> IPFS Proof
-                      </span>
-                    )}
-                    <span className={`badge badge-${item.status.toLowerCase().replace(/\s+/g, '-')}`}>
-                      <span className="pulse-dot"></span>
-                      {item.status}
-                    </span>
-                  </div>
-                </div>
-
-                <h3 className="g-title">{item.title}</h3>
-                <p className="g-desc">{item.description}</p>
-
-                <div className="g-meta-grid">
-                  <div>
-                    <span className="meta-label">Department</span>
-                    <span className="meta-value">{item.department}</span>
-                  </div>
-                  <div>
-                    <span className="meta-label">Location / Ward</span>
-                    <span className="meta-value">{item.location}</span>
-                  </div>
-                  <div>
-                    <span className="meta-label">Officer Assigned</span>
-                    <span className="meta-value">{item.assignedOfficer || 'Pending Dispatch'}</span>
-                  </div>
-                  <div>
-                    <span className="meta-label">Submitted On</span>
-                    <span className="meta-value">{new Date(item.createdAt).toLocaleDateString()}</span>
-                  </div>
-                </div>
-
-                <div className="g-card-footer">
-                  {item.feedback ? (
-                    <span className="feedback-done-tag">
-                      <MessageSquareCheck size={14} /> Citizen Feedback Submitted ({item.feedback.rating}/5 Stars)
-                    </span>
-                  ) : (
-                    <span className="g-sla-info">SLA Target Date: <strong>{new Date(item.slaDeadline).toLocaleDateString()}</strong></span>
-                  )}
-
-                  <button 
-                    className="btn btn-secondary btn-sm"
-                    onClick={() => {
-                      selectGrievanceToTrack(item.id);
-                      setActiveTab('track');
-                    }}
-                  >
-                    {t('trackProgress')}
-                    <ExternalLink size={14} />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
     </div>
