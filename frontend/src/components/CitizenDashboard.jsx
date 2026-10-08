@@ -326,7 +326,7 @@ export default function CitizenDashboard({
         className="india-gov-hero-section"
         style={{
           backgroundImage: `linear-gradient(180deg, rgba(10, 18, 35, 0.25) 0%, rgba(10, 18, 35, 0.42) 50%, rgba(10, 18, 35, 0.70) 100%), url(${govHeroBg})`,
-          backgroundAttachment: 'fixed',
+          backgroundAttachment: 'scroll',
           backgroundSize: 'cover',
           backgroundPosition: 'center 30%',
           backgroundRepeat: 'no-repeat'

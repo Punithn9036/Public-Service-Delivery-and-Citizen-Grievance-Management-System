@@ -93,35 +93,45 @@ function MainAppContent() {
 
   // Centralized Navigation Controller that pushes snapshot to history
   const navigateTo = (newTab, options = {}) => {
-    // Save snapshot of current view before transitioning
-    const snapshot = {
-      activePortal,
-      activeTab,
-      selectedTrackId,
-      showGrievanceModal,
-      selectedServiceModal,
-      showSettingsModal,
-      showPrivacyModal,
-      showTermsModal,
-      scrollPosition: window.scrollY
-    };
+    // If navigating to main overview dashboard, reset navigation history
+    if (newTab === 'overview' && !showGrievanceModal && !selectedServiceModal && !showSettingsModal && !showPrivacyModal && !showTermsModal) {
+      setNavHistory([]);
+    } else {
+      // Save snapshot of current view before transitioning
+      const snapshot = {
+        activePortal,
+        activeTab,
+        selectedTrackId,
+        showGrievanceModal,
+        selectedServiceModal,
+        showSettingsModal,
+        showPrivacyModal,
+        showTermsModal,
+        scrollPosition: window.scrollY
+      };
 
-    // Prevent duplicate consecutive entries in history
-    const isSameState = activeTab === newTab && 
-      activePortal === (options.portal || activePortal) &&
-      selectedTrackId === (options.trackId !== undefined ? options.trackId : selectedTrackId) &&
-      !showGrievanceModal && !selectedServiceModal && !showSettingsModal && !showPrivacyModal && !showTermsModal;
+      // Prevent duplicate consecutive entries in history
+      const isSameState = activeTab === newTab && 
+        activePortal === (options.portal || activePortal) &&
+        selectedTrackId === (options.trackId !== undefined ? options.trackId : selectedTrackId) &&
+        !showGrievanceModal && !selectedServiceModal && !showSettingsModal && !showPrivacyModal && !showTermsModal;
 
-    if (!isSameState) {
-      setNavHistory(prev => [...prev, snapshot]);
-      // Update browser URL hash / history
-      try {
-        window.history.pushState({ tab: newTab, portal: options.portal || activePortal, trackId: options.trackId }, '', '#' + newTab);
-      } catch (e) {}
+      if (!isSameState) {
+        setNavHistory(prev => [...prev, snapshot]);
+        // Update browser URL hash / history
+        try {
+          window.history.pushState({ tab: newTab, portal: options.portal || activePortal, trackId: options.trackId }, '', '#' + newTab);
+        } catch (e) {}
+      }
     }
 
     if (options.portal) setActivePortal(options.portal);
-    if (newTab) setActiveTab(newTab);
+    if (newTab) {
+      setActiveTab(newTab);
+      if (newTab === 'overview') {
+        setNavHistory([]);
+      }
+    }
     if (options.trackId !== undefined) setSelectedTrackId(options.trackId);
     if (options.closeModals !== false) {
       setShowGrievanceModal(false);
@@ -160,6 +170,11 @@ function MainAppContent() {
         setShowPrivacyModal(Boolean(previousState.showPrivacyModal));
         setShowTermsModal(Boolean(previousState.showTermsModal));
 
+        // If returned to overview and no modals open, reset history completely
+        if (previousState.activeTab === 'overview' && !previousState.showGrievanceModal && !previousState.selectedServiceModal && !previousState.showSettingsModal && !previousState.showPrivacyModal && !previousState.showTermsModal) {
+          setNavHistory([]);
+        }
+
         if (previousState.scrollPosition !== undefined) {
           setTimeout(() => {
             window.scrollTo({ top: previousState.scrollPosition, behavior: 'smooth' });
@@ -169,10 +184,11 @@ function MainAppContent() {
       return;
     }
 
-    // 3. Fallback: If no history but on a sub-view, return to overview dashboard
+    // 3. Fallback: If no history but on a sub-view, return to overview dashboard and reset
     if (activeTab !== 'overview') {
       setActiveTab('overview');
       setActivePortal('citizen');
+      setNavHistory([]);
     }
   };
 
@@ -183,6 +199,9 @@ function MainAppContent() {
         setActiveTab(event.state.tab);
         if (event.state.portal) setActivePortal(event.state.portal);
         if (event.state.trackId !== undefined) setSelectedTrackId(event.state.trackId);
+        if (event.state.tab === 'overview') {
+          setNavHistory([]);
+        }
       } else {
         handleGoBack();
       }
@@ -192,10 +211,11 @@ function MainAppContent() {
     return () => window.removeEventListener('popstate', onPopState);
   }, [navHistory, showGrievanceModal, selectedServiceModal, showSettingsModal, showPrivacyModal, showTermsModal]);
 
-  const canGoBack = navHistory.length > 0 || activeTab !== 'overview' || showGrievanceModal || Boolean(selectedServiceModal) || showSettingsModal || showPrivacyModal || showTermsModal;
+  const isAnyModalOpen = showGrievanceModal || Boolean(selectedServiceModal) || showSettingsModal || showPrivacyModal || showTermsModal;
+  const canGoBack = activeTab !== 'overview' || isAnyModalOpen;
 
   const getPreviousPageTitle = () => {
-    if (showGrievanceModal || selectedServiceModal || showSettingsModal || showPrivacyModal || showTermsModal) {
+    if (isAnyModalOpen) {
       return 'Current Page';
     }
     if (navHistory.length > 0) {
