@@ -25,62 +25,58 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 
-// Client-side EXIF GPS Parser for JPEG/PNG
-function parseExifGps(arrayBuffer) {
+import exifr from 'exifr';
+import { createWorker } from 'tesseract.js';
+
+// Genuine EXIF & OCR GPS Address Extractor
+async function extractGeoCoordinatesFromImage(file, fileBase64) {
+  // 1. Try standard EXIF GPS Metadata via exifr
   try {
-    const dataView = new DataView(arrayBuffer);
-    if (dataView.getUint16(0, false) !== 0xFFD8) {
-      return null; // Not a JPEG
-    }
-
-    let offset = 2;
-    const length = dataView.byteLength;
-
-    while (offset < length) {
-      const marker = dataView.getUint16(offset, false);
-      offset += 2;
-
-      if (marker === 0xFFE1) { // APP1 Exif Marker
-        const exifLength = dataView.getUint16(offset, false);
-        offset += 2;
-
-        const exifHeader = dataView.getUint32(offset, false);
-        if (exifHeader === 0x45786966) { // 'Exif'
-          const tiffOffset = offset + 6;
-          const isLittleEndian = dataView.getUint16(tiffOffset, false) === 0x4949;
-
-          const ifdOffset = dataView.getUint32(tiffOffset + 4, isLittleEndian);
-          let currentOffset = tiffOffset + ifdOffset;
-          const numEntries = dataView.getUint16(currentOffset, isLittleEndian);
-          currentOffset += 2;
-
-          let gpsInfoOffset = null;
-          for (let i = 0; i < numEntries; i++) {
-            const tag = dataView.getUint16(currentOffset, isLittleEndian);
-            if (tag === 0x8825) { // GPS IFD Pointer
-              gpsInfoOffset = dataView.getUint32(currentOffset + 8, isLittleEndian);
-              break;
-            }
-            currentOffset += 12;
-          }
-
-          if (gpsInfoOffset) {
-            return {
-              lat: 12.9716,
-              lon: 77.5946,
-              method: 'EXIF GPS Metadata'
-            };
-          }
-        }
-        break;
-      } else {
-        const markerLength = dataView.getUint16(offset, false);
-        offset += markerLength;
-      }
+    const exifData = await exifr.gps(file);
+    if (exifData && typeof exifData.latitude === 'number' && typeof exifData.longitude === 'number') {
+      return {
+        lat: Number(exifData.latitude.toFixed(6)),
+        lon: Number(exifData.longitude.toFixed(6)),
+        source: 'EXIF Metadata GPS'
+      };
     }
   } catch (err) {
-    console.log("EXIF GPS parsing fallback:", err);
+    console.warn("exifr parsing notice:", err);
   }
+
+  // 2. Try OCR on GPS Map Camera timestamp & coordinate overlay burnt onto the image
+  try {
+    const worker = await createWorker('eng');
+    const ret = await worker.recognize(fileBase64);
+    await worker.terminate();
+
+    const ocrText = ret?.data?.text || '';
+    
+    // Match patterns like: Lat 12.9716° N / Long 77.5946° E or 12.9716, 77.5946 or GPS: 12.971594 77.594563
+    const latRegex = /(?:lat|latitude)?[:\s]*([+-]?\d{1,2}\.\d{3,7})\s*°?\s*([ns])?/i;
+    const lonRegex = /(?:lon|long|longitude)?[:\s]*([+-]?\d{1,3}\.\d{3,7})\s*°?\s*([ew])?/i;
+
+    const latMatch = ocrText.match(latRegex);
+    const lonMatch = ocrText.match(lonRegex);
+
+    if (latMatch && lonMatch) {
+      let latVal = parseFloat(latMatch[1]);
+      let lonVal = parseFloat(lonMatch[1]);
+      if (latMatch[2] && latMatch[2].toUpperCase() === 'S') latVal = -latVal;
+      if (lonMatch[2] && lonMatch[2].toUpperCase() === 'W') lonVal = -lonVal;
+
+      return {
+        lat: Number(latVal.toFixed(6)),
+        lon: Number(lonVal.toFixed(6)),
+        ocrAddressText: ocrText,
+        source: 'GPS Map Camera Visual Stamp (OCR Extracted)'
+      };
+    }
+  } catch (ocrErr) {
+    console.warn("OCR recognition fallback:", ocrErr);
+  }
+
+  // No real GPS data found in image
   return null;
 }
 
@@ -233,38 +229,44 @@ export default function GrievanceFormModal({
     setUpvotedTicket(ticket);
   };
 
+  // State for Geotag Missing Error
+  const [imageGpsError, setImageGpsError] = useState(false);
+
   // Automated GPS Image Processing & Reverse Geocoding
   const handlePhotoUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     setIsProcessingImage(true);
+    setImageGpsError(false);
 
     const reader = new FileReader();
     reader.onload = async () => {
       const fileBase64 = reader.result;
       setImagePreview(fileBase64);
 
-      // Parse ArrayBuffer for embedded EXIF GPS tags
-      const arrayBufferReader = new FileReader();
-      arrayBufferReader.onload = async (event) => {
-        const buffer = event.target.result;
-        let coords = parseExifGps(buffer);
+      try {
+        // Run actual EXIF & OCR GPS extraction on the uploaded image
+        const coords = await extractGeoCoordinatesFromImage(file, fileBase64);
 
-        // Generate precise geo coordinates if EXIF stripped or GPS Camera photo
-        if (!coords) {
-          const randomLat = (12.9716 + (Math.random() - 0.5) * 0.04).toFixed(4);
-          const randomLon = (77.5946 + (Math.random() - 0.5) * 0.04).toFixed(4);
-          coords = {
-            lat: randomLat,
-            lon: randomLon,
-            method: 'GPS Map Camera Geotag'
-          };
+        if (!coords || !coords.lat || !coords.lon) {
+          // The image has no GPS EXIF tags and no OCR GPS overlay
+          setIsProcessingImage(false);
+          setImageGpsError(true);
+          setGpsData(null);
+          setFormData(prev => ({
+            ...prev,
+            attachmentName: file.name,
+            fileContent: fileBase64,
+            location: '',
+            landmark: ''
+          }));
+          return;
         }
 
-        // Automatic Reverse Geocoding to exact Street, Ward, and City
-        let resolvedAddress = `100 Feet Road, Ward 14, Indiranagar, Bengaluru, Karnataka 560038`;
-        let resolvedLandmark = `Geotag: ${coords.lat}° N, ${coords.lon}° E (Indiranagar Metro Pillar #82)`;
+        // Genuine coordinates found: reverse geocode to real street & locality
+        let resolvedAddress = `Latitude: ${coords.lat}, Longitude: ${coords.lon}`;
+        let resolvedLandmark = `${coords.source} (${coords.lat}° N, ${coords.lon}° E)`;
 
         try {
           const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.lat}&lon=${coords.lon}`, {
@@ -274,13 +276,13 @@ export default function GrievanceFormModal({
           if (geoData && geoData.display_name) {
             const parts = geoData.display_name.split(',');
             resolvedAddress = parts.slice(0, 4).join(',').trim();
-            resolvedLandmark = `GPS: ${coords.lat}° N, ${coords.lon}° E (${geoData.address?.suburb || geoData.address?.neighbourhood || 'Ward 14'})`;
+            resolvedLandmark = `${coords.source}: ${coords.lat}° N, ${coords.lon}° E (${geoData.address?.suburb || geoData.address?.neighbourhood || geoData.address?.road || 'Local Area'})`;
           }
         } catch (apiErr) {
-          // Fallback to municipal ward
+          console.warn("Reverse geocode fetch notice:", apiErr);
         }
 
-        // Auto-populate formData location automatically
+        // Auto-populate formData location automatically with genuine extracted address
         setFormData(prev => ({
           ...prev,
           attachmentName: file.name,
@@ -295,13 +297,17 @@ export default function GrievanceFormModal({
           address: resolvedAddress,
           landmark: resolvedLandmark,
           fileName: file.name,
+          source: coords.source,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         });
 
         setIsAddressLocked(true);
         setIsProcessingImage(false);
-      };
-      arrayBufferReader.readAsArrayBuffer(file);
+      } catch (procErr) {
+        console.error("GPS processing error:", procErr);
+        setIsProcessingImage(false);
+        setImageGpsError(true);
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -669,7 +675,65 @@ export default function GrievanceFormModal({
                 </button>
               </div>
 
-              {!imagePreview ? (
+              {/* Geotag Missing Error Banner */}
+              {imageGpsError && (
+                <div className="animate-fade-in" style={{
+                  background: 'rgba(239, 68, 68, 0.12)',
+                  border: '1.5px solid #dc2626',
+                  borderRadius: '10px',
+                  padding: '14px',
+                  marginTop: '12px',
+                  display: 'flex',
+                  gap: '12px',
+                  alignItems: 'flex-start'
+                }}>
+                  <AlertCircle size={22} color="#dc2626" style={{ flexShrink: 0, marginTop: '2px' }} />
+                  <div style={{ flex: 1 }}>
+                    <strong style={{ color: '#dc2626', fontSize: '0.92rem' }}>
+                      No Geotag or GPS Address Found in Image
+                    </strong>
+                    <p style={{ margin: '4px 0 10px', fontSize: '0.8rem', color: 'var(--text-main)', lineHeight: '1.4' }}>
+                      This image does not contain embedded GPS EXIF coordinates or visual GPS map camera metadata. To prevent fake reports and ensure official field team dispatch, please upload an authentic geotagged photo.
+                    </p>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      <label className="btn btn-sm btn-primary" style={{ cursor: 'pointer', fontSize: '0.78rem' }}>
+                        Upload Geotagged Photo
+                        <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handleLiveGpsCapture}
+                        className="btn btn-sm btn-secondary"
+                        style={{ fontSize: '0.78rem' }}
+                      >
+                        <Crosshair size={13} /> Capture Current GPS
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Processing Loader */}
+              {isProcessingImage && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px',
+                  padding: '16px',
+                  background: 'var(--bg-secondary)',
+                  borderRadius: '10px',
+                  marginTop: '12px',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  color: 'var(--text-main)'
+                }}>
+                  <RefreshCw size={18} className="animate-spin" color="var(--brand-700)" />
+                  <span>Scanning image EXIF tags & extracting GPS coordinates...</span>
+                </div>
+              )}
+
+              {!imagePreview && !imageGpsError && (
                 /* Drag & Drop Upload Target */
                 <label style={{
                   display: 'flex',
@@ -683,12 +747,12 @@ export default function GrievanceFormModal({
                   border: '1px solid var(--border-subtle)',
                   transition: 'all 0.2s'
                 }}>
-                  <Camera size={32} color="#2563eb" style={{ marginBottom: '8px' }} />
+                  <Camera size={32} color="#2C5745" style={{ marginBottom: '8px' }} />
                   <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-main)' }}>
                     Take Photo or Select GPS Map Camera Image
                   </span>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                    JPG, PNG, HEIC • Auto-detects GPS Latitude & Longitude
+                    JPG, PNG, HEIC • Auto-detects GPS Latitude, Longitude & Ward
                   </span>
                   <input 
                     type="file" 
@@ -697,7 +761,9 @@ export default function GrievanceFormModal({
                     style={{ display: 'none' }}
                   />
                 </label>
-              ) : (
+              )}
+
+              {imagePreview && !imageGpsError && !isProcessingImage && (
                 /* Image Preview & Auto-Extracted GPS Card */
                 <div style={{
                   display: 'flex',
@@ -705,7 +771,7 @@ export default function GrievanceFormModal({
                   background: 'var(--bg-secondary)',
                   padding: '12px',
                   borderRadius: '10px',
-                  border: '1px solid rgba(34, 197, 94, 0.4)'
+                  border: '1px solid rgba(44, 87, 69, 0.4)'
                 }}>
                   <div style={{ position: 'relative', width: '90px', height: '90px', borderRadius: '8px', overflow: 'hidden', flexShrink: 0 }}>
                     <img 
@@ -735,23 +801,23 @@ export default function GrievanceFormModal({
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: '4px',
-                        background: 'rgba(34, 197, 94, 0.15)',
-                        color: '#16a34a',
+                        background: 'rgba(44, 87, 69, 0.15)',
+                        color: '#2C5745',
                         fontSize: '0.72rem',
                         fontWeight: 800,
                         padding: '2px 8px',
                         borderRadius: '12px'
                       }}>
-                        <Check size={12} /> GPS Address Extracted
+                        <Check size={12} /> Geotag Extracted ({gpsData?.source || 'GPS'})
                       </span>
-                      <label style={{ fontSize: '0.75rem', color: '#2563eb', fontWeight: 600, cursor: 'pointer' }}>
+                      <label style={{ fontSize: '0.75rem', color: '#2C5745', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline' }}>
                         Change Photo
                         <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} />
                       </label>
                     </div>
 
                     <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-main)', lineHeight: '1.3', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <MapPin size={13} style={{ flexShrink: 0, color: '#2563eb' }} />
+                      <MapPin size={13} style={{ flexShrink: 0, color: '#2C5745' }} />
                       <span>{formData.location || 'Locating street & ward...'}</span>
                     </div>
 
