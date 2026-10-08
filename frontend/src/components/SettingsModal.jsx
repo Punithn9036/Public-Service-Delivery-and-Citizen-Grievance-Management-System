@@ -77,12 +77,12 @@ export default function SettingsModal({ onClose, theme, toggleTheme }) {
             <div style={{
               width: '36px',
               height: '36px',
-              borderRadius: '10px',
-              background: 'rgba(37, 99, 235, 0.1)',
+              borderRadius: 'var(--radius-md)',
+              background: 'var(--brand-100)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#2563eb'
+              color: 'var(--brand-700)'
             }}>
               <Settings size={20} />
             </div>
@@ -115,9 +115,9 @@ export default function SettingsModal({ onClose, theme, toggleTheme }) {
                 alignItems: 'center',
                 gap: '8px',
                 padding: '10px 12px',
-                borderRadius: '8px',
+                borderRadius: 'var(--radius-md)',
                 border: 'none',
-                background: activeTab === 'profile' ? 'var(--brand-600, #2563eb)' : 'transparent',
+                background: activeTab === 'profile' ? 'var(--brand-700)' : 'transparent',
                 color: activeTab === 'profile' ? '#ffffff' : 'var(--text-main)',
                 fontSize: '0.85rem',
                 fontWeight: 600,
@@ -137,9 +137,9 @@ export default function SettingsModal({ onClose, theme, toggleTheme }) {
                 alignItems: 'center',
                 gap: '8px',
                 padding: '10px 12px',
-                borderRadius: '8px',
+                borderRadius: 'var(--radius-md)',
                 border: 'none',
-                background: activeTab === 'language' ? 'var(--brand-600, #2563eb)' : 'transparent',
+                background: activeTab === 'language' ? 'var(--brand-700)' : 'transparent',
                 color: activeTab === 'language' ? '#ffffff' : 'var(--text-main)',
                 fontSize: '0.85rem',
                 fontWeight: 600,
@@ -159,9 +159,9 @@ export default function SettingsModal({ onClose, theme, toggleTheme }) {
                 alignItems: 'center',
                 gap: '8px',
                 padding: '10px 12px',
-                borderRadius: '8px',
+                borderRadius: 'var(--radius-md)',
                 border: 'none',
-                background: activeTab === 'appearance' ? 'var(--brand-600, #2563eb)' : 'transparent',
+                background: activeTab === 'appearance' ? 'var(--brand-700)' : 'transparent',
                 color: activeTab === 'appearance' ? '#ffffff' : 'var(--text-main)',
                 fontSize: '0.85rem',
                 fontWeight: 600,
@@ -170,7 +170,7 @@ export default function SettingsModal({ onClose, theme, toggleTheme }) {
                 transition: 'all 0.2s'
               }}
             >
-              <Eye size={16} /> Appearance & A11y
+              <Eye size={16} /> Appearance & Theme
             </button>
 
             <button
@@ -181,9 +181,9 @@ export default function SettingsModal({ onClose, theme, toggleTheme }) {
                 alignItems: 'center',
                 gap: '8px',
                 padding: '10px 12px',
-                borderRadius: '8px',
+                borderRadius: 'var(--radius-md)',
                 border: 'none',
-                background: activeTab === 'notifications' ? 'var(--brand-600, #2563eb)' : 'transparent',
+                background: activeTab === 'notifications' ? 'var(--brand-700)' : 'transparent',
                 color: activeTab === 'notifications' ? '#ffffff' : 'var(--text-main)',
                 fontSize: '0.85rem',
                 fontWeight: 600,
@@ -203,9 +203,9 @@ export default function SettingsModal({ onClose, theme, toggleTheme }) {
                 alignItems: 'center',
                 gap: '8px',
                 padding: '10px 12px',
-                borderRadius: '8px',
+                borderRadius: 'var(--radius-md)',
                 border: 'none',
-                background: activeTab === 'security' ? 'var(--brand-600, #2563eb)' : 'transparent',
+                background: activeTab === 'security' ? 'var(--brand-700)' : 'transparent',
                 color: activeTab === 'security' ? '#ffffff' : 'var(--text-main)',
                 fontSize: '0.85rem',
                 fontWeight: 600,

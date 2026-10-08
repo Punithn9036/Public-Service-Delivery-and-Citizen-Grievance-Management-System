@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
 import CitizenDashboard from './components/CitizenDashboard';
 import TrackingView from './components/TrackingView';
@@ -226,41 +227,50 @@ function MainAppContent() {
 
   return (
     <div className="app-root">
-      
-      {/* Top Navbar Header */}
-      <Navbar 
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        activePortal={activePortal}
-        setActivePortal={setActivePortal}
-        theme={theme}
-        toggleTheme={toggleTheme}
-        unreadNotifications={notifications.length}
-        setShowNotifications={setShowNotifications}
-        openGrievanceModal={() => setShowGrievanceModal(true)}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        onOpenSettings={() => setShowSettingsModal(true)}
-      />
-
-      {/* Real-time Notifications Popover */}
-      {showNotifications && (
-        <NotificationsDrawer 
-          notifications={notifications}
-          onClose={() => setShowNotifications(false)}
-          onClearAll={() => setNotifications([])}
-          onSelectNotification={(n) => {
-            const match = n.title.match(/#(GRV-[\w-]+|APP-[\w-]+)/i);
-            if (match && match[1]) {
-              setSelectedTrackId(match[1]);
-              setActiveTab('track');
-            }
-          }}
+      <div className="app-layout">
+        
+        {/* Left Navigation Sidebar */}
+        <Sidebar 
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          activePortal={activePortal}
+          setActivePortal={setActivePortal}
+          openGrievanceModal={() => setShowGrievanceModal(true)}
+          onOpenSettings={() => setShowSettingsModal(true)}
         />
-      )}
 
-      {/* Main App Page View Switcher */}
-      <main className="main-app-container">
+        {/* Main Application Area */}
+        <div className="app-main-wrapper">
+          
+          {/* Top Navbar Header */}
+          <Navbar 
+            activeTab={activeTab}
+            unreadNotifications={notifications.length}
+            setShowNotifications={setShowNotifications}
+            openGrievanceModal={() => setShowGrievanceModal(true)}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            onOpenSettings={() => setShowSettingsModal(true)}
+          />
+
+          {/* Real-time Notifications Popover */}
+          {showNotifications && (
+            <NotificationsDrawer 
+              notifications={notifications}
+              onClose={() => setShowNotifications(false)}
+              onClearAll={() => setNotifications([])}
+              onSelectNotification={(n) => {
+                const match = n.title.match(/#(GRV-[\w-]+|APP-[\w-]+)/i);
+                if (match && match[1]) {
+                  setSelectedTrackId(match[1]);
+                  setActiveTab('track');
+                }
+              }}
+            />
+          )}
+
+          {/* Main App Page View Switcher */}
+          <main className="main-app-container">
         
         {/* Official / Admin Portal View */}
         {!isCitizen && activePortal === 'admin' ? (
@@ -321,43 +331,6 @@ function MainAppContent() {
 
       </main>
 
-      {/* Grievance Lodge Modal */}
-      {showGrievanceModal && (
-        <GrievanceFormModal 
-          departments={DEPARTMENTS}
-          onClose={() => setShowGrievanceModal(false)}
-          onSubmitGrievance={handleAddGrievance}
-        />
-      )}
-
-      {/* Service Application Modal */}
-      {selectedServiceModal && (
-        <ServiceApplicationModal 
-          service={selectedServiceModal}
-          onClose={() => setSelectedServiceModal(null)}
-          onSubmitApplication={handleAddApplication}
-        />
-      )}
-
-      {/* Portal & User Settings Modal */}
-      {showSettingsModal && (
-        <SettingsModal 
-          onClose={() => setShowSettingsModal(false)}
-          theme={theme}
-          toggleTheme={toggleTheme}
-        />
-      )}
-
-      {/* Privacy Policy Modal */}
-      {showPrivacyModal && (
-        <PrivacyPolicyModal onClose={() => setShowPrivacyModal(false)} />
-      )}
-
-      {/* Terms of Governance Modal */}
-      {showTermsModal && (
-        <TermsOfServiceModal onClose={() => setShowTermsModal(false)} />
-      )}
-
       {/* Footer */}
       <footer className="footer glass-card" style={{ borderRadius: 0, marginTop: '50px', borderBottom: 0, borderLeft: 0, borderRight: 0 }}>
         <div className="main-app-container flex-between flex-wrap gap-4" style={{ margin: 0, padding: '20px' }}>
@@ -371,7 +344,7 @@ function MainAppContent() {
             <button 
               type="button"
               onClick={() => setShowPrivacyModal(true)} 
-              style={{ background: 'none', border: 'none', color: 'var(--brand-600)', cursor: 'pointer', padding: 0, fontSize: 'inherit', fontWeight: 600, textDecoration: 'underline' }}
+              style={{ background: 'none', border: 'none', color: 'var(--brand-700)', cursor: 'pointer', padding: 0, fontSize: 'inherit', fontWeight: 600, textDecoration: 'underline' }}
             >
               Privacy Policy
             </button>
@@ -379,7 +352,7 @@ function MainAppContent() {
             <button 
               type="button"
               onClick={() => setShowTermsModal(true)} 
-              style={{ background: 'none', border: 'none', color: 'var(--brand-600)', cursor: 'pointer', padding: 0, fontSize: 'inherit', fontWeight: 600, textDecoration: 'underline' }}
+              style={{ background: 'none', border: 'none', color: 'var(--brand-700)', cursor: 'pointer', padding: 0, fontSize: 'inherit', fontWeight: 600, textDecoration: 'underline' }}
             >
               Terms of Governance
             </button>
@@ -388,7 +361,47 @@ function MainAppContent() {
       </footer>
 
     </div>
-  );
+  </div>
+
+  {/* Grievance Lodge Modal */}
+  {showGrievanceModal && (
+    <GrievanceFormModal 
+      departments={DEPARTMENTS}
+      onClose={() => setShowGrievanceModal(false)}
+      onSubmitGrievance={handleAddGrievance}
+    />
+  )}
+
+  {/* Service Application Modal */}
+  {selectedServiceModal && (
+    <ServiceApplicationModal 
+      service={selectedServiceModal}
+      onClose={() => setSelectedServiceModal(null)}
+      onSubmitApplication={handleAddApplication}
+    />
+  )}
+
+  {/* Portal & User Settings Modal */}
+  {showSettingsModal && (
+    <SettingsModal 
+      onClose={() => setShowSettingsModal(false)}
+      theme={theme}
+      toggleTheme={toggleTheme}
+    />
+  )}
+
+  {/* Privacy Policy Modal */}
+  {showPrivacyModal && (
+    <PrivacyPolicyModal onClose={() => setShowPrivacyModal(false)} />
+  )}
+
+  {/* Terms of Governance Modal */}
+  {showTermsModal && (
+    <TermsOfServiceModal onClose={() => setShowTermsModal(false)} />
+  )}
+
+</div>
+);
 }
 
 export default function App() {

@@ -12,12 +12,12 @@ export default function PrivacyPolicyModal({ onClose }) {
             <div style={{
               width: '36px',
               height: '36px',
-              borderRadius: '8px',
-              background: 'rgba(26, 86, 219, 0.1)',
+              borderRadius: 'var(--radius-md)',
+              background: 'var(--brand-100)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#1a56db'
+              color: 'var(--brand-700)'
             }}>
               <ShieldCheck size={20} />
             </div>

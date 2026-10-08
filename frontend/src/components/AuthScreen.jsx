@@ -140,13 +140,13 @@ export default function AuthScreen() {
           <div style={{
             width: '56px',
             height: '56px',
-            borderRadius: '14px',
-            background: 'linear-gradient(135deg, #1d4ed8, #2563eb)',
+            borderRadius: 'var(--radius-md)',
+            background: 'var(--brand-700)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             margin: '0 auto 16px',
-            boxShadow: '0 4px 14px rgba(37, 99, 235, 0.35)'
+            boxShadow: '0 2px 8px rgba(74, 74, 74, 0.1)'
           }}>
             <Building size={30} color="#ffffff" />
           </div>

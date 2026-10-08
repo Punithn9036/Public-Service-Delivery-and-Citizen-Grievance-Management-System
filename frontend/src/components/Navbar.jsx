@@ -1,13 +1,10 @@
+import React from 'react';
 import { 
-  Building, 
-  Moon, 
-  Sun, 
   Bell, 
   PlusCircle, 
   ShieldCheck, 
   UserCheck, 
   Search, 
-  LogOut, 
   Globe,
   Settings
 } from 'lucide-react';
@@ -16,11 +13,6 @@ import { useLanguage } from '../context/LanguageContext';
 
 export default function Navbar({ 
   activeTab, 
-  setActiveTab, 
-  activePortal, 
-  setActivePortal, 
-  theme, 
-  toggleTheme, 
   unreadNotifications, 
   setShowNotifications, 
   openGrievanceModal,
@@ -28,128 +20,76 @@ export default function Navbar({
   setSearchQuery,
   onOpenSettings
 }) {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { lang, setLang, t } = useLanguage();
 
   const isCitizen = user?.role === 'CITIZEN';
 
+  const getPageTitle = () => {
+    switch (activeTab) {
+      case 'overview': return t('overviewTab') || 'Dashboard Overview';
+      case 'services': return t('servicesTab') || 'Public Services Catalog';
+      case 'track': return t('trackTab') || 'Track Status & Resolution';
+      case 'faqs': return t('faqsTab') || 'Knowledge Base & AI Guide';
+      case 'admin-dashboard': return t('nodalOfficerControl') || 'Admin Governance Center';
+      default: return 'JanSeva Portal';
+    }
+  };
+
   return (
-    <header className="navbar-header glass-card" style={{ borderRadius: 0, borderTop: 0, borderLeft: 0, borderRight: 0, sticky: 'top', zIndex: 900 }}>
+    <header className="navbar-header">
       <div className="nav-container">
         
-        {/* Left: Branding */}
-        <div className="nav-brand" onClick={() => setActiveTab('overview')} style={{ cursor: 'pointer' }}>
-          <div className="brand-icon-box">
-            <Building className="brand-icon" size={24} color="#ffffff" />
-          </div>
-          <div>
-            <div className="brand-title-row">
-              <span className="brand-name">JanSeva</span>
-              <span className="brand-tagline">{t('brandTagline')}</span>
-            </div>
-            <p className="brand-sub">{t('brandSubtitle')}</p>
-          </div>
+        {/* Left: Page Title / Breadcrumb */}
+        <div className="nav-page-context">
+          <h2 className="nav-page-heading">{getPageTitle()}</h2>
+          <span className="nav-page-sub">Public Service Delivery & Citizen Grievance Portal</span>
         </div>
 
-        {/* Search bar */}
+        {/* Center: Search bar */}
         <div className="nav-search-box">
           <Search size={16} className="search-icon" />
           <input 
             type="text" 
-            placeholder={t('searchPlaceholder')} 
+            placeholder={t('searchPlaceholder') || 'Search tickets, services, or FAQs...'} 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="nav-search-input"
           />
         </div>
 
-        {/* Middle/Right Navigation Controls */}
+        {/* Right Controls */}
         <div className="nav-actions">
 
-          {/* User Role Badge */}
-          {user && (
-            <div className="user-badge-chip flex-align-center gap-2" style={{
-              background: isCitizen ? 'rgba(34, 197, 94, 0.1)' : 'rgba(26, 86, 219, 0.1)',
-              padding: '6px 12px',
-              borderRadius: '20px',
-              border: `1px solid ${isCitizen ? 'rgba(34, 197, 94, 0.3)' : 'rgba(26, 86, 219, 0.3)'}`
-            }}>
-              {isCitizen ? <UserCheck size={14} color="#22c55e" /> : <ShieldCheck size={14} color="#1a56db" />}
-              <span className="small-text font-bold" style={{ fontSize: '0.82rem', color: 'var(--text-primary)' }}>
-                {user.fullName || user.email}
-              </span>
-              <span style={{
-                fontSize: '0.7rem',
-                padding: '2px 6px',
-                borderRadius: '10px',
-                background: isCitizen ? '#22c55e' : '#1a56db',
-                color: '#ffffff',
-                fontWeight: '700'
-              }}>
-                {user.role}
-              </span>
-              {user.department && (
-                <span className="small-text text-muted" style={{ fontSize: '0.75rem' }}>
-                  • {user.department}
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* Lodge Grievance quick button for Citizen */}
-          {isCitizen && (
-            <button className="btn btn-primary btn-sm" onClick={openGrievanceModal}>
-              <PlusCircle size={16} />
-              <span>{t('lodgeGrievance')}</span>
-            </button>
-          )}
-
           {/* Regional Languages Dropdown Selector */}
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            background: 'var(--bg-secondary)',
-            borderRadius: '10px',
-            padding: '4px 10px',
-            border: '1.5px solid var(--border-subtle)',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-            gap: '6px'
-          }}>
-            <Globe size={15} color="#2563eb" style={{ flexShrink: 0 }} />
+          <div className="language-selector-pill">
+            <Globe size={15} style={{ flexShrink: 0, color: 'var(--brand-700)' }} />
             <select
               value={lang}
               onChange={(e) => setLang(e.target.value)}
-              style={{
-                background: 'transparent',
-                color: 'var(--text-main)',
-                border: 'none',
-                outline: 'none',
-                fontSize: '0.82rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                padding: '2px 4px'
-              }}
+              className="language-select-dropdown"
               aria-label="Select State Language"
               title="Select Regional Language"
             >
-              <option value="en" style={{ background: '#1e293b', color: '#fff' }}>English (Official)</option>
-              <option value="hi" style={{ background: '#1e293b', color: '#fff' }}>हिन्दी (North & Central)</option>
-              <option value="kn" style={{ background: '#1e293b', color: '#fff' }}>ಕನ್ನಡ (Karnataka)</option>
-              <option value="ta" style={{ background: '#1e293b', color: '#fff' }}>தமிழ் (Tamil Nadu)</option>
-              <option value="te" style={{ background: '#1e293b', color: '#fff' }}>తెలుగు (AP & Telangana)</option>
-              <option value="ml" style={{ background: '#1e293b', color: '#fff' }}>മലയാളം (Kerala)</option>
-              <option value="mr" style={{ background: '#1e293b', color: '#fff' }}>मराठी (Maharashtra)</option>
-              <option value="gu" style={{ background: '#1e293b', color: '#fff' }}>ગુજરાતી (Gujarat)</option>
-              <option value="bn" style={{ background: '#1e293b', color: '#fff' }}>বাংলা (West Bengal)</option>
-              <option value="or" style={{ background: '#1e293b', color: '#fff' }}>ଓଡ଼ିଆ (Odisha)</option>
-              <option value="pa" style={{ background: '#1e293b', color: '#fff' }}>ਪੰਜਾਬੀ (Punjab)</option>
-              <option value="as" style={{ background: '#1e293b', color: '#fff' }}>অসমীয়া (Assam)</option>
-              <option value="ur" style={{ background: '#1e293b', color: '#fff' }}>اردو (J&K, Telangana, UP)</option>
+              <option value="en">English (Official)</option>
+              <option value="hi">हिन्दी (North & Central)</option>
+              <option value="kn">ಕನ್ನಡ (Karnataka)</option>
+              <option value="ta">தமிழ் (Tamil Nadu)</option>
+              <option value="te">తెలుగు (AP & Telangana)</option>
+              <option value="ml">മലയാളം (Kerala)</option>
+              <option value="mr">मराठी (Maharashtra)</option>
+              <option value="gu">ગુજરાતી (Gujarat)</option>
+              <option value="bn">বাংলা (West Bengal)</option>
+              <option value="or">ଓଡ଼ିଆ (Odisha)</option>
+              <option value="pa">ਪੰਜਾਬੀ (Punjab)</option>
+              <option value="as">অসমীয়া (Assam)</option>
+              <option value="ur">اردو (J&K, Telangana, UP)</option>
             </select>
           </div>
 
           {/* Notifications */}
           <button 
+            type="button"
             className="icon-circle-btn" 
             onClick={() => setShowNotifications(prev => !prev)}
             title="Notifications"
@@ -160,69 +100,31 @@ export default function Navbar({
             )}
           </button>
 
-          {/* Theme Toggle */}
-          <button 
-            className="icon-circle-btn" 
-            onClick={toggleTheme} 
-            title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
-          >
-            {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
-          </button>
-
-          {/* Portal & User Settings */}
+          {/* Settings Quick Access */}
           <button
+            type="button"
             className="icon-circle-btn"
             onClick={onOpenSettings}
-            title="Portal Settings & Preferences"
+            title="Portal Settings (Theme, Language, Profile)"
           >
             <Settings size={18} />
           </button>
 
-          {/* Logout Button */}
-          {user && (
-            <button
-              onClick={logout}
-              className="btn btn-secondary btn-sm"
-              title="Sign Out of Portal"
-              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+          {/* Quick Lodge Grievance for Citizen */}
+          {isCitizen && (
+            <button 
+              type="button"
+              className="btn btn-primary btn-sm" 
+              onClick={openGrievanceModal}
             >
-              <LogOut size={14} />
-              <span>{t('signOut')}</span>
+              <PlusCircle size={15} />
+              <span>{t('lodgeGrievance') || 'Lodge Grievance'}</span>
             </button>
           )}
+
         </div>
 
       </div>
-
-      {/* Navigation Sub-bar for Citizens */}
-      {isCitizen && (
-        <div className="nav-subtabs">
-          <button 
-            className={`subtab ${activeTab === 'overview' ? 'active' : ''}`} 
-            onClick={() => setActiveTab('overview')}
-          >
-            {t('overviewTab')}
-          </button>
-          <button 
-            className={`subtab ${activeTab === 'services' ? 'active' : ''}`} 
-            onClick={() => setActiveTab('services')}
-          >
-            {t('servicesTab')}
-          </button>
-          <button 
-            className={`subtab ${activeTab === 'track' ? 'active' : ''}`} 
-            onClick={() => setActiveTab('track')}
-          >
-            {t('trackTab')}
-          </button>
-          <button 
-            className={`subtab ${activeTab === 'faqs' ? 'active' : ''}`} 
-            onClick={() => setActiveTab('faqs')}
-          >
-            {t('faqsTab')}
-          </button>
-        </div>
-      )}
     </header>
   );
 }
