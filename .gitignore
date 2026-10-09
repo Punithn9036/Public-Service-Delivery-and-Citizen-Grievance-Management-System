@@ -43,3 +43,9 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+
+# Runtime data
+backend/data/
+foodie-admin/
+foodie-backend/
+
