@@ -459,13 +459,13 @@ export default function CitizenDashboard({
                   target.scrollIntoView({ behavior: 'smooth' });
                 }
               }}
-              aria-label="Scroll down to services and grievance registry"
-              title="Scroll down to explore services & grievances"
+              aria-label="Scroll down to explore more services"
+              title="Scroll down to explore more services"
             >
               <div className="scroll-arrow-circle">
                 <ChevronDown size={26} className="bouncing-arrow" />
               </div>
-              <span className="scroll-arrow-label">Explore Services & Grievances</span>
+              <span className="scroll-arrow-label">Explore More Services</span>
             </button>
           </div>
 

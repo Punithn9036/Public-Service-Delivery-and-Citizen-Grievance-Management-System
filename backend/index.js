@@ -4,6 +4,8 @@ const cors = require('cors');
 
 const authRoutes = require('./src/routes/authRoutes');
 const grievanceRoutes = require('./src/routes/grievanceRoutes');
+const applicationRoutes = require('./src/routes/applicationRoutes');
+const serviceRoutes = require('./src/routes/serviceRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -24,6 +26,8 @@ app.get('/api/health', (req, res) => {
 // Mount Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/grievances', grievanceRoutes);
+app.use('/api/applications', applicationRoutes);
+app.use('/api/services', serviceRoutes);
 
 app.listen(PORT, () => {
   console.log(`[JanSeva Backend] Server running on http://localhost:${PORT}`);

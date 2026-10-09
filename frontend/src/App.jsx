@@ -16,7 +16,7 @@ import AuthScreen from './components/AuthScreen';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
 import ErrorBoundary from './components/ErrorBoundary';
-import { grievanceAPI } from './api/apiClient';
+import { grievanceAPI, applicationAPI, serviceAPI } from './api/apiClient';
 
 import { 
   INITIAL_SERVICES, 
@@ -260,19 +260,24 @@ function MainAppContent() {
     localStorage.setItem('janseva_applications', JSON.stringify(applications));
   }, [applications]);
 
-  // Fetch live grievances from backend API on mount
+  // Fetch live grievances, applications, and services from backend API on mount
   useEffect(() => {
-    async function fetchLiveGrievances() {
+    async function fetchLiveData() {
       try {
-        const data = await grievanceAPI.getAll();
-        if (data.grievances && data.grievances.length > 0) {
-          setGrievances(data.grievances);
+        const gData = await grievanceAPI.getAll();
+        if (gData && gData.grievances && gData.grievances.length > 0) {
+          setGrievances(gData.grievances);
         }
-      } catch (err) {
-        // Fallback to local state if backend is offline
-      }
+      } catch (err) {}
+
+      try {
+        const aData = await applicationAPI.getAll();
+        if (aData && aData.applications && aData.applications.length > 0) {
+          setApplications(aData.applications);
+        }
+      } catch (err) {}
     }
-    fetchLiveGrievances();
+    fetchLiveData();
   }, []);
 
   const toggleTheme = () => {
@@ -298,7 +303,11 @@ function MainAppContent() {
     ]);
   };
 
-  const handleUpvoteGrievance = (existingTicketId) => {
+  const handleUpvoteGrievance = async (existingTicketId) => {
+    try {
+      await grievanceAPI.upvote(existingTicketId, user?.fullName || 'Citizen');
+    } catch (e) {}
+
     setGrievances(prev => prev.map(g => {
       if (g.id === existingTicketId) {
         const currentCount = g.reportCount || 1;
@@ -334,7 +343,11 @@ function MainAppContent() {
     ]);
   };
 
-  const handleAddApplication = (newApp) => {
+  const handleAddApplication = async (newApp) => {
+    try {
+      await applicationAPI.create(newApp);
+    } catch (e) {}
+
     setApplications(prev => [newApp, ...prev]);
     setNotifications(prev => [
       {

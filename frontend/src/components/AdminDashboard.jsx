@@ -22,6 +22,7 @@ import {
   Activity
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { applicationAPI } from '../api/apiClient';
 
 export default function AdminDashboard({
   grievances,
@@ -96,13 +97,21 @@ export default function AdminDashboard({
     setEditingItem(null);
   };
 
-  const handleApproveApplication = (appId, status) => {
+  const handleApproveApplication = async (appId, status) => {
+    const remarks = status === 'Approved' 
+      ? 'Verified by Registrar. Digital certificate generated.' 
+      : 'Application rejected due to document mismatch.';
+
+    try {
+      await applicationAPI.updateStatus(appId, { status, remarks });
+    } catch (e) {}
+
     setServiceApps(prev => prev.map(a => {
       if (a.id === appId) {
         return {
           ...a,
           status,
-          remarks: status === 'Approved' ? 'Verified by Registrar. Digital certificate generated.' : 'Application rejected due to document mismatch.'
+          remarks
         };
       }
       return a;
