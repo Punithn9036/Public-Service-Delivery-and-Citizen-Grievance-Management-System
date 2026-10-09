@@ -2,6 +2,7 @@
 // Controller for Public Service Applications
 const ApplicationModel = require('../../models/application');
 const ServiceModel = require('../../models/service');
+const { uploadToIPFS } = require('../../utils/ipfs');
 
 /**
  * Get all service applications with optional status, department, and phone filters
@@ -47,6 +48,12 @@ const createApplication = async (req, res) => {
       applicantName,
       applicantPhone,
       applicantEmail,
+      identityProof,
+      identityNumber,
+      address,
+      ipfsDocumentCid,
+      fileContent,
+      fileName,
       documents
     } = req.body;
 
@@ -55,6 +62,16 @@ const createApplication = async (req, res) => {
         error: 'VALIDATION_ERROR',
         message: 'applicantName, applicantPhone, and service details are required.'
       });
+    }
+
+    let finalCid = ipfsDocumentCid || null;
+    if (fileContent) {
+      try {
+        const ipfsRes = await uploadToIPFS(fileContent, fileName || 'identity_document.pdf');
+        finalCid = (ipfsRes && ipfsRes.cid) ? ipfsRes.cid : (typeof ipfsRes === 'string' ? ipfsRes : finalCid);
+      } catch (e) {
+        console.warn('IPFS upload warning in createApplication:', e);
+      }
     }
 
     // Lookup service SLA if serviceId provided
@@ -84,6 +101,10 @@ const createApplication = async (req, res) => {
       applicantName,
       applicantPhone,
       applicantEmail: applicantEmail || '',
+      identityProof: identityProof || 'Aadhaar Card',
+      identityNumber: identityNumber || '',
+      address: address || '',
+      ipfsDocumentCid: finalCid,
       status: 'Submitted',
       appliedDate,
       slaDays,

@@ -40,7 +40,8 @@ describe('Core Functionality & Utility Unit Tests', () => {
 
   test('IPFS upload helper should return a cryptographic Content Identifier (CID)', async () => {
     const testContent = 'Proof document data for road pot hole';
-    const cid = await uploadToIPFS(testContent, 'evidence.txt');
+    const res = await uploadToIPFS(testContent, 'evidence.txt');
+    const cid = (res && res.cid) ? res.cid : res;
     expect(cid).toBeDefined();
     expect(cid.startsWith('Qm')).toBe(true);
   });

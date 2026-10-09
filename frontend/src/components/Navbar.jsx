@@ -32,7 +32,7 @@ export default function Navbar({
   const { lang, setLang, t } = useLanguage();
 
   const isCitizen = user?.role === 'CITIZEN';
-  const isHeroTab = activeTab === 'overview';
+  const isHeroTab = activeTab === 'overview' || activeTab === 'admin-dashboard';
 
   const getPageTitle = () => {
     switch (activeTab) {
@@ -67,13 +67,13 @@ export default function Navbar({
           {/* JanSeva Official Brand Badge & Portal Title */}
           <div 
             className="nav-brand-badge" 
-            onClick={() => onNavigate ? onNavigate('overview') : setActiveTab('overview')} 
+            onClick={() => onNavigate ? onNavigate(isCitizen ? 'overview' : 'admin-dashboard') : setActiveTab(isCitizen ? 'overview' : 'admin-dashboard')} 
             style={{ cursor: 'pointer' }}
-            title="JanSeva Civic Portal Home"
+            title={isCitizen ? "JanSeva Civic Portal Home" : "JanSeva Official Governance Dashboard"}
           >
             <div className="nav-brand-title-wrap">
               <span className="nav-brand-name">JanSeva</span>
-              <span className="nav-brand-gov-plain">gov</span>
+              <span className="nav-brand-gov-plain">{isCitizen ? 'gov' : (user?.role === 'OFFICER' ? 'officer' : 'admin')}</span>
             </div>
           </div>
         </div>

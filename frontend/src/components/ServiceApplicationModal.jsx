@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { FileText, CheckCircle2, Send, Clock, ShieldCheck, User, Phone, Mail } from 'lucide-react';
+import { FileText, CheckCircle2, Send, Clock, ShieldCheck, User, Phone, Mail, Upload, Database, ExternalLink, RefreshCw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { ipfsAPI } from '../api/apiClient';
 
 export default function ServiceApplicationModal({ service, onClose, onSubmitApplication }) {
   const { user } = useAuth();
@@ -15,14 +16,34 @@ export default function ServiceApplicationModal({ service, onClose, onSubmitAppl
     declarationAgreed: false
   });
 
+  const [docFile, setDocFile] = useState(null);
+  const [docFileName, setDocFileName] = useState('');
+  const [docCid, setDocCid] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedId, setSubmittedId] = useState(null);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.applicantName || !formData.applicantPhone || !formData.declarationAgreed) {
       alert("Please fill in required fields and agree to the declaration.");
       return;
     }
+
+    setIsSubmitting(true);
+    let finalCid = null;
+
+    if (docFile) {
+      try {
+        const ipfsRes = await ipfsAPI.uploadFile(docFile, docFileName || 'identity_document.pdf');
+        if (ipfsRes && ipfsRes.cid) {
+          finalCid = ipfsRes.cid;
+        }
+      } catch (err) {
+        console.warn("IPFS upload warning:", err);
+      }
+    }
+
+    setDocCid(finalCid);
 
     const newAppId = `APP-2026-${Math.floor(1000 + Math.random() * 8999)}`;
     const newApp = {
@@ -33,6 +54,10 @@ export default function ServiceApplicationModal({ service, onClose, onSubmitAppl
       applicantName: formData.applicantName,
       applicantEmail: formData.applicantEmail,
       applicantPhone: formData.applicantPhone,
+      identityProof: formData.identityProof,
+      identityNumber: formData.identityNumber,
+      address: formData.address,
+      ipfsDocumentCid: finalCid,
       appliedDate: new Date().toISOString().slice(0, 10),
       status: 'Submitted',
       slaDays: service.slaDays,
@@ -40,6 +65,7 @@ export default function ServiceApplicationModal({ service, onClose, onSubmitAppl
       remarks: 'Application submitted. Document verification under process.'
     };
 
+    setIsSubmitting(false);
     onSubmitApplication(newApp);
     setSubmittedId(newAppId);
   };
@@ -67,6 +93,32 @@ export default function ServiceApplicationModal({ service, onClose, onSubmitAppl
             <h2>Application Submitted Successfully!</h2>
             <p className="success-sub">Application Reference Tracking Code:</p>
             <div className="id-highlight-box">{submittedId}</div>
+            {docCid && (
+              <div style={{
+                background: 'var(--bg-tertiary)',
+                padding: '12px 16px',
+                borderRadius: '8px',
+                margin: '15px 0',
+                border: '1px solid var(--border-subtle)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <span className="small-text text-muted" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Database size={14} className="text-blue" /> IPFS Verification CID:
+                </span>
+                <a
+                  href={`http://localhost:5000/api/ipfs/${docCid}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ fontSize: '0.78rem', fontFamily: 'monospace', color: '#1d4ed8', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px', textDecoration: 'none' }}
+                  title="View pinned identity document via IPFS Gateway"
+                >
+                  <span>{docCid.slice(0, 16)}...{docCid.slice(-6)}</span>
+                  <ExternalLink size={12} />
+                </a>
+              </div>
+            )}
             <p className="muted-text" style={{ margin: '15px 0 20px' }}>
               Guaranteed SLA Delivery: <strong>{service.slaDays} Days</strong> (Target: {new Date(Date.now() + service.slaDays * 24 * 60 * 60 * 1000).toLocaleDateString()})
             </p>
@@ -160,6 +212,45 @@ export default function ServiceApplicationModal({ service, onClose, onSubmitAppl
                 />
               </div>
 
+              <div className="form-group col-span-2">
+                <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                  <span>Supporting Identity / Proof Document (Optional)</span>
+                  <span style={{ fontSize: '0.72rem', color: '#16a34a', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
+                    <Database size={12} /> IPFS Pinned
+                  </span>
+                </label>
+                <div style={{
+                  border: '1.5px dashed var(--border-subtle)',
+                  borderRadius: '8px',
+                  padding: '14px',
+                  textAlign: 'center',
+                  background: 'var(--bg-tertiary)',
+                  cursor: 'pointer'
+                }}>
+                  <input
+                    type="file"
+                    accept=".pdf,image/png,image/jpeg,image/webp"
+                    id="app-doc-upload"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        setDocFile(e.target.files[0]);
+                        setDocFileName(e.target.files[0].name);
+                      }
+                    }}
+                  />
+                  <label htmlFor="app-doc-upload" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', margin: 0 }}>
+                    <Upload size={20} className="text-blue" />
+                    <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                      {docFileName ? `Selected: ${docFileName}` : 'Choose PDF, JPEG, or PNG to Pin to IPFS'}
+                    </span>
+                    <span className="small-text text-muted" style={{ fontSize: '0.72rem' }}>
+                      Cryptographic SHA-256 Content-Addressed Storage
+                    </span>
+                  </label>
+                </div>
+              </div>
+
               <div className="form-group col-span-2 flex-align-center" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <input 
                   type="checkbox" 
@@ -174,11 +265,19 @@ export default function ServiceApplicationModal({ service, onClose, onSubmitAppl
             </div>
 
             <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" onClick={onClose}>
+              <button type="button" className="btn btn-secondary" onClick={onClose} disabled={isSubmitting}>
                 Cancel
               </button>
-              <button type="submit" className="btn btn-primary" disabled={!formData.declarationAgreed}>
-                <Send size={16} /> Submit Official Application
+              <button type="submit" className="btn btn-primary" disabled={!formData.declarationAgreed || isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <RefreshCw size={16} className="animate-spin" /> Pinning to IPFS...
+                  </>
+                ) : (
+                  <>
+                    <Send size={16} /> Submit Official Application
+                  </>
+                )}
               </button>
             </div>
           </form>

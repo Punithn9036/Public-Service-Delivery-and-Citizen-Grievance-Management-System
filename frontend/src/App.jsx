@@ -455,8 +455,8 @@ function MainAppContent() {
         {/* Main Application Area */}
         <div className="app-main-wrapper">
           
-          {/* Top Navbar Header - Only on Dashboard Overview */}
-          {activeTab === 'overview' && (
+          {/* Top Navbar Header - On Dashboard Overview & Admin/Officer Dashboard */}
+          {(activeTab === 'overview' || activeTab === 'admin-dashboard') && (
             <Navbar 
               activeTab={activeTab}
               setActiveTab={(tab) => navigateTo(tab)}

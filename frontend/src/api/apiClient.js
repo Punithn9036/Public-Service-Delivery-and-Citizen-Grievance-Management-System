@@ -66,9 +66,38 @@ export const serviceAPI = {
   getById: (id) => request(`/services/${id}`, { method: 'GET' })
 };
 
+export const ipfsAPI = {
+  uploadFile: (fileOrPayload, filename = 'document') => {
+    if (typeof File !== 'undefined' && fileOrPayload instanceof File) {
+      const fd = new FormData();
+      fd.append('file', fileOrPayload);
+      return fetch(`${API_BASE_URL}/ipfs/upload`, {
+        method: 'POST',
+        body: fd
+      }).then(res => res.json());
+    }
+    if (typeof FormData !== 'undefined' && fileOrPayload instanceof FormData) {
+      return fetch(`${API_BASE_URL}/ipfs/upload`, {
+        method: 'POST',
+        body: fileOrPayload
+      }).then(res => res.json());
+    }
+    const bodyObj = typeof fileOrPayload === 'string'
+      ? { fileContent: fileOrPayload, filename }
+      : fileOrPayload;
+    return request('/ipfs/upload', {
+      method: 'POST',
+      body: JSON.stringify(bodyObj)
+    });
+  },
+  getGatewayUrl: (cid) => `${API_BASE_URL}/ipfs/${cid}`,
+  getMetadata: (cid) => request(`/ipfs/${cid}/meta`, { method: 'GET' })
+};
+
 export default {
   auth: authAPI,
   grievance: grievanceAPI,
   application: applicationAPI,
-  service: serviceAPI
+  service: serviceAPI,
+  ipfs: ipfsAPI
 };

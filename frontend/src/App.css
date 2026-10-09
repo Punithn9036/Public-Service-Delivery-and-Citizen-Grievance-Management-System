@@ -1243,6 +1243,38 @@
   color: #FFFFFF;
 }
 
+.trending-chip.active-chip {
+  background: #EB7D00 !important;
+  color: #FFFFFF !important;
+  border-color: #EB7D00 !important;
+  box-shadow: 0 2px 8px rgba(235, 125, 0, 0.5);
+}
+
+.admin-portal-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  padding: 6px 16px;
+  border-radius: 20px;
+  color: #FFFFFF;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-bottom: 14px;
+  text-transform: uppercase;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.admin-hero-dept-tag {
+  color: #FFF2B2;
+  font-weight: 600;
+  text-transform: none;
+}
+
 /* ========================================================================= */
 /* HERO SCROLL DOWN ARROW INDICATOR */
 /* ========================================================================= */
