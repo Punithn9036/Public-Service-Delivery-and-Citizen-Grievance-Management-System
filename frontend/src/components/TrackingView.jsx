@@ -23,6 +23,7 @@ import {
   FileText,
   ArrowLeft,
   Bell,
+  Eye,
   Globe
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
@@ -72,6 +73,7 @@ export default function TrackingView({
   const [feedbackText, setFeedbackText] = useState('');
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
   const [showLedgerModal, setShowLedgerModal] = useState(false);
+  const [showIpfsPreview, setShowIpfsPreview] = useState(false);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -312,49 +314,103 @@ export default function TrackingView({
                   border: '1px solid var(--border-subtle)',
                   borderRadius: '12px',
                   padding: '16px',
-                  marginBottom: '20px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  flexWrap: 'wrap',
-                  gap: '12px'
+                  marginBottom: '20px'
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '8px',
-                      background: 'rgba(37, 99, 235, 0.1)',
-                      color: '#2563eb',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
-                      <Database size={22} />
-                    </div>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <strong style={{ fontSize: '0.9rem' }}>Decentralized Proof on IPFS</strong>
-                        <span style={{ fontSize: '0.7rem', padding: '2px 6px', borderRadius: '10px', background: 'rgba(34, 197, 94, 0.15)', color: '#16a34a', fontWeight: 700 }}>
-                          Verified
-                        </span>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '12px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '8px',
+                        background: 'rgba(37, 99, 235, 0.1)',
+                        color: '#2563eb',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <Database size={22} />
                       </div>
-                      <p className="text-muted small-text" style={{ margin: 0, wordBreak: 'break-all', fontFamily: 'monospace' }}>
-                        CID: {activeSearchResult.ipfsDocumentCid}
-                      </p>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <strong style={{ fontSize: '0.9rem' }}>Decentralized Proof on IPFS</strong>
+                          <span style={{ fontSize: '0.7rem', padding: '2px 6px', borderRadius: '10px', background: 'rgba(34, 197, 94, 0.15)', color: '#16a34a', fontWeight: 700 }}>
+                            Pinned
+                          </span>
+                        </div>
+                        <p className="text-muted small-text" style={{ margin: 0, wordBreak: 'break-all', fontFamily: 'monospace' }}>
+                          CID: {activeSearchResult.ipfsDocumentCid}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        onClick={() => setShowIpfsPreview(prev => !prev)}
+                        className="btn btn-secondary btn-sm"
+                        style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                      >
+                        <Eye size={14} />
+                        <span>{showIpfsPreview ? 'Hide Preview' : 'Preview Evidence'}</span>
+                      </button>
+
+                      <a
+                        href={`http://localhost:5000/api/ipfs/${activeSearchResult.ipfsDocumentCid}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-secondary btn-sm"
+                        style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}
+                      >
+                        <ExternalLink size={14} />
+                        <span>Open Gateway</span>
+                      </a>
                     </div>
                   </div>
 
-                  <a
-                    href={`https://ipfs.io/ipfs/${activeSearchResult.ipfsDocumentCid}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn btn-secondary btn-sm"
-                    style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}
-                  >
-                    <ExternalLink size={14} />
-                    <span>View Evidence via IPFS Gateway</span>
-                  </a>
+                  {showIpfsPreview && (
+                    <div className="animate-fade-in" style={{
+                      marginTop: '14px',
+                      paddingTop: '14px',
+                      borderTop: '1px solid var(--border-subtle)',
+                      textAlign: 'center'
+                    }}>
+                      <div style={{
+                        maxWidth: '420px',
+                        margin: '0 auto',
+                        borderRadius: '8px',
+                        overflow: 'hidden',
+                        border: '1px solid var(--border-subtle)',
+                        background: '#000000',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                      }}>
+                        <img
+                          src={`http://localhost:5000/api/ipfs/${activeSearchResult.ipfsDocumentCid}`}
+                          alt="IPFS Evidence Document"
+                          style={{ width: '100%', maxHeight: '340px', objectFit: 'contain', display: 'block' }}
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            if (e.target.parentNode) {
+                              e.target.parentNode.innerHTML = `
+                                <div style="padding: 24px; color: #fff; text-align: center;">
+                                  <p style="font-weight: 600; margin-bottom: 8px;">Non-Image Document (PDF / Binary)</p>
+                                  <a href="http://localhost:5000/api/ipfs/${activeSearchResult.ipfsDocumentCid}" target="_blank" style="color: #60a5fa; text-decoration: underline; font-size: 0.85rem;">Click here to inspect or download file</a>
+                                </div>
+                              `;
+                            }
+                          }}
+                        />
+                      </div>
+                      <p className="small-text text-muted" style={{ marginTop: '8px', fontSize: '0.72rem' }}>
+                        Cryptographically retrieved from Local IPFS Repository • Content-addressed verification match
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 

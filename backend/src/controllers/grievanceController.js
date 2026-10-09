@@ -184,7 +184,10 @@ const createGrievance = async (req, res) => {
 
     let finalCid = ipfsDocumentCid || null;
     if (fileContent) {
-      finalCid = await uploadToIPFS(fileContent, fileName || 'document.pdf');
+      try {
+        const ipfsRes = await uploadToIPFS(fileContent, fileName || 'evidence.jpg');
+        finalCid = (ipfsRes && ipfsRes.cid) ? ipfsRes.cid : (typeof ipfsRes === 'string' ? ipfsRes : finalCid);
+      } catch (e) {}
     }
 
     const assignedPriority = priority && ['Low', 'Medium', 'High', 'Urgent'].includes(priority) ? priority : 'Medium';

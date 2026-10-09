@@ -7,13 +7,15 @@ const authRoutes = require('../src/routes/authRoutes');
 const grievanceRoutes = require('../src/routes/grievanceRoutes');
 const applicationRoutes = require('../src/routes/applicationRoutes');
 const serviceRoutes = require('../src/routes/serviceRoutes');
+const ipfsRoutes = require('../src/routes/ipfsRoutes');
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '15mb' }));
 app.use('/api/auth', authRoutes);
 app.use('/api/grievances', grievanceRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/services', serviceRoutes);
+app.use('/api/ipfs', ipfsRoutes);
 
 describe('Phase 1 REST API Integration Tests', () => {
   let citizenToken = '';
@@ -197,6 +199,106 @@ describe('Phase 1 REST API Integration Tests', () => {
 
       expect(res.statusCode).toBe(200);
       expect(res.body.application.status).toBe('In Verification');
+    });
+  });
+
+  // 5. Phase 2: Live IPFS Decentralized Document Storage Tests
+  describe('5. Phase 2: Live IPFS Decentralized Storage Endpoints', () => {
+    let uploadedCid = '';
+
+    test('POST /api/ipfs/upload should pin a base64 document and return a valid Qm CID', async () => {
+      const sampleText = 'JanSeva Decentralized Civic Evidence - Ground Truth Verification';
+      const base64Data = 'data:text/plain;base64,' + Buffer.from(sampleText).toString('base64');
+
+      const res = await request(app)
+        .post('/api/ipfs/upload')
+        .send({
+          fileContent: base64Data,
+          filename: 'civic_evidence.txt'
+        });
+
+      expect(res.statusCode).toBe(201);
+      expect(res.body.cid).toBeDefined();
+      expect(res.body.cid.startsWith('Qm')).toBe(true);
+      expect(res.body.gatewayUrl).toBe(`/api/ipfs/${res.body.cid}`);
+      expect(res.body.size).toBe(sampleText.length);
+      uploadedCid = res.body.cid;
+    });
+
+    test('GET /api/ipfs/:cid should stream content back with proper HTTP headers', async () => {
+      const res = await request(app)
+        .get(`/api/ipfs/${uploadedCid}`);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.text).toBe('JanSeva Decentralized Civic Evidence - Ground Truth Verification');
+      expect(res.headers['content-type']).toContain('text/plain');
+      expect(res.headers['etag']).toBe(`"${uploadedCid}"`);
+    });
+
+    test('GET /api/ipfs/:cid/meta should retrieve cryptographic metadata', async () => {
+      const res = await request(app)
+        .get(`/api/ipfs/${uploadedCid}/meta`);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.cid).toBe(uploadedCid);
+      expect(res.body.filename).toBe('civic_evidence.txt');
+      expect(res.body.sha256).toBeDefined();
+      expect(res.body.pinned).toBe(true);
+    });
+
+    test('POST /api/grievances with fileContent should automatically pin to IPFS and save CID', async () => {
+      const photoPayload = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=';
+      
+      const res = await request(app)
+        .post('/api/grievances')
+        .send({
+          title: 'Deep Pothole with Water Logging',
+          category: 'Roads & Infrastructure',
+          department: 'Public Works & Infrastructure',
+          description: 'Large crater in road causing traffic disruption and safety hazard.',
+          location: 'Outer Ring Road, Ward 22',
+          landmark: 'Opposite State Bank',
+          priority: 'High',
+          citizenName: 'Deepa Narayan',
+          citizenPhone: '+91 98888 77777',
+          fileContent: photoPayload,
+          fileName: 'pothole_photo.jpg'
+        });
+
+      expect(res.statusCode).toBe(201);
+      expect(res.body.grievance.ipfsDocumentCid).toBeDefined();
+      expect(res.body.grievance.ipfsDocumentCid.startsWith('Qm')).toBe(true);
+    });
+
+    test('POST /api/applications with fileContent should automatically pin to IPFS and save CID', async () => {
+      const certDoc = 'data:application/pdf;base64,JVBERi0xLjUKMSAwIG9iajw8L1R5cGUvQ2F0YWxvZz4+ZW5kb2JqCnRyYWlsZXI8PC9Sb290IDEgMCBSPj4=';
+
+      const res = await request(app)
+        .post('/api/applications')
+        .send({
+          serviceId: 'srv-1',
+          serviceName: 'Issue of Birth Certificate',
+          department: 'Revenue & Vital Statistics',
+          applicantName: 'Rohan Deshmukh',
+          applicantPhone: '+91 97777 66666',
+          applicantEmail: 'rohan.d@example.com',
+          identityProof: 'Aadhaar Card',
+          identityNumber: '9988-7766-5544',
+          fileContent: certDoc,
+          fileName: 'aadhaar_scan.pdf'
+        });
+
+      expect(res.statusCode).toBe(201);
+      expect(res.body.application.ipfsDocumentCid).toBeDefined();
+      expect(res.body.application.ipfsDocumentCid.startsWith('Qm')).toBe(true);
+    });
+
+    test('GET /api/ipfs/:cid with invalid CID should return 404 CID_NOT_FOUND', async () => {
+      const res = await request(app)
+        .get('/api/ipfs/QmNonExistentHash999999999999999999999999999');
+
+      expect(res.statusCode).toBe(404);
+      expect(res.body.error).toBe('CID_NOT_FOUND');
     });
   });
 

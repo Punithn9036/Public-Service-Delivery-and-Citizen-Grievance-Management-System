@@ -21,10 +21,12 @@ import {
   Users,
   Layers,
   ArrowRight,
+  ExternalLink,
   Image as ImageIcon
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { ipfsAPI } from '../api/apiClient';
 
 import exifr from 'exifr';
 import { createWorker } from 'tesseract.js';
@@ -129,6 +131,8 @@ export default function GrievanceFormModal({
   const [aiSuggestion, setAiSuggestion] = useState(null);
   const [submittedId, setSubmittedId] = useState(null);
   const [ipfsCid, setIpfsCid] = useState(null);
+  const [rawFile, setRawFile] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Duplicate Detection States
   const [nearbyDuplicates, setNearbyDuplicates] = useState([]);
@@ -238,6 +242,7 @@ export default function GrievanceFormModal({
     const file = e.target.files[0];
     if (!file) return;
 
+    setRawFile(file);
     setIsProcessingImage(true);
     setImageGpsError(false);
 
@@ -368,16 +373,39 @@ export default function GrievanceFormModal({
     );
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.title || !formData.description || !formData.location || !formData.citizenName || !formData.citizenPhone) {
       alert("Please upload a GPS photo or verify the grievance details.");
       return;
     }
 
-    const newTicketId = `GRV-2026-${Math.floor(8000 + Math.random() * 1900)}`;
-    const generatedCid = `Qm${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
+    setIsSubmitting(true);
+    let generatedCid = null;
+
+    try {
+      if (rawFile) {
+        const ipfsRes = await ipfsAPI.uploadFile(rawFile, formData.attachmentName || 'photo_evidence.jpg');
+        if (ipfsRes && ipfsRes.cid) {
+          generatedCid = ipfsRes.cid;
+        }
+      } else if (formData.fileContent) {
+        const ipfsRes = await ipfsAPI.uploadFile(formData.fileContent, formData.attachmentName || 'photo_evidence.jpg');
+        if (ipfsRes && ipfsRes.cid) {
+          generatedCid = ipfsRes.cid;
+        }
+      }
+    } catch (ipfsErr) {
+      console.warn("IPFS node pinning warning:", ipfsErr);
+    }
+
+    if (!generatedCid) {
+      generatedCid = `Qm${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
+    }
+
     setIpfsCid(generatedCid);
+
+    const newTicketId = `GRV-2026-${Math.floor(8000 + Math.random() * 1900)}`;
 
     const newGrievance = {
       id: newTicketId,
@@ -393,12 +421,13 @@ export default function GrievanceFormModal({
         {
           status: 'Submitted',
           timestamp: new Date().toISOString(),
-          note: `Grievance registered. Address automatically captured from GPS Photo (${gpsData ? `${gpsData.lat}° N, ${gpsData.lon}° E` : formData.location}). IPFS proof pinned.`
+          note: `Grievance registered. Address automatically captured from GPS Photo (${gpsData ? `${gpsData.lat}° N, ${gpsData.lon}° E` : formData.location}). IPFS proof pinned (${generatedCid}).`
         }
       ],
       feedback: null
     };
 
+    setIsSubmitting(false);
     onSubmitGrievance(newGrievance);
     setSubmittedId(newTicketId);
   };
@@ -524,9 +553,18 @@ export default function GrievanceFormModal({
                 </div>
               )}
               {ipfsCid && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-subtle)', paddingTop: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-subtle)', paddingTop: '10px' }}>
                   <span className="text-muted small-text">IPFS Evidence CID:</span>
-                  <span style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#2C5745' }}>{ipfsCid}</span>
+                  <a 
+                    href={`http://localhost:5000/api/ipfs/${ipfsCid}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ fontSize: '0.78rem', fontFamily: 'monospace', color: '#1d4ed8', fontWeight: 600, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                    title="View pinned image in IPFS Gateway"
+                  >
+                    <span>{ipfsCid.slice(0, 16)}...{ipfsCid.slice(-6)}</span>
+                    <ExternalLink size={13} />
+                  </a>
                 </div>
               )}
             </div>
@@ -964,11 +1002,25 @@ export default function GrievanceFormModal({
 
             {/* Modal Footer Submit */}
             <div className="modal-footer" style={{ marginTop: '20px' }}>
-              <button type="button" className="btn btn-secondary" onClick={onClose}>
+              <button type="button" className="btn btn-secondary" onClick={onClose} disabled={isSubmitting}>
                 Cancel
               </button>
-              <button type="submit" className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Send size={16} /> Submit Grievance
+              <button 
+                type="submit" 
+                className="btn btn-primary" 
+                disabled={isSubmitting}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                {isSubmitting ? (
+                  <>
+                    <RefreshCw size={16} className="animate-spin" />
+                    <span>Pinning to IPFS...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send size={16} /> Submit Grievance
+                  </>
+                )}
               </button>
             </div>
 

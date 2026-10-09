@@ -19,10 +19,16 @@ import {
   XCircle,
   Printer,
   TrendingUp,
-  Activity
+  Activity,
+  Search,
+  ChevronDown,
+  Filter
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import { applicationAPI } from '../api/apiClient';
+import govHeroBg from '../assets/gov-hero-bg.png';
+import nationalEmblemImg from '../assets/national-emblem.webp';
 
 export default function AdminDashboard({
   grievances,
@@ -32,9 +38,15 @@ export default function AdminDashboard({
   onAssignOfficer
 }) {
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const isOfficer = user?.role === 'OFFICER';
+  const isAdmin = user?.role === 'ADMIN';
+
   const [activeSection, setActiveSection] = useState('grievances'); // 'grievances' | 'applications' | 'analytics'
   const [selectedDept, setSelectedDept] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
+  const [selectedPriority, setSelectedPriority] = useState('All');
+  const [searchFilter, setSearchFilter] = useState('');
   const [editingItem, setEditingItem] = useState(null);
   const [newStatus, setNewStatus] = useState('');
   const [officerName, setOfficerName] = useState('');
@@ -53,8 +65,47 @@ export default function AdminDashboard({
   const filteredList = grievances.filter(g => {
     const matchDept = selectedDept === 'All' || g.department === selectedDept;
     const matchStatus = selectedStatus === 'All' || g.status === selectedStatus;
-    return matchDept && matchStatus;
+    const matchPriority = selectedPriority === 'All' || g.priority === selectedPriority;
+    const q = (searchFilter || '').trim().toLowerCase();
+    const matchSearch = !q || (
+      (g.id && g.id.toLowerCase().includes(q)) ||
+      (g.title && g.title.toLowerCase().includes(q)) ||
+      (g.citizenName && g.citizenName.toLowerCase().includes(q)) ||
+      (g.location && g.location.toLowerCase().includes(q)) ||
+      (g.assignedOfficer && g.assignedOfficer.toLowerCase().includes(q)) ||
+      (g.department && g.department.toLowerCase().includes(q))
+    );
+    return matchDept && matchStatus && matchPriority && matchSearch;
   });
+
+  const handleHeroSearchSubmit = (e) => {
+    if (e) e.preventDefault();
+    const target = document.getElementById('admin-management-section');
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const handleFilterChip = (type, val) => {
+    if (type === 'section') {
+      setActiveSection(val);
+      setSelectedStatus('All');
+      setSelectedPriority('All');
+    } else if (type === 'status') {
+      setActiveSection('grievances');
+      setSelectedStatus(prev => prev === val ? 'All' : val);
+    } else if (type === 'dept') {
+      setActiveSection('grievances');
+      setSelectedDept(prev => prev === val ? 'All' : val);
+    } else if (type === 'priority') {
+      setActiveSection('grievances');
+      setSelectedPriority(prev => prev === val ? 'All' : val);
+    }
+    const target = document.getElementById('admin-management-section');
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   // Calculate Department SLA Turnaround Time (TAT) Analytics
   const departmentStats = departments.map(dept => {
@@ -165,30 +216,269 @@ export default function AdminDashboard({
   };
 
   return (
-    <div className="admin-container animate-fade-in">
+    <div className="dashboard-content animate-fade-in" style={{ padding: 0 }}>
       
-      {/* Officer Header */}
-      <div className="admin-header glass-card">
-        <div className="admin-header-title">
-          <div className="badge-official">
-            <ShieldCheck size={18} />
-            <span>{t('nodalOfficerControl')}</span>
+      {/* ========================================================================= */}
+      {/* 1. GRAND GOVERNMENT HERO BANNER (FOR ADMIN & OFFICER) */}
+      {/* ========================================================================= */}
+      <div 
+        className="india-gov-hero-section admin-hero-theme"
+        style={{
+          backgroundImage: `linear-gradient(180deg, rgba(10, 18, 35, 0.28) 0%, rgba(10, 18, 35, 0.48) 50%, rgba(10, 18, 35, 0.76) 100%), url(${govHeroBg})`,
+          backgroundAttachment: 'scroll',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center 30%',
+          backgroundRepeat: 'no-repeat'
+        }}
+      >
+        <div className="hero-center-content">
+          {/* State Emblem of India */}
+          <div className="hero-emblem-container animate-float-subtle">
+            <img 
+              src={nationalEmblemImg} 
+              alt="State Emblem of India" 
+              className="hero-emblem-img"
+            />
           </div>
-          <h1>{t('publicGovernanceCenter')}</h1>
-          <p>{t('governanceSubtitle')}</p>
+
+          {/* Role Pill Badge */}
+          <div className="admin-portal-hero-badge">
+            <ShieldCheck size={15} />
+            <span>
+              {isOfficer 
+                ? (user?.department ? `${user.department} • Field Officer Control Desk` : 'Nodal Field Officer Command Desk')
+                : 'Central Nodal Administration & Governance Center'}
+            </span>
+          </div>
+
+          {/* Portal Title */}
+          <h1 className="hero-portal-title">
+            janseva<span className="hero-gov-dot">.gov.in</span>
+          </h1>
+
+          <div className="hero-portal-sub">
+            {isOfficer ? 'Designated Field Officer Command Desk' : 'Public Service Administration & Nodal Control Room'}
+          </div>
+
+          <p className="hero-tagline-quote">
+            {isOfficer 
+              ? `Authorized Officer: ${user?.fullName || 'Field Officer'} — Statutory SLA Compliance & Rapid Field Remediation` 
+              : `Authorized Administrator: ${user?.fullName || 'Administrator'} — Real-Time Grievance Routing, SLA Oversight & Blockchain Verification`}
+          </p>
+
+          {/* Central India.gov.in Style Search Bar */}
+          <form onSubmit={handleHeroSearchSubmit} className="hero-search-wrapper">
+            <div className="hero-search-input-box">
+              <Search size={18} className="hero-search-icon" />
+              <input 
+                type="text" 
+                placeholder={isOfficer 
+                  ? "Search tickets by ID (GRV-...), citizen name, location, or issue..." 
+                  : "Search grievances, applications, officers, wards, or ticket IDs..."} 
+                value={searchFilter}
+                onChange={(e) => setSearchFilter(e.target.value)}
+                className="hero-search-input"
+              />
+            </div>
+
+            <div className="hero-search-cat-dropdown">
+              <select 
+                value={selectedDept} 
+                onChange={(e) => setSelectedDept(e.target.value)}
+                className="hero-category-select"
+              >
+                <option value="All">All Departments</option>
+                {departments.map(d => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
+
+            <button type="submit" className="hero-search-submit-btn">
+              <span>Filter</span>
+            </button>
+          </form>
+
+          {/* Fast-Track Operations Chips */}
+          <div className="hero-trending-row">
+            <span className="trending-label">{isOfficer ? 'Quick Filters:' : 'Quick Operations:'}</span>
+            <div className="trending-chips-wrap">
+              {isOfficer ? (
+                <>
+                  <button 
+                    type="button" 
+                    className={`trending-chip ${selectedStatus === 'Submitted' ? 'active-chip' : ''}`}
+                    onClick={() => handleFilterChip('status', 'Submitted')}
+                  >
+                    <Clock size={12} />
+                    <span>Awaiting Review ({pendingCount})</span>
+                  </button>
+
+                  <button 
+                    type="button" 
+                    className={`trending-chip highlight-chip ${selectedStatus === 'In Progress' ? 'active-chip' : ''}`}
+                    onClick={() => handleFilterChip('status', 'In Progress')}
+                  >
+                    <UserCheck size={12} />
+                    <span>Active in Field ({inProgressCount})</span>
+                  </button>
+
+                  <button 
+                    type="button" 
+                    className={`trending-chip ${selectedStatus === 'All' && selectedDept === (user?.department || 'Water Supply & Sanitation') ? 'active-chip' : ''}`}
+                    onClick={() => handleFilterChip('dept', user?.department || 'Water Supply & Sanitation')}
+                  >
+                    <Building size={12} />
+                    <span>My Department</span>
+                  </button>
+
+                  <button 
+                    type="button" 
+                    className={`trending-chip ${selectedPriority === 'Urgent' ? 'active-chip' : ''}`}
+                    onClick={() => handleFilterChip('priority', 'Urgent')}
+                  >
+                    <Flame size={12} />
+                    <span>Urgent SLA ({urgentCount})</span>
+                  </button>
+
+                  <button 
+                    type="button" 
+                    className={`trending-chip ${selectedStatus === 'Resolved' ? 'active-chip' : ''}`}
+                    onClick={() => handleFilterChip('status', 'Resolved')}
+                  >
+                    <CheckCircle size={12} />
+                    <span>Resolved ({resolvedCount})</span>
+                  </button>
+
+                  <button 
+                    type="button" 
+                    className="trending-chip"
+                    onClick={exportCSV}
+                  >
+                    <FileSpreadsheet size={12} />
+                    <span>Export CSV</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button 
+                    type="button" 
+                    className={`trending-chip ${activeSection === 'grievances' && selectedStatus === 'All' && selectedPriority === 'All' ? 'active-chip' : ''}`}
+                    onClick={() => handleFilterChip('section', 'grievances')}
+                  >
+                    <Building size={12} />
+                    <span>All Grievances ({grievances.length})</span>
+                  </button>
+
+                  <button 
+                    type="button" 
+                    className={`trending-chip highlight-chip ${activeSection === 'applications' ? 'active-chip' : ''}`}
+                    onClick={() => handleFilterChip('section', 'applications')}
+                  >
+                    <FileCheck2 size={12} />
+                    <span>Service Apps ({serviceApps.length})</span>
+                  </button>
+
+                  <button 
+                    type="button" 
+                    className={`trending-chip ${selectedStatus === 'Submitted' ? 'active-chip' : ''}`}
+                    onClick={() => handleFilterChip('status', 'Submitted')}
+                  >
+                    <Clock size={12} />
+                    <span>Pending Review ({pendingCount})</span>
+                  </button>
+
+                  <button 
+                    type="button" 
+                    className={`trending-chip ${selectedPriority === 'Urgent' ? 'active-chip' : ''}`}
+                    onClick={() => handleFilterChip('priority', 'Urgent')}
+                  >
+                    <Flame size={12} />
+                    <span>Urgent ({urgentCount})</span>
+                  </button>
+
+                  <button 
+                    type="button" 
+                    className={`trending-chip ${activeSection === 'analytics' ? 'active-chip' : ''}`}
+                    onClick={() => handleFilterChip('section', 'analytics')}
+                  >
+                    <TrendingUp size={12} />
+                    <span>SLA TAT Analytics</span>
+                  </button>
+
+                  <button 
+                    type="button" 
+                    className="trending-chip"
+                    onClick={exportCSV}
+                  >
+                    <FileSpreadsheet size={12} />
+                    <span>Export CSV</span>
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
         </div>
 
-        <div className="admin-actions" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <button className="btn btn-primary" onClick={exportCSV}>
-            <FileSpreadsheet size={18} />
-            {t('exportCSV')}
-          </button>
-          <button className="btn btn-secondary" onClick={printAuditReport}>
-            <Printer size={18} />
-            {t('exportAudit')}
+        {/* Scroll Down Arrow Indicator Button */}
+        <div className="hero-scroll-down-container">
+          <button 
+            type="button" 
+            className="hero-scroll-down-btn"
+            onClick={() => {
+              const target = document.getElementById('admin-management-section');
+              if (target) {
+                target.scrollIntoView({ behavior: 'smooth' });
+              }
+            }}
+            aria-label="Scroll down to explore more services"
+            title="Scroll down to explore more services"
+          >
+            <div className="scroll-arrow-circle">
+              <ChevronDown size={26} className="bouncing-arrow" />
+            </div>
+            <span className="scroll-arrow-label">Explore More Services</span>
           </button>
         </div>
       </div>
+
+      {/* 2. ADMIN & OFFICER MANAGEMENT CONSOLE */}
+      <div className="admin-container" id="admin-management-section">
+        
+        {/* Officer / Admin Header */}
+        <div className="admin-header glass-card">
+          <div className="admin-header-title">
+            <div className="badge-official">
+              <ShieldCheck size={18} />
+              <span>
+                {isOfficer 
+                  ? (user?.department ? `${user.department} — Field Control Desk` : t('nodalOfficerControl'))
+                  : t('nodalOfficerControl')}
+              </span>
+            </div>
+            <h1>
+              {isOfficer 
+                ? 'Field Officer Operations & Ticket Redressal' 
+                : t('publicGovernanceCenter')}
+            </h1>
+            <p>
+              {isOfficer 
+                ? 'Rapid on-site verification, officer dispatch management, statutory SLA enforcement, and resolution closure.' 
+                : t('governanceSubtitle')}
+            </p>
+          </div>
+
+          <div className="admin-actions" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <button className="btn btn-primary" onClick={exportCSV}>
+              <FileSpreadsheet size={18} />
+              {t('exportCSV')}
+            </button>
+            <button className="btn btn-secondary" onClick={printAuditReport}>
+              <Printer size={18} />
+              {t('exportAudit')}
+            </button>
+          </div>
+        </div>
 
       {/* KPI Cards Row */}
       <div className="admin-kpi-grid">
@@ -291,11 +581,28 @@ export default function AdminDashboard({
           <div className="admin-table-card glass-card">
             <div className="table-header-controls">
               <div>
-                <h2>{t('manageTickets')}</h2>
-                <p>{t('manageTicketsSub')}</p>
+                <h2>{isOfficer ? 'Field Tickets & Grievance Registry' : t('manageTickets')}</h2>
+                <p>{isOfficer ? 'Inspect evidence, dispatch field units, update state machine, and log official notes' : t('manageTicketsSub')}</p>
               </div>
 
-              <div className="filter-row">
+              <div className="filter-row" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <input 
+                  type="text" 
+                  placeholder="Filter by ID, citizen, title..." 
+                  value={searchFilter}
+                  onChange={(e) => setSearchFilter(e.target.value)}
+                  className="filter-search-input"
+                  style={{
+                    padding: '7px 12px',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--border-subtle)',
+                    fontSize: '0.82rem',
+                    background: 'var(--bg-primary)',
+                    color: 'var(--text-main)',
+                    minWidth: '180px'
+                  }}
+                />
+
                 <select 
                   value={selectedDept} 
                   onChange={(e) => setSelectedDept(e.target.value)}
@@ -318,6 +625,18 @@ export default function AdminDashboard({
                   <option value="Assigned">Assigned</option>
                   <option value="In Progress">In Progress</option>
                   <option value="Resolved">Resolved</option>
+                </select>
+
+                <select 
+                  value={selectedPriority} 
+                  onChange={(e) => setSelectedPriority(e.target.value)}
+                  className="filter-select"
+                >
+                  <option value="All">All Priorities</option>
+                  <option value="Urgent">Urgent (&lt;24h)</option>
+                  <option value="High">High</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Low">Low</option>
                 </select>
               </div>
             </div>
@@ -359,7 +678,7 @@ export default function AdminDashboard({
                       <td>
                         {item.ipfsDocumentCid ? (
                           <a
-                            href={`https://ipfs.io/ipfs/${item.ipfsDocumentCid}`}
+                            href={`http://localhost:5000/api/ipfs/${item.ipfsDocumentCid}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{
@@ -429,6 +748,7 @@ export default function AdminDashboard({
                   <th>Department</th>
                   <th>Applicant Name</th>
                   <th>Phone</th>
+                  <th>Evidence (IPFS)</th>
                   <th>SLA Target</th>
                   <th>Status</th>
                   <th>Decision Actions</th>
@@ -448,6 +768,32 @@ export default function AdminDashboard({
                     <td>{app.department}</td>
                     <td><strong>{app.applicantName}</strong></td>
                     <td>{app.applicantPhone}</td>
+                    <td>
+                      {app.ipfsDocumentCid ? (
+                        <a
+                          href={`http://localhost:5000/api/ipfs/${app.ipfsDocumentCid}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            fontSize: '0.75rem',
+                            color: '#2563eb',
+                            textDecoration: 'none',
+                            background: 'rgba(37, 99, 235, 0.08)',
+                            padding: '3px 8px',
+                            borderRadius: '6px'
+                          }}
+                        >
+                          <Database size={12} />
+                          <span>IPFS Doc</span>
+                          <ExternalLink size={10} />
+                        </a>
+                      ) : (
+                        <span className="text-muted" style={{ fontSize: '0.75rem' }}>Aadhaar Verified</span>
+                      )}
+                    </td>
                     <td><span className="sla-pill">{app.slaDays} Days</span></td>
                     <td>
                       <span className={`badge badge-${(app.status || 'submitted').toLowerCase().replace(/\s+/g, '-')}`}>
@@ -616,6 +962,7 @@ export default function AdminDashboard({
         </div>
       )}
 
+      </div>
     </div>
   );
 }
