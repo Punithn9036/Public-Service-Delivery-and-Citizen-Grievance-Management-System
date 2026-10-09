@@ -28,7 +28,9 @@ import {
   ChevronRight,
   ChevronDown,
   TrendingUp,
-  Layers
+  Layers,
+  ArrowLeft,
+  Bell
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -194,12 +196,17 @@ export default function CitizenDashboard({
   applications,
   openGrievanceModal,
   openServiceModal,
+  activeTab,
   setActiveTab,
   selectGrievanceToTrack,
   searchQuery,
   setSearchQuery,
   isSidebarOpen,
-  onToggleSidebar
+  onToggleSidebar,
+  onGoBack,
+  canGoBack,
+  unreadNotifications,
+  setShowNotifications
 }) {
   const { user } = useAuth();
   const { lang, setLang, t } = useLanguage();
@@ -316,155 +323,235 @@ export default function CitizenDashboard({
     <div className="dashboard-content animate-fade-in" style={{ padding: 0 }}>
 
       {/* ========================================================================= */}
-      {/* 1. GRAND GOVERNMENT HERO BANNER (INDIA.GOV.IN STYLE WITH RASHTRAPATI BG) */}
+      {/* 1. GRAND GOVERNMENT HERO BANNER (ONLY ON MAIN OVERVIEW DASHBOARD) */}
       {/* ========================================================================= */}
-      <div 
-        className="india-gov-hero-section"
-        style={{
-          backgroundImage: `linear-gradient(180deg, rgba(10, 18, 35, 0.25) 0%, rgba(10, 18, 35, 0.42) 50%, rgba(10, 18, 35, 0.70) 100%), url(${govHeroBg})`,
-          backgroundAttachment: 'fixed',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center 30%',
-          backgroundRepeat: 'no-repeat'
-        }}
-      >
+      {activeTab === 'overview' && (
+        <div 
+          className="india-gov-hero-section"
+          style={{
+            backgroundImage: `linear-gradient(180deg, rgba(10, 18, 35, 0.25) 0%, rgba(10, 18, 35, 0.42) 50%, rgba(10, 18, 35, 0.70) 100%), url(${govHeroBg})`,
+            backgroundAttachment: 'scroll',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center 30%',
+            backgroundRepeat: 'no-repeat'
+          }}
+        >
 
-        {/* Hero Main Core Content */}
-        <div className="hero-center-content">
-          
-          {/* State Emblem of India (Uploaded Official Lion Capital & Satyameva Jayate) */}
-          <div className="hero-emblem-container animate-float-subtle">
-            <img 
-              src={nationalEmblemImg} 
-              alt="State Emblem of India" 
-              className="hero-emblem-img"
-            />
-          </div>
-
-          {/* Majestic Portal Title */}
-          <h1 className="hero-portal-title">
-            janseva<span className="hero-gov-dot">.gov.in</span>
-          </h1>
-
-          {/* Central India.gov.in Style Search Bar */}
-          <form onSubmit={handleHeroSearchSubmit} className="hero-search-wrapper">
-            <div className="hero-search-input-box">
-              <Search size={18} className="hero-search-icon" />
-              <input 
-                type="text" 
-                placeholder={t('searchPlaceholder') || 'Search for public services, schemes, ticket status, or municipal wards...'} 
-                value={localSearch}
-                onChange={(e) => {
-                  setLocalSearch(e.target.value);
-                  if (setSearchQuery) setSearchQuery(e.target.value);
-                }}
-                className="hero-search-input"
+          {/* Hero Main Core Content */}
+          <div className="hero-center-content">
+            
+            {/* State Emblem of India (Uploaded Official Lion Capital & Satyameva Jayate) */}
+            <div className="hero-emblem-container animate-float-subtle">
+              <img 
+                src={nationalEmblemImg} 
+                alt="State Emblem of India" 
+                className="hero-emblem-img"
               />
             </div>
 
-            <div className="hero-search-cat-dropdown">
-              <select 
-                value={selectedCategory} 
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="hero-category-select"
-              >
-                <option value="All Categories">All Categories</option>
-                <option value="Grievances">Citizen Grievances</option>
-                <option value="Public Services">Public Services</option>
-                <option value="Certificates">Certificates & Revenue</option>
-                <option value="Municipal">Municipal & Roads</option>
-                <option value="Health">Water & Sanitation</option>
-              </select>
+            {/* Majestic Portal Title */}
+            <h1 className="hero-portal-title">
+              janseva<span className="hero-gov-dot">.gov.in</span>
+            </h1>
+
+            {/* Central India.gov.in Style Search Bar */}
+            <form onSubmit={handleHeroSearchSubmit} className="hero-search-wrapper">
+              <div className="hero-search-input-box">
+                <Search size={18} className="hero-search-icon" />
+                <input 
+                  type="text" 
+                  placeholder={t('searchPlaceholder') || 'Search for public services, schemes, ticket status, or municipal wards...'} 
+                  value={localSearch}
+                  onChange={(e) => {
+                    setLocalSearch(e.target.value);
+                    if (setSearchQuery) setSearchQuery(e.target.value);
+                  }}
+                  className="hero-search-input"
+                />
+              </div>
+
+              <div className="hero-search-cat-dropdown">
+                <select 
+                  value={selectedCategory} 
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="hero-category-select"
+                >
+                  <option value="All Categories">All Categories</option>
+                  <option value="Grievances">Citizen Grievances</option>
+                  <option value="Public Services">Public Services</option>
+                  <option value="Certificates">Certificates & Revenue</option>
+                  <option value="Municipal">Municipal & Roads</option>
+                  <option value="Health">Water & Sanitation</option>
+                </select>
+              </div>
+
+              <button type="submit" className="hero-search-submit-btn">
+                <span>Search</span>
+              </button>
+            </form>
+
+            {/* Trending / Fast-Track Searches Row */}
+            <div className="hero-trending-row">
+              <span className="trending-label">Trending Searches:</span>
+              <div className="trending-chips-wrap">
+                <button 
+                  type="button" 
+                  className="trending-chip highlight-chip"
+                  onClick={() => handleTrendingClick('', 'modal-grievance')}
+                >
+                  <FilePlus size={12} />
+                  <span>+ Lodge Grievance</span>
+                </button>
+
+                <button 
+                  type="button" 
+                  className="trending-chip"
+                  onClick={() => handleTrendingClick('', 'tab-track')}
+                >
+                  <Clock size={12} />
+                  <span>Track Ticket</span>
+                </button>
+
+                <button 
+                  type="button" 
+                  className="trending-chip"
+                  onClick={() => handleTrendingClick('pothole')}
+                >
+                  <span>Pothole Repair</span>
+                </button>
+
+                <button 
+                  type="button" 
+                  className="trending-chip"
+                  onClick={() => handleTrendingClick('water')}
+                >
+                  <span>Water Supply</span>
+                </button>
+
+                <button 
+                  type="button" 
+                  className="trending-chip"
+                  onClick={() => handleTrendingClick('', 'modal-birth')}
+                >
+                  <span>Birth Certificate</span>
+                </button>
+
+                <button 
+                  type="button" 
+                  className="trending-chip"
+                  onClick={() => handleTrendingClick('streetlight')}
+                >
+                  <span>Streetlight Outage</span>
+                </button>
+              </div>
             </div>
 
-            <button type="submit" className="hero-search-submit-btn">
-              <span>Search</span>
+          </div>
+
+          {/* Scroll Down Arrow Indicator Button */}
+          <div className="hero-scroll-down-container">
+            <button 
+              type="button" 
+              className="hero-scroll-down-btn"
+              onClick={() => {
+                const target = document.getElementById('citizen-services-section') || document.getElementById('citizen-grievances-section');
+                if (target) {
+                  target.scrollIntoView({ behavior: 'smooth' });
+                }
+              }}
+              aria-label="Scroll down to explore more services"
+              title="Scroll down to explore more services"
+            >
+              <div className="scroll-arrow-circle">
+                <ChevronDown size={26} className="bouncing-arrow" />
+              </div>
+              <span className="scroll-arrow-label">Explore More Services</span>
             </button>
-          </form>
-
-          {/* Trending / Fast-Track Searches Row */}
-          <div className="hero-trending-row">
-            <span className="trending-label">Trending Searches:</span>
-            <div className="trending-chips-wrap">
-              <button 
-                type="button" 
-                className="trending-chip highlight-chip"
-                onClick={() => handleTrendingClick('', 'modal-grievance')}
-              >
-                <FilePlus size={12} />
-                <span>+ Lodge Grievance</span>
-              </button>
-
-              <button 
-                type="button" 
-                className="trending-chip"
-                onClick={() => handleTrendingClick('', 'tab-track')}
-              >
-                <Clock size={12} />
-                <span>Track Ticket</span>
-              </button>
-
-              <button 
-                type="button" 
-                className="trending-chip"
-                onClick={() => handleTrendingClick('pothole')}
-              >
-                <span>Pothole Repair</span>
-              </button>
-
-              <button 
-                type="button" 
-                className="trending-chip"
-                onClick={() => handleTrendingClick('water')}
-              >
-                <span>Water Supply</span>
-              </button>
-
-              <button 
-                type="button" 
-                className="trending-chip"
-                onClick={() => handleTrendingClick('', 'modal-birth')}
-              >
-                <span>Birth Certificate</span>
-              </button>
-
-              <button 
-                type="button" 
-                className="trending-chip"
-                onClick={() => handleTrendingClick('streetlight')}
-              >
-                <span>Streetlight Outage</span>
-              </button>
-            </div>
           </div>
 
         </div>
-
-        {/* Scroll Down Arrow Indicator Button */}
-        <div className="hero-scroll-down-container">
-          <button 
-            type="button" 
-            className="hero-scroll-down-btn"
-            onClick={() => {
-              const target = document.getElementById('citizen-services-section') || document.getElementById('citizen-grievances-section');
-              if (target) {
-                target.scrollIntoView({ behavior: 'smooth' });
-              }
-            }}
-            aria-label="Scroll down to services and grievance registry"
-            title="Scroll down to explore services & grievances"
-          >
-            <div className="scroll-arrow-circle">
-              <ChevronDown size={26} className="bouncing-arrow" />
-            </div>
-            <span className="scroll-arrow-label">Explore Services & Grievances</span>
-          </button>
-        </div>
-
-      </div>
+      )}
 
       {/* Main Inner Container for Dashboard Sections */}
       <div className="dashboard-inner-wrap" style={{ padding: '24px 20px', maxWidth: '1400px', margin: '0 auto' }}>
+
+        {/* Top Contextual Back Bar & Breadcrumb (when on Services Tab) */}
+        {activeTab === 'services' && (
+          <div className="subpage-back-bar" style={{ marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              <button 
+                type="button" 
+                className="subpage-back-btn" 
+                onClick={onGoBack}
+                title="Return to Overview Dashboard"
+              >
+                <ArrowLeft size={16} />
+                <span>Back to Overview Dashboard</span>
+              </button>
+              <span className="subpage-breadcrumb">JanSeva &gt; Public Services Catalog</span>
+            </div>
+
+            <div className="subpage-actions-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              {/* Regional Languages Dropdown Selector */}
+              <div className="language-selector-pill">
+                <Globe size={15} style={{ flexShrink: 0, color: 'var(--brand-700)' }} />
+                <select
+                  value={lang}
+                  onChange={(e) => setLang(e.target.value)}
+                  className="language-select-dropdown"
+                  aria-label="Select State Language"
+                  title="Select Regional Language"
+                >
+                  <option value="en">English (Official)</option>
+                  <option value="hi">हिन्दी (North & Central)</option>
+                  <option value="kn">ಕನ್ನಡ (Karnataka)</option>
+                  <option value="ta">தமிழ் (Tamil Nadu)</option>
+                  <option value="te">తెలుగు (AP & Telangana)</option>
+                  <option value="ml">മലയാളം (Kerala)</option>
+                  <option value="mr">मराठी (Maharashtra)</option>
+                  <option value="gu">ગુજરાતી (Gujarat)</option>
+                  <option value="bn">বাংলা (West Bengal)</option>
+                  <option value="or">ଓଡ଼ିଆ (Odisha)</option>
+                  <option value="pa">ਪੰਜਾਬੀ (Punjab)</option>
+                  <option value="as">অসমীয়া (Assam)</option>
+                  <option value="ur">اردو (J&K, Telangana, UP)</option>
+                </select>
+              </div>
+
+              {/* Notifications */}
+              {setShowNotifications && (
+                <button 
+                  type="button" 
+                  className="icon-circle-btn" 
+                  onClick={() => setShowNotifications(prev => !prev)}
+                  title="Notifications"
+                >
+                  <Bell size={18} />
+                  {unreadNotifications > 0 && (
+                    <span className="notification-badge">{unreadNotifications}</span>
+                  )}
+                </button>
+              )}
+
+              {/* Tricolour Menu Button */}
+              {onToggleSidebar && (
+                <button
+                  type="button"
+                  className={`tricolour-menu-btn ${isSidebarOpen ? 'active' : ''}`}
+                  onClick={onToggleSidebar}
+                  title="Toggle Navigation Menu"
+                  aria-label="Toggle Navigation Sidebar"
+                >
+                  <div className="tricolour-icon">
+                    <span className="tricolour-bar saffron-bar" />
+                    <span className="tricolour-bar white-bar" />
+                    <span className="tricolour-bar green-bar" />
+                  </div>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Quick Statutory SLA Compliance Alert Card */}
         <div className="gov-sla-bar-strip">

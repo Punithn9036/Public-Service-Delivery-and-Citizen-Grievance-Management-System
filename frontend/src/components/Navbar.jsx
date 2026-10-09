@@ -6,7 +6,8 @@ import {
   Search, 
   Globe,
   Settings,
-  Menu
+  Menu,
+  ArrowLeft
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -14,6 +15,10 @@ import { useLanguage } from '../context/LanguageContext';
 export default function Navbar({ 
   activeTab, 
   setActiveTab,
+  onNavigate,
+  canGoBack,
+  onGoBack,
+  previousPageTitle,
   unreadNotifications, 
   setShowNotifications, 
   openGrievanceModal,
@@ -27,7 +32,7 @@ export default function Navbar({
   const { lang, setLang, t } = useLanguage();
 
   const isCitizen = user?.role === 'CITIZEN';
-  const isHeroTab = activeTab === 'overview' || activeTab === 'services';
+  const isHeroTab = activeTab === 'overview';
 
   const getPageTitle = () => {
     switch (activeTab) {
@@ -44,12 +49,25 @@ export default function Navbar({
     <header className={`navbar-header ${isHeroTab ? 'navbar-hero-merged' : ''}`}>
       <div className="nav-container">
         
-        {/* Left Section: JanSeva Brand Heading */}
+        {/* Left Section: Back Button & JanSeva Brand Heading */}
         <div className="nav-left-group">
+          {canGoBack && (
+            <button
+              type="button"
+              className="nav-back-btn"
+              onClick={onGoBack}
+              title={previousPageTitle ? `Back to ${previousPageTitle}` : "Go back to previous page"}
+              aria-label="Go back to previous page"
+            >
+              <ArrowLeft size={16} />
+              <span className="nav-back-text">Back</span>
+            </button>
+          )}
+
           {/* JanSeva Official Brand Badge & Portal Title */}
           <div 
             className="nav-brand-badge" 
-            onClick={() => setActiveTab('overview')} 
+            onClick={() => onNavigate ? onNavigate('overview') : setActiveTab('overview')} 
             style={{ cursor: 'pointer' }}
             title="JanSeva Civic Portal Home"
           >

@@ -47,10 +47,28 @@ export const grievanceAPI = {
   create: (data) => request('/grievances', { method: 'POST', body: JSON.stringify(data) }),
   updateStatus: (id, updateData) => request(`/grievances/${id}/status`, { method: 'PATCH', body: JSON.stringify(updateData) }),
   submitFeedback: (id, feedback) => request(`/grievances/${id}/feedback`, { method: 'POST', body: JSON.stringify(feedback) }),
-  reopen: (id, reason) => request(`/grievances/${id}/reopen`, { method: 'POST', body: JSON.stringify({ reason }) })
+  reopen: (id, reason) => request(`/grievances/${id}/reopen`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  upvote: (id, citizenName) => request(`/grievances/${id}/upvote`, { method: 'POST', body: JSON.stringify({ citizenName }) })
+};
+
+export const applicationAPI = {
+  getAll: (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return request(`/applications?${query}`, { method: 'GET' });
+  },
+  getById: (id) => request(`/applications/${id}`, { method: 'GET' }),
+  create: (data) => request('/applications', { method: 'POST', body: JSON.stringify(data) }),
+  updateStatus: (id, updateData) => request(`/applications/${id}/status`, { method: 'PATCH', body: JSON.stringify(updateData) })
+};
+
+export const serviceAPI = {
+  getAll: () => request('/services', { method: 'GET' }),
+  getById: (id) => request(`/services/${id}`, { method: 'GET' })
 };
 
 export default {
   auth: authAPI,
-  grievance: grievanceAPI
+  grievance: grievanceAPI,
+  application: applicationAPI,
+  service: serviceAPI
 };

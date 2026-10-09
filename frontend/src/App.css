@@ -425,6 +425,10 @@
   font-weight: 800;
   font-size: 1.25rem;
   letter-spacing: -0.02em;
+  color: var(--text-main);
+}
+
+.navbar-header.navbar-hero-merged .nav-brand-name {
   color: #FFFFFF;
 }
 
@@ -435,7 +439,95 @@
   color: #EB7D00;
   letter-spacing: -0.01em;
   margin-left: 2px;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.navbar-header.navbar-hero-merged .nav-brand-gov-plain {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+/* Back Navigation Buttons (Header & Sub-pages) */
+.nav-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(8px);
+  color: #FFFFFF;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.825rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  margin-right: 6px;
+}
+
+.nav-back-btn:hover {
+  background: rgba(255, 255, 255, 0.28);
+  border-color: #FFFFFF;
+  transform: translateX(-2px);
+}
+
+.nav-back-btn:active {
+  transform: translateX(-1px) scale(0.97);
+}
+
+.navbar-header:not(.navbar-hero-merged) .nav-back-btn {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-main);
+  box-shadow: var(--shadow-subtle);
+}
+
+.navbar-header:not(.navbar-hero-merged) .nav-back-btn:hover {
+  background: var(--brand-700);
+  color: #FFFFFF;
+  border-color: var(--brand-700);
+}
+
+/* Sub-page Top Contextual Back Bar */
+.subpage-back-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  padding: 10px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-subtle);
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.subpage-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-tertiary);
+  color: var(--brand-700);
+  border: 1px solid var(--border-subtle);
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.subpage-back-btn:hover {
+  background: var(--brand-700);
+  color: #FFFFFF;
+  border-color: var(--brand-700);
+  transform: translateX(-2px);
+}
+
+.subpage-breadcrumb {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 600;
 }
 
 .nav-brand-tag {

@@ -1,9 +1,19 @@
 import React, { useState } from 'react';
-import { BookOpen, Bot, Send, Search, ChevronDown, ChevronUp, Sparkles, HelpCircle, CheckCircle2 } from 'lucide-react';
+import { BookOpen, Bot, Send, Search, ChevronDown, ChevronUp, Sparkles, HelpCircle, CheckCircle2, ArrowLeft, Bell, Globe } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
-export default function KnowledgeBase({ faqs, searchQuery }) {
-  const { t } = useLanguage();
+export default function KnowledgeBase({ 
+  faqs, 
+  searchQuery, 
+  onGoBack, 
+  canGoBack, 
+  previousPageTitle,
+  unreadNotifications,
+  setShowNotifications,
+  isSidebarOpen,
+  onToggleSidebar
+}) {
+  const { lang, setLang, t } = useLanguage();
   const [openFaqId, setOpenFaqId] = useState(faqs[0]?.id || null);
   const [chatMessages, setChatMessages] = useState([
     {
@@ -65,6 +75,82 @@ export default function KnowledgeBase({ faqs, searchQuery }) {
   return (
     <div className="knowledge-container animate-fade-in">
       
+      {/* Top Contextual Back Bar & Breadcrumb */}
+      <div className="subpage-back-bar">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <button 
+            type="button" 
+            className="subpage-back-btn" 
+            onClick={onGoBack}
+            title={previousPageTitle ? `Back to ${previousPageTitle}` : "Back to Overview Dashboard"}
+          >
+            <ArrowLeft size={16} />
+            <span>Back to {previousPageTitle || 'Dashboard'}</span>
+          </button>
+          <span className="subpage-breadcrumb">JanSeva &gt; Knowledge Base &amp; FAQs</span>
+        </div>
+
+        <div className="subpage-actions-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {/* Regional Languages Dropdown Selector */}
+          <div className="language-selector-pill">
+            <Globe size={15} style={{ flexShrink: 0, color: 'var(--brand-700)' }} />
+            <select
+              value={lang}
+              onChange={(e) => setLang(e.target.value)}
+              className="language-select-dropdown"
+              aria-label="Select State Language"
+              title="Select Regional Language"
+            >
+              <option value="en">English (Official)</option>
+              <option value="hi">हिन्दी (North & Central)</option>
+              <option value="kn">ಕನ್ನಡ (Karnataka)</option>
+              <option value="ta">தமிழ் (Tamil Nadu)</option>
+              <option value="te">తెలుగు (AP & Telangana)</option>
+              <option value="ml">മലയാളം (Kerala)</option>
+              <option value="mr">मराठी (Maharashtra)</option>
+              <option value="gu">ગુજરાતી (Gujarat)</option>
+              <option value="bn">বাংলা (West Bengal)</option>
+              <option value="or">ଓଡ଼ିଆ (Odisha)</option>
+              <option value="pa">ਪੰਜਾਬੀ (Punjab)</option>
+              <option value="as">অসমীয়া (Assam)</option>
+              <option value="ur">اردو (J&K, Telangana, UP)</option>
+            </select>
+          </div>
+
+          {/* Notifications */}
+          {setShowNotifications && (
+            <button 
+              type="button" 
+              className="icon-circle-btn" 
+              onClick={() => setShowNotifications(prev => !prev)}
+              title="Notifications"
+            >
+              <Bell size={18} />
+              {unreadNotifications > 0 && (
+                <span className="notification-badge">{unreadNotifications}</span>
+              )}
+            </button>
+          )}
+
+          {/* Tricolour Menu Button */}
+          {onToggleSidebar && (
+            <button
+              type="button"
+              className={`tricolour-menu-btn ${isSidebarOpen ? 'active' : ''}`}
+              onClick={onToggleSidebar}
+              title="Toggle Navigation Menu"
+              aria-label="Toggle Navigation Sidebar"
+            >
+              <div className="tricolour-icon">
+                <span className="tricolour-bar saffron-bar" />
+                <span className="tricolour-bar white-bar" />
+                <span className="tricolour-bar green-bar" />
+              </div>
+            </button>
+          )}
+        </div>
+      </div>
+
       <div className="kb-grid">
         
         {/* FAQs Left Section */}

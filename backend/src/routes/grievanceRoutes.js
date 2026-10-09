@@ -6,7 +6,8 @@ const {
   createGrievance, 
   updateGrievanceStatus, 
   submitFeedback, 
-  reopenGrievance 
+  reopenGrievance,
+  upvoteGrievance
 } = require('../controllers/grievanceController');
 
 const { verifyToken, requireRole } = require('../middleware/authMiddleware');
@@ -21,8 +22,9 @@ router.post('/', createGrievance);
 // Official State Machine Transition Update (Restricted to Officers & Admins)
 router.patch('/:id/status', verifyToken, requireRole('ADMIN', 'OFFICER'), updateGrievanceStatus);
 
-// Citizen Feedback & Escalation
+// Citizen Feedback, Escalation, and Community Upvote
 router.post('/:id/feedback', submitFeedback);
 router.post('/:id/reopen', reopenGrievance);
+router.post('/:id/upvote', upvoteGrievance);
 
 module.exports = router;

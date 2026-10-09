@@ -446,11 +446,34 @@ const reopenGrievance = async (req, res) => {
   }
 };
 
+/**
+ * Upvote / Community +1 Report Action
+ */
+const upvoteGrievance = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const citizenName = req.body.citizenName || req.user?.fullName || 'Citizen';
+
+    const updated = await GrievanceModel.upvote(id, citizenName);
+    if (!updated) {
+      return res.status(404).json({ error: 'NOT_FOUND', message: `Grievance ticket '${id}' not found.` });
+    }
+
+    return res.json({
+      message: `Community report upvoted. Priority is now ${updated.priority}.`,
+      grievance: updated
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'SERVER_ERROR', message: err.message });
+  }
+};
+
 module.exports = {
   getAllGrievances,
   getGrievanceById,
   createGrievance,
   updateGrievanceStatus,
   submitFeedback,
-  reopenGrievance
+  reopenGrievance,
+  upvoteGrievance
 };
