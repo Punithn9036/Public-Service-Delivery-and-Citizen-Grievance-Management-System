@@ -3,6 +3,7 @@
 const ApplicationModel = require('../../models/application');
 const ServiceModel = require('../../models/service');
 const { uploadToIPFS } = require('../../utils/ipfs');
+const { sendNotification } = require('../../utils/notifications');
 
 /**
  * Get all service applications with optional status, department, and phone filters
@@ -112,6 +113,22 @@ const createApplication = async (req, res) => {
       remarks: 'Application received and submitted for departmental verification.'
     });
 
+    // Statutory Citizen Notification Dispatch (SMS & WhatsApp)
+    try {
+      await sendNotification({
+        phone: applicantPhone,
+        template: 'APPLICATION_SUBMITTED',
+        data: {
+          id: newId,
+          serviceName: finalServiceName,
+          slaDays,
+          estimatedCompletion: estDate
+        }
+      });
+    } catch (notifErr) {
+      console.warn('[Notification Notice] Application submission alert warning:', notifErr.message);
+    }
+
     return res.status(201).json({
       message: 'Service application submitted successfully.',
       id: newId,
@@ -140,6 +157,22 @@ const updateApplicationStatus = async (req, res) => {
     const updated = await ApplicationModel.updateStatus(id, { status, remarks });
     if (!updated) {
       return res.status(404).json({ error: 'NOT_FOUND', message: `Application '${id}' not found.` });
+    }
+
+    // Statutory Citizen Notification Dispatch (SMS & WhatsApp)
+    try {
+      await sendNotification({
+        phone: updated.applicantPhone || '+91 98765 43210',
+        template: 'APPLICATION_STATUS_UPDATE',
+        data: {
+          id,
+          serviceName: updated.serviceName,
+          status,
+          remarks
+        }
+      });
+    } catch (notifErr) {
+      console.warn('[Notification Notice] Application status update alert warning:', notifErr.message);
     }
 
     return res.json({

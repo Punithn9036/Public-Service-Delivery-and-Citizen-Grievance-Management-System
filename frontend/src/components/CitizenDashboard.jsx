@@ -326,16 +326,14 @@ export default function CitizenDashboard({
       {/* 1. GRAND GOVERNMENT HERO BANNER (ONLY ON MAIN OVERVIEW DASHBOARD) */}
       {/* ========================================================================= */}
       {activeTab === 'overview' && (
-        <div 
-          className="india-gov-hero-section"
-          style={{
-            backgroundImage: `linear-gradient(180deg, rgba(10, 18, 35, 0.25) 0%, rgba(10, 18, 35, 0.42) 50%, rgba(10, 18, 35, 0.70) 100%), url(${govHeroBg})`,
-            backgroundAttachment: 'scroll',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center 30%',
-            backgroundRepeat: 'no-repeat'
-          }}
-        >
+        <div className="india-gov-hero-section">
+          {/* Overhanging Hero Background Layer (Overhangs by 2cm to prevent any white edge gap when shifted) */}
+          <div 
+            className="hero-bg-layer"
+            style={{
+              backgroundImage: `linear-gradient(180deg, rgba(10, 18, 35, 0.25) 0%, rgba(10, 18, 35, 0.42) 50%, rgba(10, 18, 35, 0.70) 100%), url(${govHeroBg})`
+            }}
+          />
 
           {/* Hero Main Core Content */}
           <div className="hero-center-content">

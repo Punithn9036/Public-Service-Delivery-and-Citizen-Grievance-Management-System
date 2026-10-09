@@ -7,6 +7,8 @@ const grievanceRoutes = require('./src/routes/grievanceRoutes');
 const applicationRoutes = require('./src/routes/applicationRoutes');
 const serviceRoutes = require('./src/routes/serviceRoutes');
 const ipfsRoutes = require('./src/routes/ipfsRoutes');
+const notificationRoutes = require('./src/routes/notificationRoutes');
+const notificationController = require('./src/controllers/notificationController');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -22,7 +24,8 @@ app.get('/api/health', (req, res) => {
     service: 'JanSeva / DIGIT CMS REST API Backend Gateway',
     timestamp: new Date().toISOString(),
     hyperledgerFabric: 'PortalOrg / GovOrg Gateway Configured',
-    ipfsStorage: 'Active / Local Content-Addressed Store'
+    ipfsStorage: 'Active / Local Content-Addressed Store',
+    statutoryNotifications: 'Active / SMS & WhatsApp DLT Gateway'
   });
 });
 
@@ -33,6 +36,8 @@ app.use('/api/applications', applicationRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/ipfs', ipfsRoutes);
 app.use('/api/upload', ipfsRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/webhook/whatsapp', notificationController.handleWhatsAppWebhook);
 
 app.listen(PORT, () => {
   console.log(`[JanSeva Backend] Server running on http://localhost:${PORT}`);

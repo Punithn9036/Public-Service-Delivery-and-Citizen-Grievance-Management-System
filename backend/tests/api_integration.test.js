@@ -8,6 +8,8 @@ const grievanceRoutes = require('../src/routes/grievanceRoutes');
 const applicationRoutes = require('../src/routes/applicationRoutes');
 const serviceRoutes = require('../src/routes/serviceRoutes');
 const ipfsRoutes = require('../src/routes/ipfsRoutes');
+const notificationRoutes = require('../src/routes/notificationRoutes');
+const notificationController = require('../src/controllers/notificationController');
 
 const app = express();
 app.use(express.json({ limit: '15mb' }));
@@ -16,6 +18,8 @@ app.use('/api/grievances', grievanceRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/ipfs', ipfsRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/webhook/whatsapp', notificationController.handleWhatsAppWebhook);
 
 describe('Phase 1 REST API Integration Tests', () => {
   let citizenToken = '';
@@ -299,6 +303,80 @@ describe('Phase 1 REST API Integration Tests', () => {
 
       expect(res.statusCode).toBe(404);
       expect(res.body.error).toBe('CID_NOT_FOUND');
+    });
+  });
+
+  // 6. Phase 3: Statutory SMS & WhatsApp Notification Alerts Tests
+  describe('6. Phase 3: Statutory SMS & WhatsApp Notification Alerts Tests', () => {
+    test('POST /api/notifications/test should dispatch multi-channel statutory alerts with DLT compliance', async () => {
+      const res = await request(app)
+        .post('/api/notifications/test')
+        .send({
+          phone: '+91 98765 43210',
+          template: 'GRIEVANCE_LODGED',
+          data: {
+            id: 'GRV-2026-9999',
+            department: 'Public Works & Infrastructure',
+            priority: 'Urgent',
+            slaHours: 24
+          },
+          channels: ['SMS', 'WHATSAPP']
+        });
+
+      expect(res.statusCode).toBe(201);
+      expect(res.body.receipts).toHaveLength(2);
+      expect(res.body.receipts[0].status).toBe('DELIVERED');
+      expect(res.body.receipts[0].dltEntityId).toBe('DLT-GOV-IND-49201');
+      expect(res.body.receipts[1].channel).toBe('WHATSAPP');
+    });
+
+    test('GET /api/notifications should retrieve statutory dispatch audit logs', async () => {
+      const res = await request(app)
+        .get('/api/notifications?limit=10');
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.logs.length).toBeGreaterThan(0);
+      expect(res.body.logs[0].id).toMatch(/^NOTIF-/);
+      expect(res.body.logs[0].dispatchedAt).toBeDefined();
+    });
+
+    test('POST /api/webhook/whatsapp should answer STATUS queries with live grievance redressal information', async () => {
+      const res = await request(app)
+        .post('/api/webhook/whatsapp')
+        .send({
+          from: '+91 98765 43210',
+          body: 'STATUS GRV-2026-8910'
+        });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.replyMessage).toContain('GRV-2026-8910');
+      expect(res.body.replyMessage).toContain('JanSeva Redressal Status');
+    });
+
+    test('POST /api/webhook/whatsapp should handle HELP keyword with emergency contact numbers', async () => {
+      const res = await request(app)
+        .post('/api/webhook/whatsapp')
+        .send({
+          from: '+91 98765 43210',
+          body: 'HELP'
+        });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.replyMessage).toContain('1800-425-GOV');
+      expect(res.body.replyMessage).toContain('112');
+    });
+
+    test('POST /api/notifications/test with invalid template should return 400', async () => {
+      const res = await request(app)
+        .post('/api/notifications/test')
+        .send({
+          phone: '+91 98765 43210',
+          template: 'UNKNOWN_TEMPLATE_KEY'
+        });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.error).toBe('INVALID_TEMPLATE');
     });
   });
 

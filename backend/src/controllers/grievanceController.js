@@ -4,6 +4,7 @@
 const GrievanceModel = require('../../models/grievance');
 const FabricClient = require('../../fabric/client');
 const { uploadToIPFS } = require('../../utils/ipfs');
+const { sendNotification } = require('../../utils/notifications');
 
 // Initial Fallback In-Memory Grievance Ledger in case DB is warming up
 let grievancesStore = [
@@ -244,6 +245,22 @@ const createGrievance = async (req, res) => {
       grievancesStore.unshift(createdGrievance);
     }
 
+    // Statutory Citizen Notification Dispatch (SMS & WhatsApp via National DLT Gateway)
+    try {
+      await sendNotification({
+        phone: citizenPhone,
+        template: 'GRIEVANCE_LODGED',
+        data: {
+          id: newId,
+          department,
+          priority: assignedPriority,
+          slaHours
+        }
+      });
+    } catch (notifErr) {
+      console.warn('[Notification Notice] Citizen alert dispatch warning:', notifErr.message);
+    }
+
     return res.status(201).json({
       message: 'Grievance ticket created successfully.',
       id: newId,
@@ -319,6 +336,35 @@ const updateGrievanceStatus = async (req, res) => {
         timestamp: new Date().toISOString()
       });
       updatedGrievance = grievance;
+    }
+
+    // Statutory Citizen Notification Dispatch (SMS & WhatsApp)
+    try {
+      const recipientPhone = updatedGrievance.citizenPhone || '+91 98765 43210';
+      if (nextStatus === 'Assigned' || nextStatus === 'In Progress') {
+        await sendNotification({
+          phone: recipientPhone,
+          template: 'OFFICER_ASSIGNED',
+          data: {
+            id,
+            officerName: officerName || updatedGrievance.assignedOfficer || 'Field Officer',
+            officerPhone: officerContact || updatedGrievance.assignedOfficerContact || '+91 94411 99887',
+            department: updatedGrievance.department
+          }
+        });
+      } else if (nextStatus === 'Resolved') {
+        await sendNotification({
+          phone: recipientPhone,
+          template: 'GRIEVANCE_RESOLVED',
+          data: {
+            id,
+            officerName: officerName || updatedGrievance.assignedOfficer || 'Nodal Officer',
+            resolutionNote: note || 'Issue inspected and resolved'
+          }
+        });
+      }
+    } catch (notifErr) {
+      console.warn('[Notification Notice] Status update notification warning:', notifErr.message);
     }
 
     return res.json({
@@ -438,6 +484,20 @@ const reopenGrievance = async (req, res) => {
         timestamp: new Date().toISOString()
       });
       updated = grievance;
+    }
+
+    // Statutory Citizen Notification Dispatch (SMS & WhatsApp)
+    try {
+      await sendNotification({
+        phone: updated.citizenPhone || '+91 98765 43210',
+        template: 'GRIEVANCE_REOPENED',
+        data: {
+          id,
+          reason
+        }
+      });
+    } catch (notifErr) {
+      console.warn('[Notification Notice] Reopen alert dispatch warning:', notifErr.message);
     }
 
     return res.json({

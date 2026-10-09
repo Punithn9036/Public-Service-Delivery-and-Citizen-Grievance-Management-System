@@ -24,9 +24,12 @@ import {
   ArrowLeft,
   Bell,
   Eye,
-  Globe
+  Globe,
+  MessageSquare,
+  Smartphone
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { notificationAPI } from '../api/apiClient';
 
 export default function TrackingView({ 
   grievances, 
@@ -74,6 +77,25 @@ export default function TrackingView({
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
   const [showLedgerModal, setShowLedgerModal] = useState(false);
   const [showIpfsPreview, setShowIpfsPreview] = useState(false);
+  const [whatsappBotReply, setWhatsappBotReply] = useState(null);
+  const [whatsappBotLoading, setWhatsappBotLoading] = useState(false);
+
+  const handleTestWhatsAppStatus = async () => {
+    if (!activeSearchResult) return;
+    setWhatsappBotLoading(true);
+    try {
+      const queryText = (activeSearchResult.id && activeSearchResult.id.startsWith('GRV'))
+        ? `STATUS ${activeSearchResult.id}`
+        : `TRACK ${activeSearchResult.id}`;
+      const phone = activeSearchResult.citizenPhone || activeSearchResult.applicantPhone || '+91 98765 43210';
+      const res = await notificationAPI.queryWhatsAppBot(phone, queryText);
+      setWhatsappBotReply(res?.replyMessage || 'No status response returned');
+    } catch (e) {
+      setWhatsappBotReply('Error communicating with WhatsApp gateway: ' + e.message);
+    } finally {
+      setWhatsappBotLoading(false);
+    }
+  };
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -437,6 +459,79 @@ export default function TrackingView({
                   </span>
                 </div>
               )}
+
+              {/* Statutory SMS & WhatsApp Alerts Delivery Receipt */}
+              <div style={{
+                background: 'var(--bg-tertiary)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: '10px',
+                padding: '14px 16px',
+                marginBottom: '20px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Smartphone size={16} className="text-blue" />
+                    <strong style={{ fontSize: '0.85rem' }}>Statutory Government Alerts Dispatched</strong>
+                    <span className="badge badge-official" style={{ fontSize: '0.68rem', padding: '2px 6px' }}>
+                      DLT-GOV-IND-49201
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <span style={{ fontSize: '0.72rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(37, 99, 235, 0.1)', color: '#2563eb', fontWeight: 600 }}>
+                      SMS Delivered
+                    </span>
+                    <span style={{ fontSize: '0.72rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(37, 211, 102, 0.15)', color: '#16a34a', fontWeight: 600 }}>
+                      WhatsApp Synced
+                    </span>
+                  </div>
+                </div>
+
+                <p className="small-text text-muted" style={{ margin: '0 0 10px', fontSize: '0.78rem' }}>
+                  SMS &amp; WhatsApp alerts dispatched to registered mobile: <strong>{activeSearchResult.citizenPhone || activeSearchResult.applicantPhone || '+91 98765 43210'}</strong> on every state transition.
+                </p>
+
+                {/* WhatsApp Status Query simulation */}
+                <div style={{
+                  background: 'var(--bg-primary)',
+                  padding: '10px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid var(--border-subtle)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '8px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem' }}>
+                    <MessageSquare size={14} style={{ color: '#25D366' }} />
+                    <span>JanSeva WhatsApp 24x7 Status Bot (Send <code>STATUS {activeSearchResult.id}</code>)</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleTestWhatsAppStatus}
+                    disabled={whatsappBotLoading}
+                    className="btn btn-secondary btn-sm"
+                    style={{ fontSize: '0.72rem', padding: '3px 8px' }}
+                  >
+                    {whatsappBotLoading ? 'Checking...' : 'Check WhatsApp Live Status'}
+                  </button>
+                </div>
+
+                {whatsappBotReply && (
+                  <div className="animate-fade-in" style={{
+                    marginTop: '10px',
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    background: '#075E54',
+                    color: '#ffffff',
+                    fontSize: '0.78rem',
+                    whiteSpace: 'pre-wrap',
+                    lineHeight: '1.4'
+                  }}>
+                    {whatsappBotReply}
+                  </div>
+                )}
+              </div>
 
               {/* Detailed Activity Logs */}
               <div className="timeline-logs">

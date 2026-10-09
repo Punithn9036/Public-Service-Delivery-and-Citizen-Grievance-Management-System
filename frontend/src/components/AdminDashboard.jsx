@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ShieldCheck, 
   UserCheck, 
@@ -22,11 +22,14 @@ import {
   Activity,
   Search,
   ChevronDown,
-  Filter
+  Filter,
+  MessageSquare,
+  Smartphone,
+  RefreshCw
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
-import { applicationAPI } from '../api/apiClient';
+import { applicationAPI, notificationAPI } from '../api/apiClient';
 import govHeroBg from '../assets/gov-hero-bg.png';
 import nationalEmblemImg from '../assets/national-emblem.webp';
 
@@ -54,6 +57,64 @@ export default function AdminDashboard({
 
   // Local state for applications if updated
   const [serviceApps, setServiceApps] = useState(applications);
+
+  // Phase 3: Statutory Notifications & WhatsApp Webhook States
+  const [notifLogs, setNotifLogs] = useState([]);
+  const [testPhone, setTestPhone] = useState('+91 98765 43210');
+  const [testTemplate, setTestTemplate] = useState('GRIEVANCE_LODGED');
+  const [testSending, setTestSending] = useState(false);
+  const [testResult, setTestResult] = useState(null);
+  const [whatsappInput, setWhatsappInput] = useState('STATUS GRV-2026-8910');
+  const [whatsappReply, setWhatsappReply] = useState(null);
+  const [whatsappLoading, setWhatsappLoading] = useState(false);
+
+  const fetchNotifLogs = async () => {
+    try {
+      const res = await notificationAPI.getLogs({ limit: 50 });
+      if (res && res.logs) {
+        setNotifLogs(res.logs);
+      }
+    } catch (e) {
+      console.warn("Error fetching notification logs:", e);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifLogs();
+  }, [activeSection]);
+
+  const handleSendTestAlert = async (e) => {
+    e.preventDefault();
+    setTestSending(true);
+    setTestResult(null);
+    try {
+      const res = await notificationAPI.sendTest({
+        phone: testPhone,
+        template: testTemplate,
+        channels: ['SMS', 'WHATSAPP']
+      });
+      setTestResult(res);
+      fetchNotifLogs();
+    } catch (err) {
+      alert("Failed to dispatch alert: " + err.message);
+    } finally {
+      setTestSending(false);
+    }
+  };
+
+  const handleTestWhatsAppBot = async (e) => {
+    e.preventDefault();
+    if (!whatsappInput.trim()) return;
+    setWhatsappLoading(true);
+    try {
+      const res = await notificationAPI.queryWhatsAppBot('+91 98765 43210', whatsappInput);
+      setWhatsappReply(res?.replyMessage || 'No response returned');
+    } catch (err) {
+      setWhatsappReply("Error querying bot: " + err.message);
+    } finally {
+      setWhatsappLoading(false);
+    }
+  };
 
   // Metrics
   const total = grievances.length;
@@ -221,16 +282,15 @@ export default function AdminDashboard({
       {/* ========================================================================= */}
       {/* 1. GRAND GOVERNMENT HERO BANNER (FOR ADMIN & OFFICER) */}
       {/* ========================================================================= */}
-      <div 
-        className="india-gov-hero-section admin-hero-theme"
-        style={{
-          backgroundImage: `linear-gradient(180deg, rgba(10, 18, 35, 0.28) 0%, rgba(10, 18, 35, 0.48) 50%, rgba(10, 18, 35, 0.76) 100%), url(${govHeroBg})`,
-          backgroundAttachment: 'scroll',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center 30%',
-          backgroundRepeat: 'no-repeat'
-        }}
-      >
+      <div className="india-gov-hero-section admin-hero-theme">
+        {/* Overhanging Hero Background Layer (Overhangs by 2cm to prevent any white edge gap when shifted) */}
+        <div 
+          className="hero-bg-layer"
+          style={{
+            backgroundImage: `linear-gradient(180deg, rgba(10, 18, 35, 0.28) 0%, rgba(10, 18, 35, 0.48) 50%, rgba(10, 18, 35, 0.76) 100%), url(${govHeroBg})`
+          }}
+        />
+
         <div className="hero-center-content">
           {/* State Emblem of India */}
           <div className="hero-emblem-container animate-float-subtle">
@@ -408,6 +468,15 @@ export default function AdminDashboard({
 
                   <button 
                     type="button" 
+                    className={`trending-chip ${activeSection === 'notifications' ? 'active-chip' : ''}`}
+                    onClick={() => handleFilterChip('section', 'notifications')}
+                  >
+                    <MessageSquare size={12} />
+                    <span>DLT Alerts ({notifLogs.length})</span>
+                  </button>
+
+                  <button 
+                    type="button" 
                     className="trending-chip"
                     onClick={exportCSV}
                   >
@@ -550,6 +619,13 @@ export default function AdminDashboard({
           style={{ padding: '8px 18px', fontWeight: 700 }}
         >
           <TrendingUp size={16} /> SLA TAT Analytics Scorecard
+        </button>
+        <button
+          onClick={() => setActiveSection('notifications')}
+          className={`btn btn-sm ${activeSection === 'notifications' ? 'btn-primary' : 'btn-secondary'}`}
+          style={{ padding: '8px 18px', fontWeight: 700 }}
+        >
+          <MessageSquare size={16} /> Statutory Alerts & DLT Logs ({notifLogs.length})
         </button>
       </div>
 
@@ -888,6 +964,228 @@ export default function AdminDashboard({
         </div>
       )}
 
+      {activeSection === 'notifications' && (
+        /* Statutory SMS & WhatsApp Notification Command Center */
+        <div className="admin-table-card glass-card animate-fade-in">
+          <div className="table-header-controls" style={{ marginBottom: '20px' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h2 style={{ margin: 0 }}>Statutory SMS & WhatsApp Dispatch Log</h2>
+                <span className="badge badge-official" style={{ fontSize: '0.72rem' }}>
+                  DLT Compliant • Entity ID: DLT-GOV-IND-49201
+                </span>
+              </div>
+              <p style={{ marginTop: '4px' }}>
+                Every citizen notification is cryptographically recorded with regulatory DLT headers, delivery receipts, and two-way WhatsApp interaction.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={fetchNotifLogs}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <RefreshCw size={14} /> Refresh Logs
+            </button>
+          </div>
+
+          {/* Interactive Tools Grid (Trigger Alert + WhatsApp Bot Simulator) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+            
+            {/* 1. Quick Test Alert Dispatcher */}
+            <div style={{
+              background: 'var(--bg-tertiary)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: '10px',
+              padding: '16px'
+            }}>
+              <h3 style={{ fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
+                <Smartphone size={16} className="text-blue" /> Dispatch On-Demand Statutory Alert
+              </h3>
+              <form onSubmit={handleSendTestAlert}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div>
+                    <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Citizen Mobile Number</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={testPhone}
+                      onChange={(e) => setTestPhone(e.target.value)}
+                      placeholder="+91 98765 43210"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Statutory Template</label>
+                    <select
+                      className="form-input"
+                      value={testTemplate}
+                      onChange={(e) => setTestTemplate(e.target.value)}
+                    >
+                      <option value="GRIEVANCE_LODGED">Grievance Lodged (SLA Guarantee)</option>
+                      <option value="OFFICER_ASSIGNED">Field Officer Assigned & Dispatched</option>
+                      <option value="GRIEVANCE_RESOLVED">Grievance Resolved (Verification Notice)</option>
+                      <option value="SLA_BREACH_ESCALATION">Critical SLA Breach (Zonal Escalation)</option>
+                      <option value="APPLICATION_SUBMITTED">Service Application Registered</option>
+                      <option value="APPLICATION_STATUS_UPDATE">Application Approved / Rejected</option>
+                    </select>
+                  </div>
+                  <button
+                    type="submit"
+                    className="btn btn-primary btn-sm"
+                    disabled={testSending}
+                    style={{ marginTop: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                  >
+                    {testSending ? <RefreshCw size={14} className="animate-spin" /> : <Send size={14} />}
+                    <span>{testSending ? 'Transmitting via DLT...' : 'Send SMS & WhatsApp Alert'}</span>
+                  </button>
+                </div>
+              </form>
+              {testResult && (
+                <div style={{ marginTop: '10px', padding: '8px', borderRadius: '6px', background: 'rgba(34, 197, 94, 0.1)', color: '#16a34a', fontSize: '0.78rem' }}>
+                  ✓ Dispatched {testResult.receipts?.length || 2} alerts successfully via National DLT Relay!
+                </div>
+              )}
+            </div>
+
+            {/* 2. WhatsApp Two-Way Interactive Bot Simulator */}
+            <div style={{
+              background: 'var(--bg-tertiary)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: '10px',
+              padding: '16px'
+            }}>
+              <h3 style={{ fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
+                <MessageSquare size={16} style={{ color: '#25D366' }} /> WhatsApp 24x7 Citizen Bot Console
+              </h3>
+              <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginBottom: '10px' }}>
+                Simulate incoming citizen WhatsApp queries (e.g. <code>STATUS GRV-2026-8910</code> or <code>TRACK APP-2026-1049</code>) to test automated redressal responses.
+              </p>
+              <form onSubmit={handleTestWhatsAppBot}>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={whatsappInput}
+                    onChange={(e) => setWhatsappInput(e.target.value)}
+                    placeholder="STATUS GRV-2026-8910"
+                    required
+                  />
+                  <button
+                    type="submit"
+                    className="btn btn-secondary btn-sm"
+                    disabled={whatsappLoading}
+                    style={{ whiteSpace: 'nowrap' }}
+                  >
+                    {whatsappLoading ? 'Querying...' : 'Simulate Query'}
+                  </button>
+                </div>
+              </form>
+              {whatsappReply && (
+                <div style={{
+                  marginTop: '12px',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  background: '#075E54',
+                  color: '#ffffff',
+                  fontSize: '0.8rem',
+                  whiteSpace: 'pre-wrap',
+                  lineHeight: '1.4',
+                  fontFamily: 'inherit'
+                }}>
+                  {whatsappReply}
+                </div>
+              )}
+            </div>
+
+          </div>
+
+          {/* Statutory Notification Logs Table */}
+          <div className="table-wrapper">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Dispatch ID</th>
+                  <th>Recipient Mobile</th>
+                  <th>Channel</th>
+                  <th>Regulatory DLT Header</th>
+                  <th>Message Excerpt</th>
+                  <th>Delivery Status</th>
+                  <th>Timestamp</th>
+                </tr>
+              </thead>
+              <tbody>
+                {notifLogs.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} style={{ textAlign: 'center', padding: '30px' }} className="text-muted">
+                      No statutory notifications logged yet. Lodge a grievance or test above to see live dispatches.
+                    </td>
+                  </tr>
+                ) : (
+                  notifLogs.map(log => (
+                    <tr key={log.id}>
+                      <td className="td-id">
+                        <strong style={{ fontSize: '0.78rem' }}>{log.id}</strong>
+                        {log.relatedEntityId && <span className="td-sub">{log.relatedEntityId}</span>}
+                      </td>
+                      <td>
+                        <strong>{log.recipientPhone}</strong>
+                      </td>
+                      <td>
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          fontSize: '0.72rem',
+                          padding: '2px 8px',
+                          borderRadius: '12px',
+                          fontWeight: 700,
+                          background: log.channel === 'WHATSAPP' ? 'rgba(37, 211, 102, 0.15)' : 'rgba(37, 99, 235, 0.15)',
+                          color: log.channel === 'WHATSAPP' ? '#16a34a' : '#2563eb'
+                        }}>
+                          {log.channel === 'WHATSAPP' ? <MessageSquare size={11} /> : <Smartphone size={11} />}
+                          {log.channel}
+                        </span>
+                      </td>
+                      <td>
+                        <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'var(--text-main)' }}>
+                          {log.dltHeader || 'JANSEV'}
+                        </span>
+                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{log.dltEntityId || 'DLT-GOV-IND'}</div>
+                      </td>
+                      <td style={{ maxWidth: '300px' }}>
+                        <div style={{ fontSize: '0.78rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={log.message}>
+                          {log.message}
+                        </div>
+                      </td>
+                      <td>
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          fontSize: '0.72rem',
+                          padding: '2px 8px',
+                          borderRadius: '12px',
+                          background: 'rgba(34, 197, 94, 0.15)',
+                          color: '#16a34a',
+                          fontWeight: 700
+                        }}>
+                          <CheckCircle2 size={11} /> {log.status}
+                        </span>
+                      </td>
+                      <td style={{ fontSize: '0.75rem', whiteSpace: 'nowrap' }} className="text-muted">
+                        {new Date(log.dispatchedAt).toLocaleString()}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* Edit Modal */}
       {editingItem && (
         <div className="modal-overlay">
@@ -905,7 +1203,7 @@ export default function AdminDashboard({
                 {editingItem.ipfsDocumentCid && (
                   <p>
                     <strong>IPFS Evidence: </strong>
-                    <a href={`https://ipfs.io/ipfs/${editingItem.ipfsDocumentCid}`} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb' }}>
+                    <a href={`http://localhost:5000/api/ipfs/${editingItem.ipfsDocumentCid}`} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb' }}>
                       {editingItem.ipfsDocumentCid} ↗
                     </a>
                   </p>

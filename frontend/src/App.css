@@ -1022,8 +1022,7 @@
   min-height: 100vh;
   min-height: 100dvh;
   box-sizing: border-box;
-  background: linear-gradient(180deg, rgba(10, 18, 35, 0.25) 0%, rgba(10, 18, 35, 0.42) 50%, rgba(10, 18, 35, 0.70) 100%), 
-              url('./assets/gov-hero-bg.png') center 30% / cover no-repeat;
+  background-color: #0a1223;
   color: #FFFFFF;
   padding: 95px 24px 70px;
   border-bottom: 3.5px solid #EB7D00;
@@ -1031,7 +1030,22 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  overflow: visible;
+  overflow: hidden;
+}
+
+.hero-bg-layer {
+  position: absolute;
+  top: 0;
+  left: -2cm;
+  right: -2cm;
+  bottom: 0;
+  width: calc(100% + 4cm);
+  background-attachment: scroll;
+  background-size: cover;
+  background-position: calc(50% + 0.5cm) 30%;
+  background-repeat: no-repeat;
+  z-index: 0;
+  pointer-events: none;
 }
 
 /* Hero Center Content - Elegantly Centered & Positioned in Viewport */

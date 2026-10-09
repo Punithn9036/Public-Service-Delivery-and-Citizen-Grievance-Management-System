@@ -94,10 +94,20 @@ export const ipfsAPI = {
   getMetadata: (cid) => request(`/ipfs/${cid}/meta`, { method: 'GET' })
 };
 
+export const notificationAPI = {
+  getLogs: (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return request(`/notifications?${query}`, { method: 'GET' });
+  },
+  sendTest: (data) => request('/notifications/test', { method: 'POST', body: JSON.stringify(data) }),
+  queryWhatsAppBot: (from, body) => request('/webhook/whatsapp', { method: 'POST', body: JSON.stringify({ from, body }) })
+};
+
 export default {
   auth: authAPI,
   grievance: grievanceAPI,
   application: applicationAPI,
   service: serviceAPI,
-  ipfs: ipfsAPI
+  ipfs: ipfsAPI,
+  notifications: notificationAPI
 };
