@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Building, ShieldCheck, UserCheck, Lock, Mail, Phone, User, ArrowRight, AlertCircle, CheckCircle2, Globe } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import govHeroBg from '../assets/gov-hero-bg.png';
 
 export default function AuthScreen() {
   const { login, register, quickDemoLogin } = useAuth();
@@ -78,16 +79,37 @@ export default function AuthScreen() {
       alignItems: 'center',
       justifyContent: 'center',
       padding: '24px',
-      background: 'var(--bg-primary)'
+      position: 'relative',
+      overflow: 'hidden',
+      backgroundColor: '#0a1223'
     }}>
+      {/* Overhanging Hero Background Layer to eliminate white edge gap */}
+      <div 
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: '-2cm',
+          right: '-2cm',
+          bottom: 0,
+          width: 'calc(100% + 4cm)',
+          backgroundImage: `linear-gradient(180deg, rgba(10, 18, 35, 0.45) 0%, rgba(10, 18, 35, 0.65) 50%, rgba(10, 18, 35, 0.85) 100%), url(${govHeroBg})`,
+          backgroundAttachment: 'scroll',
+          backgroundSize: 'cover',
+          backgroundPosition: 'calc(50% + 0.5cm) 30%',
+          backgroundRepeat: 'no-repeat',
+          zIndex: 0,
+          pointerEvents: 'none'
+        }}
+      />
       <div className="glass-card" style={{
         maxWidth: '520px',
         width: '100%',
         padding: '36px',
-        boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
-        border: '1px solid var(--border-subtle)',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.35)',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
         borderRadius: 'var(--radius-md)',
-        position: 'relative'
+        position: 'relative',
+        zIndex: 10
       }}>
         
         {/* Top Right Regional Language Selector */}
