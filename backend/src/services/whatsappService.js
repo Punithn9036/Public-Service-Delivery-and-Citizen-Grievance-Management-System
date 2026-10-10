@@ -16,6 +16,11 @@ let isStarted = false;
 const AUTH_FOLDER = path.join(__dirname, '../../auth_info_baileys');
 
 async function initWhatsApp() {
+  if (process.env.PAUSE_NOTIFICATIONS === 'true') {
+    connectionStatus = 'PAUSED';
+    console.log('⏸️ [WhatsApp Service] WhatsApp notifications are currently PAUSED.');
+    return;
+  }
   isStarted = true;
   try {
     if (!fs.existsSync(AUTH_FOLDER)) {
@@ -111,6 +116,9 @@ async function initWhatsApp() {
 }
 
 async function sendMessage(toPhone, text) {
+  if (process.env.PAUSE_NOTIFICATIONS === 'true' || connectionStatus === 'PAUSED') {
+    return { success: false, reason: 'PAUSED', status: 'PAUSED' };
+  }
   if (connectionStatus !== 'CONNECTED' || !sock) {
     return { success: false, reason: 'NOT_CONNECTED', status: connectionStatus };
   }
@@ -136,10 +144,32 @@ function getStatus() {
   return {
     status: connectionStatus,
     isConnected: connectionStatus === 'CONNECTED',
+    isPaused: connectionStatus === 'PAUSED' || process.env.PAUSE_NOTIFICATIONS === 'true',
     connectedNumber: connectedPhone,
     qrCodeDataUrl: qrCodeDataUrl,
     hasQr: !!qrCodeDataUrl
   };
+}
+
+function pause() {
+  clearTimeout(reconnectTimer);
+  if (sock) {
+    try {
+      sock.end();
+    } catch (e) {}
+    sock = null;
+  }
+  connectionStatus = 'PAUSED';
+  console.log('⏸️ [WhatsApp Service] WhatsApp service successfully PAUSED.');
+  return { success: true, status: 'PAUSED' };
+}
+
+function resume() {
+  process.env.PAUSE_NOTIFICATIONS = 'false';
+  connectionStatus = 'INITIALIZING';
+  console.log('▶️ [WhatsApp Service] Resuming WhatsApp service...');
+  initWhatsApp();
+  return { success: true, status: 'RESUMING' };
 }
 
 async function disconnect() {
@@ -163,6 +193,10 @@ module.exports = {
   initWhatsApp,
   sendMessage,
   getStatus,
+  pause,
+  resume,
   disconnect,
-  isConnected: () => connectionStatus === 'CONNECTED'
+  isConnected: () => connectionStatus === 'CONNECTED',
+  isPaused: () => connectionStatus === 'PAUSED' || process.env.PAUSE_NOTIFICATIONS === 'true'
 };
+

@@ -41,7 +41,22 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/blockchain', blockchainRoutes);
 app.use('/api/webhook/whatsapp', notificationController.handleWhatsAppWebhook);
 
+// Serve built React SPA in production if available
+const path = require('path');
+const fs = require('fs');
+const frontendDist = path.join(__dirname, '../frontend/dist');
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  });
+}
+
 const whatsappService = require('./src/services/whatsappService');
+
 
 app.listen(PORT, () => {
   console.log(`[JanSeva Backend] Server running on http://localhost:${PORT}`);

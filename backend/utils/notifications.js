@@ -128,59 +128,66 @@ async function sendNotification({ phone, template, data = {}, channels = ['SMS',
       dispatchedAt: new Date().toISOString()
     };
 
-    // Live Fast2SMS Dispatch (Real SMS landing on mobile)
-    if (isSms && process.env.FAST2SMS_API_KEY && process.env.FAST2SMS_API_KEY.trim().length > 0) {
-      try {
-        if (clean10.length === 10) {
-          const fast2smsRes = await fetch('https://www.fast2sms.com/dev/bulkV2', {
-            method: 'POST',
-            headers: {
-              'authorization': process.env.FAST2SMS_API_KEY.trim(),
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              route: 'q',
-              message: messageContent,
-              language: 'english',
-              flash: 0,
-              numbers: clean10
-            })
-          });
-          const fast2smsJson = await fast2smsRes.json();
-          receipt.gatewayResponse = fast2smsJson;
-          if (fast2smsJson && fast2smsJson.return) {
-            receipt.status = 'DELIVERED_REAL_SMS';
-            receipt.fast2smsRequestId = fast2smsJson.request_id;
-            console.log(`[Fast2SMS] Successfully dispatched real SMS to ${clean10}. Request ID: ${fast2smsJson.request_id}`);
-          } else {
-            receipt.status = 'DISPATCHED_LOCAL';
-            receipt.gatewayError = fast2smsJson?.message || 'Fast2SMS returned false';
-            console.warn(`[Fast2SMS Gateway Notice] Provider response:`, fast2smsJson);
-          }
-        }
-      } catch (err) {
-        console.warn('[Fast2SMS Gateway Error]:', err.message);
-        receipt.gatewayError = err.message;
-      }
-    }
+    const isPaused = process.env.PAUSE_NOTIFICATIONS === 'true';
 
-    // Live WhatsApp Dispatch if Admin / Officer device is linked
-    if (!isSms && process.env.NODE_ENV !== 'test') {
-      try {
-        const whatsappService = require('../src/services/whatsappService');
-        if (whatsappService && whatsappService.isConnected()) {
-          const waRes = await whatsappService.sendMessage(intlDigits, messageContent);
-          if (waRes && waRes.success) {
-            receipt.status = 'DELIVERED_REAL_WHATSAPP';
-            receipt.whatsappMessageId = waRes.messageId;
-            receipt.senderNumber = whatsappService.getStatus().connectedNumber;
-            console.log(`[WhatsApp Service] Dispatched real WhatsApp message to ${intlDigits} from linked device (${receipt.senderNumber}).`);
-          } else {
-            receipt.whatsappSendNotice = waRes?.reason || 'Not sent via linked device';
+    if (isPaused) {
+      receipt.status = 'PAUSED';
+      receipt.notice = 'Live SMS & WhatsApp dispatches are temporarily PAUSED by administrator.';
+    } else {
+      // Live Fast2SMS Dispatch (Real SMS landing on mobile)
+      if (isSms && process.env.FAST2SMS_API_KEY && process.env.FAST2SMS_API_KEY.trim().length > 0) {
+        try {
+          if (clean10.length === 10) {
+            const fast2smsRes = await fetch('https://www.fast2sms.com/dev/bulkV2', {
+              method: 'POST',
+              headers: {
+                'authorization': process.env.FAST2SMS_API_KEY.trim(),
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                route: 'q',
+                message: messageContent,
+                language: 'english',
+                flash: 0,
+                numbers: clean10
+              })
+            });
+            const fast2smsJson = await fast2smsRes.json();
+            receipt.gatewayResponse = fast2smsJson;
+            if (fast2smsJson && fast2smsJson.return) {
+              receipt.status = 'DELIVERED_REAL_SMS';
+              receipt.fast2smsRequestId = fast2smsJson.request_id;
+              console.log(`[Fast2SMS] Successfully dispatched real SMS to ${clean10}. Request ID: ${fast2smsJson.request_id}`);
+            } else {
+              receipt.status = 'DISPATCHED_LOCAL';
+              receipt.gatewayError = fast2smsJson?.message || 'Fast2SMS returned false';
+              console.warn(`[Fast2SMS Gateway Notice] Provider response:`, fast2smsJson);
+            }
           }
+        } catch (err) {
+          console.warn('[Fast2SMS Gateway Error]:', err.message);
+          receipt.gatewayError = err.message;
         }
-      } catch (err) {
-        console.warn('[WhatsApp Service Error]:', err.message);
+      }
+
+      // Live WhatsApp Dispatch if Admin / Officer device is linked
+      if (!isSms && process.env.NODE_ENV !== 'test') {
+        try {
+          const whatsappService = require('../src/services/whatsappService');
+          if (whatsappService && whatsappService.isConnected()) {
+            const waRes = await whatsappService.sendMessage(intlDigits, messageContent);
+            if (waRes && waRes.success) {
+              receipt.status = 'DELIVERED_REAL_WHATSAPP';
+              receipt.whatsappMessageId = waRes.messageId;
+              receipt.senderNumber = whatsappService.getStatus().connectedNumber;
+              console.log(`[WhatsApp Service] Dispatched real WhatsApp message to ${intlDigits} from linked device (${receipt.senderNumber}).`);
+            } else {
+              receipt.whatsappSendNotice = waRes?.reason || 'Not sent via linked device';
+            }
+          }
+        } catch (err) {
+          console.warn('[WhatsApp Service Error]:', err.message);
+        }
       }
     }
 

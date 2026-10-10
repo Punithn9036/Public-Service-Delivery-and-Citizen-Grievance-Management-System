@@ -13,8 +13,14 @@ router.post('/test', notificationController.sendTestNotification);
 router.get('/whatsapp-status', notificationController.getWhatsAppStatus);
 router.post('/whatsapp-disconnect', notificationController.disconnectWhatsApp);
 
+// Notification Live Dispatch Pause / Resume Controls
+router.post('/pause', notificationController.pauseNotifications);
+router.post('/resume', notificationController.resumeNotifications);
+router.get('/pause-status', notificationController.getPauseStatus);
+
 // Interactive Two-Way WhatsApp Webhook endpoints
 router.post('/whatsapp-webhook', notificationController.handleWhatsAppWebhook);
 router.post('/webhook', notificationController.handleWhatsAppWebhook);
 
 module.exports = router;
+
