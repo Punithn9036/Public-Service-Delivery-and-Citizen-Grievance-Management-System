@@ -16,7 +16,8 @@ let isStarted = false;
 const AUTH_FOLDER = path.join(__dirname, '../../auth_info_baileys');
 
 async function initWhatsApp() {
-  if (process.env.PAUSE_NOTIFICATIONS === 'true') {
+  const isPaused = process.env.PAUSE_WHATSAPP === 'true' || process.env.PAUSE_NOTIFICATIONS === 'true';
+  if (isPaused) {
     connectionStatus = 'PAUSED';
     console.log('⏸️ [WhatsApp Service] WhatsApp notifications are currently PAUSED.');
     return;
@@ -116,7 +117,7 @@ async function initWhatsApp() {
 }
 
 async function sendMessage(toPhone, text) {
-  if (process.env.PAUSE_NOTIFICATIONS === 'true' || connectionStatus === 'PAUSED') {
+  if (process.env.PAUSE_WHATSAPP === 'true' || process.env.PAUSE_NOTIFICATIONS === 'true' || connectionStatus === 'PAUSED') {
     return { success: false, reason: 'PAUSED', status: 'PAUSED' };
   }
   if (connectionStatus !== 'CONNECTED' || !sock) {

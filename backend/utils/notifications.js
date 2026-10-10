@@ -128,11 +128,15 @@ async function sendNotification({ phone, template, data = {}, channels = ['SMS',
       dispatchedAt: new Date().toISOString()
     };
 
-    const isPaused = process.env.PAUSE_NOTIFICATIONS === 'true';
+    const isSmsPaused = process.env.PAUSE_SMS === 'true' || process.env.PAUSE_NOTIFICATIONS === 'true';
+    const isWhatsAppPaused = process.env.PAUSE_WHATSAPP === 'true' || (process.env.PAUSE_NOTIFICATIONS === 'true' && process.env.PAUSE_WHATSAPP !== 'false');
 
-    if (isPaused) {
+    if (isSms && isSmsPaused) {
       receipt.status = 'PAUSED';
-      receipt.notice = 'Live SMS & WhatsApp dispatches are temporarily PAUSED by administrator.';
+      receipt.notice = 'Live SMS dispatch is paused by administrator.';
+    } else if (!isSms && isWhatsAppPaused) {
+      receipt.status = 'PAUSED';
+      receipt.notice = 'Live WhatsApp dispatch is paused by administrator.';
     } else {
       // Live Fast2SMS Dispatch (Real SMS landing on mobile)
       if (isSms && process.env.FAST2SMS_API_KEY && process.env.FAST2SMS_API_KEY.trim().length > 0) {
