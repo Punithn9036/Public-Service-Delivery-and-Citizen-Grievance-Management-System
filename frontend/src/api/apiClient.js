@@ -50,7 +50,8 @@ export const grievanceAPI = {
   updateStatus: (id, updateData) => request(`/grievances/${id}/status`, { method: 'PATCH', body: JSON.stringify(updateData) }),
   submitFeedback: (id, feedback) => request(`/grievances/${id}/feedback`, { method: 'POST', body: JSON.stringify(feedback) }),
   reopen: (id, reason) => request(`/grievances/${id}/reopen`, { method: 'POST', body: JSON.stringify({ reason }) }),
-  upvote: (id, citizenName) => request(`/grievances/${id}/upvote`, { method: 'POST', body: JSON.stringify({ citizenName }) })
+  upvote: (id, citizenName) => request(`/grievances/${id}/upvote`, { method: 'POST', body: JSON.stringify({ citizenName }) }),
+  getOfficerRoster: () => request('/grievances/officers/roster', { method: 'GET' })
 };
 
 export const applicationAPI = {

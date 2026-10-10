@@ -1,7 +1,22 @@
 import React, { useState } from 'react';
-import { Building, ShieldCheck, UserCheck, Lock, Mail, Phone, User, ArrowRight, AlertCircle, CheckCircle2, Globe } from 'lucide-react';
+import { 
+  Building, 
+  ShieldCheck, 
+  UserCheck, 
+  Lock, 
+  Mail, 
+  Phone, 
+  User, 
+  ArrowRight, 
+  AlertCircle, 
+  CheckCircle2, 
+  Globe,
+  BadgeCheck,
+  Building2
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { authAPI } from '../api/apiClient';
 import govHeroBg from '../assets/gov-hero-bg.png';
 
 export default function AuthScreen() {
@@ -15,9 +30,59 @@ export default function AuthScreen() {
   const [phone, setPhone] = useState('');
   const [department, setDepartment] = useState('Water Supply & Sanitation');
   
+  // Officer Government Unique Employee ID Verification States
+  const [employeeId, setEmployeeId] = useState('');
+  const [verifiedOfficer, setVerifiedOfficer] = useState(null);
+  const [verifyingId, setVerifyingId] = useState(false);
+  const [verifyNotice, setVerifyNotice] = useState(null);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
+
+  // Real-time verification of Government Employee ID
+  const handleVerifyEmployeeId = async (idToVerify) => {
+    const empId = (idToVerify || employeeId || '').trim();
+    if (!empId) {
+      setError('Please enter a Government Employee ID (e.g. EMP-GOV-2002)');
+      return;
+    }
+
+    setError(null);
+    setVerifyNotice(null);
+    setVerifyingId(true);
+
+    try {
+      const res = await authAPI.verifyEmployee(empId);
+      if (res && res.valid && res.employee) {
+        setVerifiedOfficer(res.employee);
+        setEmployeeId(res.employee.employeeId);
+        setFullName(res.employee.fullName);
+        setDepartment(res.employee.department);
+        if (res.employee.email) {
+          setEmail(res.employee.email);
+        }
+        setVerifyNotice({
+          type: 'success',
+          text: `Verified Official: ${res.employee.fullName} • ${res.employee.department} (${res.employee.designation})`
+        });
+      }
+    } catch (err) {
+      setVerifiedOfficer(null);
+      setVerifyNotice({
+        type: 'error',
+        text: err.message || 'Invalid Employee ID. Access restricted to authorized personnel.'
+      });
+    } finally {
+      setVerifyingId(false);
+    }
+  };
+
+  // Quick select an available demo Employee ID for testing
+  const handleSelectSampleEmployee = (sampleId) => {
+    setEmployeeId(sampleId);
+    handleVerifyEmployeeId(sampleId);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,20 +95,26 @@ export default function AuthScreen() {
         if (!fullName || !email || !phone || !password) {
           throw new Error('Please fill in all required fields.');
         }
+
+        if (role === 'OFFICER' && !employeeId.trim()) {
+          throw new Error('Government Employee Unique ID (KGID / HRMS) is required to register as an Officer.');
+        }
+
         await register({
           fullName,
           email,
           phone,
           password,
           role,
+          employeeId: role === 'OFFICER' ? employeeId.trim() : null,
           department: role === 'CITIZEN' ? null : department
         });
         setSuccessMsg('Account registered successfully! Redirecting...');
       } else {
         if (!email || !password) {
-          throw new Error('Please enter your email and password.');
+          throw new Error('Please enter your Employee ID / Email and password.');
         }
-        await login(email, password);
+        await login(email, password, phone);
       }
     } catch (err) {
       setError(err.message || 'Authentication failed. Please check your credentials.');
@@ -59,7 +130,7 @@ export default function AuthScreen() {
         setEmail('aarav.sharma@example.com');
         setPassword('Password123!');
       } else if (demoRole === 'OFFICER') {
-        setEmail('rajesh.varma@gov.in');
+        setEmail('EMP-GOV-2001');
         setPassword('Officer123!');
       } else if (demoRole === 'ADMIN') {
         setEmail('admin.controlroom@gov.in');
@@ -70,7 +141,6 @@ export default function AuthScreen() {
       setError('Quick login failed: ' + e.message);
     }
   };
-
 
   return (
     <div className="auth-screen-container" style={{
@@ -83,7 +153,7 @@ export default function AuthScreen() {
       overflow: 'hidden',
       backgroundColor: '#0a1223'
     }}>
-      {/* Overhanging Hero Background Layer to eliminate white edge gap */}
+      {/* Overhanging Hero Background Layer */}
       <div 
         style={{
           position: 'absolute',
@@ -102,7 +172,7 @@ export default function AuthScreen() {
         }}
       />
       <div className="glass-card" style={{
-        maxWidth: '520px',
+        maxWidth: '540px',
         width: '100%',
         padding: '36px',
         boxShadow: '0 8px 32px rgba(0,0,0,0.35)',
@@ -158,7 +228,7 @@ export default function AuthScreen() {
         </div>
 
         {/* Header Branding */}
-        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
           <div style={{
             width: '56px',
             height: '56px',
@@ -167,12 +237,12 @@ export default function AuthScreen() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            margin: '0 auto 16px',
+            margin: '0 auto 14px',
             boxShadow: '0 2px 8px rgba(74, 74, 74, 0.1)'
           }}>
             <Building size={30} color="#ffffff" />
           </div>
-          <h2 style={{ fontSize: '1.6rem', fontWeight: 800, margin: '0 0 6px', color: 'var(--text-main)' }}>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 6px', color: 'var(--text-main)' }}>
             JanSeva Governance Portal
           </h2>
           <p className="small-text" style={{ margin: 0, color: 'var(--text-muted)' }}>
@@ -186,20 +256,28 @@ export default function AuthScreen() {
           background: 'var(--bg-tertiary)',
           padding: '4px',
           borderRadius: '10px',
-          marginBottom: '22px',
+          marginBottom: '20px',
           border: '1px solid var(--border-subtle)'
         }}>
           <button
             type="button"
             className={`auth-toggle-btn ${!isRegister ? 'active' : ''}`}
-            onClick={() => { setIsRegister(false); setError(null); }}
+            onClick={() => { 
+              setIsRegister(false); 
+              setError(null); 
+              setVerifyNotice(null); 
+            }}
           >
             {t('signIn')}
           </button>
           <button
             type="button"
             className={`auth-toggle-btn ${isRegister ? 'active' : ''}`}
-            onClick={() => { setIsRegister(true); setError(null); }}
+            onClick={() => { 
+              setIsRegister(true); 
+              setError(null); 
+              setVerifyNotice(null); 
+            }}
           >
             {t('createAccount')}
           </button>
@@ -246,12 +324,18 @@ export default function AuthScreen() {
         <form onSubmit={handleSubmit}>
           {isRegister && (
             <>
+              {/* Account Role Selector */}
               <div style={{ marginBottom: '14px' }}>
                 <label className="small-text font-bold" style={{ display: 'block', marginBottom: '6px', color: 'var(--text-main)' }}>Account Role</label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                   <button
                     type="button"
-                    onClick={() => setRole('CITIZEN')}
+                    onClick={() => {
+                      setRole('CITIZEN');
+                      setVerifiedOfficer(null);
+                      setVerifyNotice(null);
+                      setError(null);
+                    }}
                     className={`auth-role-select-btn ${role === 'CITIZEN' ? 'selected' : ''}`}
                   >
                     <UserCheck size={16} color={role === 'CITIZEN' ? 'var(--brand-700)' : 'currentColor'} />
@@ -259,7 +343,12 @@ export default function AuthScreen() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setRole('OFFICER')}
+                    onClick={() => {
+                      setRole('OFFICER');
+                      setVerifiedOfficer(null);
+                      setVerifyNotice(null);
+                      setError(null);
+                    }}
                     className={`auth-role-select-btn ${role === 'OFFICER' ? 'selected' : ''}`}
                   >
                     <ShieldCheck size={16} color={role === 'OFFICER' ? 'var(--brand-700)' : 'currentColor'} />
@@ -268,71 +357,209 @@ export default function AuthScreen() {
                 </div>
               </div>
 
+              {/* MANDATORY GOVERNMENT EMPLOYEE ID VERIFICATION (FIELD OFFICERS ONLY) */}
+              {role === 'OFFICER' && (
+                <div style={{
+                  background: 'rgba(37, 99, 235, 0.08)',
+                  border: '1px solid rgba(37, 99, 235, 0.25)',
+                  borderRadius: '8px',
+                  padding: '14px',
+                  marginBottom: '16px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#1d4ed8', fontWeight: 700, fontSize: '0.82rem', marginBottom: '4px' }}>
+                    <BadgeCheck size={16} /> Government Personnel Verification (KGID / HRMS)
+                  </div>
+                  <p style={{ margin: '0 0 10px', fontSize: '0.74rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+                    Only verified government employees can create an Officer account. Enter your official Service ID to unlock registration.
+                  </p>
+
+                  <label className="small-text font-bold" style={{ display: 'block', marginBottom: '4px', color: 'var(--text-main)' }}>
+                    Government Employee Unique ID <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. EMP-GOV-2002"
+                      value={employeeId}
+                      onChange={(e) => {
+                        setEmployeeId(e.target.value);
+                        setVerifiedOfficer(null);
+                        setVerifyNotice(null);
+                      }}
+                      className="auth-input-field"
+                      style={{ 
+                        flex: 1, 
+                        fontFamily: 'monospace', 
+                        textTransform: 'uppercase', 
+                        fontWeight: 700,
+                        letterSpacing: '0.5px' 
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => handleVerifyEmployeeId(employeeId)}
+                      disabled={verifyingId}
+                      style={{ whiteSpace: 'nowrap', padding: '0 16px', fontWeight: 600 }}
+                    >
+                      {verifyingId ? 'Verifying...' : 'Verify ID'}
+                    </button>
+                  </div>
+
+                  {/* Real-time Verification Feedback */}
+                  {verifyNotice && (
+                    <div style={{
+                      marginTop: '10px',
+                      padding: '8px 12px',
+                      borderRadius: '6px',
+                      fontSize: '0.76rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      background: verifyNotice.type === 'success' ? 'rgba(34, 197, 94, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+                      color: verifyNotice.type === 'success' ? '#15803d' : '#b91c1c',
+                      border: `1px solid ${verifyNotice.type === 'success' ? 'rgba(34, 197, 94, 0.25)' : 'rgba(239, 68, 68, 0.25)'}`
+                    }}>
+                      {verifyNotice.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+                      <span>{verifyNotice.text}</span>
+                    </div>
+                  )}
+
+                  {/* Clickable Authorized Demo Employee IDs */}
+                  <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px dashed rgba(37, 99, 235, 0.2)' }}>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
+                      Available Authorized Demo IDs (Click to auto-verify):
+                    </span>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleSelectSampleEmployee('EMP-GOV-2002')}
+                        style={{ fontSize: '0.7rem', padding: '4px 8px', background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)', borderRadius: '4px', cursor: 'pointer', color: 'var(--text-main)' }}
+                      >
+                        EMP-GOV-2002 (PWD)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSelectSampleEmployee('EMP-GOV-2003')}
+                        style={{ fontSize: '0.7rem', padding: '4px 8px', background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)', borderRadius: '4px', cursor: 'pointer', color: 'var(--text-main)' }}
+                      >
+                        EMP-GOV-2003 (Health)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSelectSampleEmployee('EMP-GOV-2004')}
+                        style={{ fontSize: '0.7rem', padding: '4px 8px', background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)', borderRadius: '4px', cursor: 'pointer', color: 'var(--text-main)' }}
+                      >
+                        EMP-GOV-2004 (Electricity)
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Full Name */}
               <div style={{ marginBottom: '14px' }}>
-                <label className="small-text font-bold" style={{ display: 'block', marginBottom: '6px', color: 'var(--text-main)' }}>Full Name</label>
+                <label className="small-text font-bold" style={{ display: 'block', marginBottom: '6px', color: 'var(--text-main)' }}>
+                  Full Name
+                  {verifiedOfficer && <span style={{ fontSize: '0.72rem', color: '#16a34a', marginLeft: '6px' }}>(✓ Locked from Govt Registry)</span>}
+                </label>
                 <div style={{ position: 'relative' }}>
                   <User size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Aarav Sharma"
+                    placeholder="e.g. Er. Ananya Sen"
                     value={fullName}
+                    readOnly={!!verifiedOfficer}
                     onChange={(e) => setFullName(e.target.value)}
                     className="auth-input-field"
+                    style={{ background: verifiedOfficer ? 'var(--bg-tertiary)' : 'inherit' }}
                   />
                 </div>
               </div>
 
+              {/* Assigned Department */}
+              {role !== 'CITIZEN' && (
+                <div style={{ marginBottom: '14px' }}>
+                  <label className="small-text font-bold" style={{ display: 'block', marginBottom: '6px', color: 'var(--text-main)' }}>
+                    Assigned Department
+                    {verifiedOfficer && <span style={{ fontSize: '0.72rem', color: '#16a34a', marginLeft: '6px' }}>(✓ Locked from Govt Registry)</span>}
+                  </label>
+                  {verifiedOfficer ? (
+                    <input
+                      type="text"
+                      readOnly
+                      value={department}
+                      className="auth-input-field"
+                      style={{ background: 'var(--bg-tertiary)' }}
+                    />
+                  ) : (
+                    <select
+                      value={department}
+                      onChange={(e) => setDepartment(e.target.value)}
+                      className="auth-input-field"
+                      style={{ paddingLeft: '12px' }}
+                    >
+                      <option value="Water Supply & Sanitation">Water Supply & Sanitation</option>
+                      <option value="Public Works & Infrastructure">Public Works & Infrastructure</option>
+                      <option value="Revenue & Land Records">Revenue & Land Records</option>
+                      <option value="Public Health & Safety">Public Health & Safety</option>
+                      <option value="Electricity & Street Lighting">Electricity & Street Lighting</option>
+                      <option value="Town Planning & Building">Town Planning & Building</option>
+                      <option value="Municipal Governance">Municipal Governance</option>
+                    </select>
+                  )}
+                </div>
+              )}
+
+              {/* Phone Number */}
               <div style={{ marginBottom: '14px' }}>
-                <label className="small-text font-bold" style={{ display: 'block', marginBottom: '6px', color: 'var(--text-main)' }}>Phone Number</label>
+                <label className="small-text font-bold" style={{ display: 'block', marginBottom: '6px', color: 'var(--text-main)' }}>
+                  Mobile Number (Fast2SMS & WhatsApp Alerts)
+                </label>
                 <div style={{ position: 'relative' }}>
                   <Phone size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />
                   <input
                     type="tel"
                     required
-                    placeholder="+91 98765 43210"
+                    placeholder="+91 94495 24516"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     className="auth-input-field"
                   />
                 </div>
+                <span style={{ fontSize: '0.72rem', color: '#16a34a', display: 'block', marginTop: '3px' }}>
+                  ✓ Real SMS & WhatsApp statutory alerts will be dispatched to this number
+                </span>
               </div>
-
-              {role !== 'CITIZEN' && (
-                <div style={{ marginBottom: '14px' }}>
-                  <label className="small-text font-bold" style={{ display: 'block', marginBottom: '6px', color: 'var(--text-main)' }}>Assigned Department</label>
-                  <select
-                    value={department}
-                    onChange={(e) => setDepartment(e.target.value)}
-                    className="auth-input-field"
-                    style={{ paddingLeft: '12px' }}
-                  >
-                    <option value="Water Supply & Sanitation">Water Supply & Sanitation</option>
-                    <option value="Public Works & Infrastructure">Public Works & Infrastructure</option>
-                    <option value="Revenue & Land Records">Revenue & Land Records</option>
-                    <option value="Public Health & Safety">Public Health & Safety</option>
-                    <option value="Municipal Governance">Municipal Governance</option>
-                  </select>
-                </div>
-              )}
             </>
           )}
 
+          {/* Email / Government Employee ID Field */}
           <div style={{ marginBottom: '14px' }}>
-            <label className="small-text font-bold" style={{ display: 'block', marginBottom: '6px', color: 'var(--text-main)' }}>Email Address</label>
+            <label className="small-text font-bold" style={{ display: 'block', marginBottom: '6px', color: 'var(--text-main)' }}>
+              {!isRegister ? 'Government Employee ID or Email Address' : 'Official Email Address'}
+            </label>
             <div style={{ position: 'relative' }}>
               <Mail size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />
               <input
-                type="email"
+                type="text"
                 required
-                placeholder="name@example.gov.in"
+                placeholder={!isRegister ? "e.g. EMP-GOV-2001 or rajesh.varma@gov.in" : "name@example.gov.in"}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="auth-input-field"
               />
             </div>
+            {!isRegister && (
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginTop: '3px' }}>
+                Tip: Field Officers can log in directly using their Employee ID (e.g. <code>EMP-GOV-2001</code>) or Email.
+              </span>
+            )}
           </div>
 
+          {/* Password Field */}
           <div style={{ marginBottom: '22px' }}>
             <label className="small-text font-bold" style={{ display: 'block', marginBottom: '6px', color: 'var(--text-main)' }}>Password</label>
             <div style={{ position: 'relative' }}>
@@ -354,13 +581,13 @@ export default function AuthScreen() {
             className="btn btn-primary"
             style={{ width: '100%', padding: '12px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '0.95rem' }}
           >
-            {loading ? 'Authenticating...' : isRegister ? 'Register Account' : 'Sign In to Portal'}
+            {loading ? 'Authenticating...' : isRegister ? (role === 'OFFICER' ? 'Register Verified Officer' : 'Register Account') : 'Sign In to Portal'}
             <ArrowRight size={16} />
           </button>
         </form>
 
         {/* Quick Demo Logins */}
-        <div style={{ marginTop: '28px', paddingTop: '20px', borderTop: '1px dashed var(--border-subtle)' }}>
+        <div style={{ marginTop: '26px', paddingTop: '18px', borderTop: '1px dashed var(--border-subtle)' }}>
           <p className="small-text" style={{ margin: '0 0 10px', textAlign: 'center', color: 'var(--text-muted)' }}>
             Quick Demo Login Profiles (One-Click):
           </p>
@@ -379,7 +606,7 @@ export default function AuthScreen() {
               onClick={() => handleQuickLogin('OFFICER')}
               style={{ fontSize: '0.78rem', padding: '6px 12px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
-              <ShieldCheck size={14} /> Officer (Rajesh)
+              <ShieldCheck size={14} /> Officer (EMP-GOV-2001)
             </button>
             <button
               type="button"
