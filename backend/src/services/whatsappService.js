@@ -27,7 +27,7 @@ async function initWhatsApp() {
     sock = makeWASocket({
       auth: state,
       logger: pino({ level: 'silent' }),
-      printQRInTerminal: true,
+      printQRInTerminal: false,
       browser: ['JanSeva Gov Desk', 'Chrome', '124.0.0']
     });
 
@@ -44,9 +44,6 @@ async function initWhatsApp() {
           console.error('[WhatsApp QR Generation Error]', e.message);
         }
         connectionStatus = 'AWAITING_SCAN';
-        console.log('\n======================================================');
-        console.log('📲 [WhatsApp] SCAN QR CODE TO LINK YOUR NUMBER AS SENDER');
-        console.log('======================================================\n');
       }
 
       if (connection === 'close') {
