@@ -27,6 +27,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { ipfsAPI } from '../api/apiClient';
+import { allocateNextOfficer, resolveSector, SECTORS } from '../utils/officerDispatch';
 
 import exifr from 'exifr';
 import { createWorker } from 'tesseract.js';
@@ -113,6 +114,7 @@ export default function GrievanceFormModal({
     title: '',
     category: 'Roads & Infrastructure',
     department: departments[0] || 'Public Works & Infrastructure',
+    sector: SECTORS[0] || 'Sector 1 (North Zone)',
     priority: 'Medium',
     description: '',
     location: '',
@@ -124,6 +126,7 @@ export default function GrievanceFormModal({
     fileContent: null
   });
 
+  const [allocatedOfficerDetails, setAllocatedOfficerDetails] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [gpsData, setGpsData] = useState(null);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
@@ -419,21 +422,32 @@ export default function GrievanceFormModal({
 
     const newTicketId = `GRV-2026-${Math.floor(8000 + Math.random() * 1900)}`;
 
+    // Automatic sequential round-robin officer allocation for sector & department
+    const targetSector = resolveSector(formData.location, formData.sector);
+    const assignedOfficerInfo = allocateNextOfficer(formData.department, targetSector, newTicketId);
+    setAllocatedOfficerDetails(assignedOfficerInfo);
+
     const newGrievance = {
       id: newTicketId,
       ...formData,
+      sector: targetSector,
       ipfsDocumentCid: generatedCid,
-      status: 'Submitted',
+      status: 'Assigned',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      assignedOfficer: 'Control Room Officer (Pending Dispatch)',
-      assignedOfficerContact: '+91 1800-425-GOV',
+      assignedOfficer: assignedOfficerInfo.officerName,
+      assignedOfficerContact: assignedOfficerInfo.officerContact,
       slaDeadline: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
       timeline: [
         {
           status: 'Submitted',
           timestamp: new Date().toISOString(),
-          note: `Grievance registered. Address automatically captured from GPS Photo (${gpsData ? `${gpsData.lat}° N, ${gpsData.lon}° E` : formData.location}). IPFS proof pinned (${generatedCid}).`
+          note: `Grievance registered. Address captured from GPS (${gpsData ? `${gpsData.lat}° N, ${gpsData.lon}° E` : formData.location}). IPFS proof pinned (${generatedCid}).`
+        },
+        {
+          status: 'Assigned',
+          timestamp: new Date().toISOString(),
+          note: `Auto-allocated via Sequential Duty Queue to ${assignedOfficerInfo.officerName} (${assignedOfficerInfo.sector}). Contact: ${assignedOfficerInfo.officerContact}.`
         }
       ],
       feedback: null
@@ -552,6 +566,34 @@ export default function GrievanceFormModal({
                 <span className="text-muted small-text">Assigned Department:</span>
                 <strong>{formData.department}</strong>
               </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                <span className="text-muted small-text">Municipal Sector:</span>
+                <strong style={{ color: '#2C5745' }}>{formData.sector || 'Sector 1 (North Zone)'}</strong>
+              </div>
+              {allocatedOfficerDetails && (
+                <div style={{ 
+                  background: 'rgba(44, 87, 69, 0.08)', 
+                  border: '1px solid rgba(44, 87, 69, 0.25)', 
+                  borderRadius: '8px', 
+                  padding: '10px 12px', 
+                  marginBottom: '10px' 
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#2C5745', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      ⚡ Auto-Allocated Officer (Next in Queue)
+                    </span>
+                    <span style={{ fontSize: '0.72rem', background: '#16a34a', color: '#fff', padding: '1px 6px', borderRadius: '4px', fontWeight: 700 }}>
+                      Assigned
+                    </span>
+                  </div>
+                  <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main)' }}>
+                    {allocatedOfficerDetails.officerName}
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                    Direct Hotline: <strong>{allocatedOfficerDetails.officerContact}</strong>
+                  </div>
+                </div>
+              )}
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
                 <span className="text-muted small-text">Auto-Captured Address:</span>
                 <strong style={{ fontSize: '0.85rem', maxWidth: '65%', textAlign: 'right' }}>{formData.location}</strong>
@@ -908,6 +950,19 @@ export default function GrievanceFormModal({
                 >
                   {departments.map(d => (
                     <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Municipal Sector / Zone <span className="req">*</span></label>
+                <select 
+                  value={formData.sector}
+                  onChange={(e) => setFormData({...formData, sector: e.target.value})}
+                  className="form-input"
+                >
+                  {SECTORS.map(s => (
+                    <option key={s} value={s}>{s}</option>
                   ))}
                 </select>
               </div>

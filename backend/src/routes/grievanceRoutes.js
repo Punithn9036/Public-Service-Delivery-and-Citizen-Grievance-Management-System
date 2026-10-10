@@ -7,10 +7,14 @@ const {
   updateGrievanceStatus, 
   submitFeedback, 
   reopenGrievance,
-  upvoteGrievance
+  upvoteGrievance,
+  getOfficerRoster
 } = require('../controllers/grievanceController');
 
 const { verifyToken, requireRole } = require('../middleware/authMiddleware');
+
+// Sector-Based Officer Duty Roster & Queue Status
+router.get('/officers/roster', getOfficerRoster);
 
 // Public / Citizen Search & Lookup
 router.get('/', getAllGrievances);

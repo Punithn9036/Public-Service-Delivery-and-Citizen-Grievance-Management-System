@@ -5,6 +5,7 @@ const GrievanceModel = require('../../models/grievance');
 const FabricClient = require('../../fabric/client');
 const { uploadToIPFS } = require('../../utils/ipfs');
 const { sendNotification } = require('../../utils/notifications');
+const { allocateNextOfficer, releaseOfficerFromTicket, getRosterStatus } = require('../../utils/officerDispatch');
 
 // Initial Fallback In-Memory Grievance Ledger in case DB is warming up
 let grievancesStore = [
@@ -195,14 +196,22 @@ const createGrievance = async (req, res) => {
     const slaHours = calculateSlaHours(assignedPriority);
     const newId = `GRV-2026-${Math.floor(8000 + Math.random() * 1900)}`;
 
+    // Automated Sector & Department Round-Robin Officer Allocation
+    const sectorInput = req.body.sector || '';
+    const assignedOfficerInfo = allocateNextOfficer(department, sectorInput || location, newId);
+
+    const initialOfficer = assignedOfficerInfo ? assignedOfficerInfo.officerName : 'Control Room Officer (Pending Dispatch)';
+    const initialOfficerContact = assignedOfficerInfo ? assignedOfficerInfo.officerContact : '+91 1800-425-GOV';
+    const initialStatus = 'Submitted';
+
     const fabricResult = await FabricClient.submitTransaction('RecordGrievanceState', [
       newId,
       department,
       assignedPriority,
-      'Submitted',
-      'Control Room Officer (Pending Dispatch)',
+      initialStatus,
+      initialOfficer,
       finalCid || '',
-      `Grievance ticket lodged online via JanSeva Citizen Portal for ${department}.`
+      `Grievance ticket lodged and auto-allocated to ${initialOfficer} (${assignedOfficerInfo?.sector || 'Zone Desk'}).`
     ]);
 
     const grievanceData = {
@@ -212,14 +221,15 @@ const createGrievance = async (req, res) => {
       department,
       description,
       location,
+      sector: assignedOfficerInfo?.sector || sectorInput || 'Sector 1 (North Zone)',
       landmark: landmark || '',
       priority: assignedPriority,
-      status: 'Submitted',
+      status: initialStatus,
       citizenName,
       citizenPhone,
       citizenEmail: citizenEmail || '',
-      assignedOfficer: 'Control Room Officer (Pending Dispatch)',
-      assignedOfficerContact: '+91 1800-425-GOV',
+      assignedOfficer: initialOfficer,
+      assignedOfficerContact: initialOfficerContact,
       ipfsDocumentCid: finalCid,
       fabricTxId: fabricResult.txId,
       fabricBlockNumber: fabricResult.blockNumber,
@@ -354,6 +364,15 @@ const updateGrievanceStatus = async (req, res) => {
         timestamp: new Date().toISOString()
       });
       updatedGrievance = grievance;
+    }
+
+    // Round-Robin Queue: If status is Resolved or Rejected, release officer back to available queue
+    if (nextStatus === 'Resolved' || nextStatus === 'Rejected') {
+      try {
+        releaseOfficerFromTicket(id);
+      } catch (relErr) {
+        console.warn('[Dispatch Warning] Could not release officer:', relErr.message);
+      }
     }
 
     // Statutory Citizen Notification Dispatch (SMS & WhatsApp)
@@ -566,6 +585,18 @@ const upvoteGrievance = async (req, res) => {
   }
 };
 
+/**
+ * Fetch Officer Roster & Queue Status across all sectors & departments
+ */
+const getOfficerRoster = async (req, res) => {
+  try {
+    const status = getRosterStatus();
+    return res.json(status);
+  } catch (err) {
+    return res.status(500).json({ error: 'SERVER_ERROR', message: err.message });
+  }
+};
+
 module.exports = {
   getAllGrievances,
   getGrievanceById,
@@ -573,5 +604,6 @@ module.exports = {
   updateGrievanceStatus,
   submitFeedback,
   reopenGrievance,
-  upvoteGrievance
+  upvoteGrievance,
+  getOfficerRoster
 };

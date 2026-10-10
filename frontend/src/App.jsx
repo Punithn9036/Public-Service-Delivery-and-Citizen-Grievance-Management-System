@@ -17,6 +17,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import { grievanceAPI, applicationAPI, serviceAPI } from './api/apiClient';
+import { releaseOfficerFromTicket } from './utils/officerDispatch';
 
 import { 
   INITIAL_SERVICES, 
@@ -365,6 +366,13 @@ function MainAppContent() {
     try {
       await grievanceAPI.updateStatus(id, { nextStatus: status, officerName, note });
     } catch (e) {}
+
+    // When a ticket is marked Resolved or Rejected, free up the officer and return them to the queue!
+    if (status === 'Resolved' || status === 'Rejected') {
+      try {
+        releaseOfficerFromTicket(id);
+      } catch (e) {}
+    }
 
     setGrievances(prev => prev.map(g => {
       if (g.id === id) {
