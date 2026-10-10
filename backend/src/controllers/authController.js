@@ -137,32 +137,43 @@ const register = async (req, res) => {
  */
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, phone } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({
         error: 'VALIDATION_ERROR',
-        message: 'Email and password are required.'
+        message: 'Email/Mobile number and password are required.'
       });
     }
 
+    const identifier = email.trim().toLowerCase();
     let user;
     try {
-      user = await UserModel.findByEmail(email);
+      user = await UserModel.findByEmail(identifier);
+      if (!user) {
+        user = await UserModel.findByPhone(identifier);
+      }
     } catch (dbErr) {
-      user = mockUserStore.find(u => u.email.toLowerCase() === email.toLowerCase());
+      user = mockUserStore.find(u => u.email.toLowerCase() === identifier || (u.phone && u.phone.replace(/\D/g, '').includes(identifier.replace(/\D/g, ''))));
     }
 
     if (!user) {
-      // Check fallback store
-      user = mockUserStore.find(u => u.email.toLowerCase() === email.toLowerCase());
+      user = mockUserStore.find(u => u.email.toLowerCase() === identifier || (u.phone && u.phone.replace(/\D/g, '').includes(identifier.replace(/\D/g, ''))));
     }
 
     if (!user) {
       return res.status(401).json({
         error: 'INVALID_CREDENTIALS',
-        message: 'Invalid email or password.'
+        message: 'Invalid email, mobile number, or password.'
       });
+    }
+
+    // If citizen provided their real mobile number on login, dynamically update profile
+    if (phone && phone.trim().length >= 10) {
+      user.phone = phone.trim();
+      try {
+        await UserModel.updatePhone(user.id, phone.trim());
+      } catch (e) {}
     }
 
     const isMatch = await comparePassword(password, user.passwordHash || user.password_hash);

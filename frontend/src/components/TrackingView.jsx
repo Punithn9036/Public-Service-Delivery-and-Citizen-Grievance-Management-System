@@ -554,15 +554,28 @@ export default function TrackingView({
                     <MessageSquare size={14} style={{ color: '#25D366' }} />
                     <span>JanSeva WhatsApp 24x7 Status Bot (Send <code>STATUS {activeSearchResult.id}</code>)</span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleTestWhatsAppStatus}
-                    disabled={whatsappBotLoading}
-                    className="btn btn-secondary btn-sm"
-                    style={{ fontSize: '0.72rem', padding: '3px 8px' }}
-                  >
-                    {whatsappBotLoading ? 'Checking...' : 'Check WhatsApp Live Status'}
-                  </button>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <a
+                      href={`https://api.whatsapp.com/send?phone=${((activeSearchResult.citizenPhone || '9449524516').replace(/\D/g, '').length === 10 ? '91' + (activeSearchResult.citizenPhone || '9449524516').replace(/\D/g, '') : (activeSearchResult.citizenPhone || '919449524516').replace(/\D/g, ''))}&text=${encodeURIComponent(`🇮🇳 *JanSeva Citizen Grievance Redressal*\n\nYour grievance *${activeSearchResult.id}* status update:\n\n🏛 *Department:* ${activeSearchResult.department}\n⚡ *Status:* *${activeSearchResult.status.toUpperCase()}*\n👤 *Officer:* ${activeSearchResult.assignedOfficer || 'Control Room Officer'}\n⏱ *SLA Deadline:* ${activeSearchResult.slaDeadline ? new Date(activeSearchResult.slaDeadline).toLocaleDateString() : 'Active'}\n\nTrack Live on Public Blockchain:\nhttp://localhost:5173/?track=${activeSearchResult.id}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-sm"
+                      style={{ background: '#25D366', color: '#ffffff', fontWeight: 700, fontSize: '0.72rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px' }}
+                      title="Directly send live grievance update to WhatsApp"
+                    >
+                      <MessageSquare size={12} />
+                      <span>Send to WhatsApp</span>
+                    </a>
+                    <button
+                      type="button"
+                      onClick={handleTestWhatsAppStatus}
+                      disabled={whatsappBotLoading}
+                      className="btn btn-secondary btn-sm"
+                      style={{ fontSize: '0.72rem', padding: '3px 8px' }}
+                    >
+                      {whatsappBotLoading ? 'Checking...' : 'Check WhatsApp Live Status'}
+                    </button>
+                  </div>
                 </div>
 
                 {whatsappBotReply && (

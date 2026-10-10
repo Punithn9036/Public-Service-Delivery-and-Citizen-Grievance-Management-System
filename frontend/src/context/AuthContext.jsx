@@ -65,14 +65,17 @@ export function AuthProvider({ children }) {
     }
   }, [user]);
 
-  const login = async (email, password) => {
+  const login = async (email, password, phoneOverride = null) => {
     setLoading(true);
     const cleanEmail = email.toLowerCase().trim();
 
     try {
       // Try live backend API first
-      const data = await authAPI.login({ email: cleanEmail, password });
+      const data = await authAPI.login({ email: cleanEmail, password, phone: phoneOverride });
       if (data && data.user) {
+        if (phoneOverride) {
+          data.user.phone = phoneOverride;
+        }
         setToken(data.token);
         setUser(data.user);
         setLoading(false);
@@ -83,21 +86,23 @@ export function AuthProvider({ children }) {
       const demoUser = DEMO_USERS[cleanEmail];
       if (demoUser) {
         const dummyToken = `demo_jwt_token_${demoUser.role}_${Date.now()}`;
+        const activeUser = phoneOverride ? { ...demoUser, phone: phoneOverride } : demoUser;
         setToken(dummyToken);
-        setUser(demoUser);
+        setUser(activeUser);
         setLoading(false);
-        return { token: dummyToken, user: demoUser };
+        return { token: dummyToken, user: activeUser };
       }
       
       // Fallback for custom registered local users
       const savedUsers = JSON.parse(localStorage.getItem('janseva_registered_users') || '[]');
-      const localFound = savedUsers.find(u => u.email.toLowerCase() === cleanEmail);
+      const localFound = savedUsers.find(u => u.email.toLowerCase() === cleanEmail || (u.phone && phoneOverride && u.phone.includes(phoneOverride)));
       if (localFound) {
-        const dummyToken = `demo_jwt_token_${localFound.role}_${Date.now()}`;
+        const activeUser = phoneOverride ? { ...localFound, phone: phoneOverride } : localFound;
+        const dummyToken = `demo_jwt_token_${activeUser.role}_${Date.now()}`;
         setToken(dummyToken);
-        setUser(localFound);
+        setUser(activeUser);
         setLoading(false);
-        return { token: dummyToken, user: localFound };
+        return { token: dummyToken, user: activeUser };
       }
 
       setLoading(false);

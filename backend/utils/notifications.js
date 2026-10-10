@@ -108,6 +108,12 @@ async function sendNotification({ phone, template, data = {}, channels = ['SMS',
     const messageContent = isSms ? messages.sms : messages.whatsapp;
     const notifId = `NOTIF-${Date.now()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
 
+    // Standardize 10-digit phone for Indian gateway and full international for WhatsApp
+    const rawDigits = phone.replace(/\D/g, '');
+    const clean10 = rawDigits.slice(-10);
+    const intlDigits = rawDigits.length >= 10 ? (rawDigits.startsWith('91') && rawDigits.length === 12 ? rawDigits : `91${clean10}`) : '919876543210';
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=${intlDigits}&text=${encodeURIComponent(messages.whatsapp)}`;
+
     const receipt = {
       id: notifId,
       recipientPhone: phone,
@@ -117,31 +123,44 @@ async function sendNotification({ phone, template, data = {}, channels = ['SMS',
       status: 'DELIVERED',
       dltEntityId: 'DLT-GOV-IND-49201',
       dltHeader: isSms ? 'JANSEV' : 'JANSEVA_GOV',
+      whatsappUrl: !isSms ? whatsappUrl : undefined,
       relatedEntityId: data.id || null,
       dispatchedAt: new Date().toISOString()
     };
 
-    // If external SMS/WhatsApp API keys are provided in environment, trigger HTTP dispatch
-    if (isSms && process.env.FAST2SMS_API_KEY) {
+    // Live Fast2SMS Dispatch (Real SMS landing on mobile)
+    if (isSms && process.env.FAST2SMS_API_KEY && process.env.FAST2SMS_API_KEY.trim().length > 0) {
       try {
-        // Fast2SMS DLT-compliant Indian gateway integration
-        await fetch('https://www.fast2sms.com/dev/bulkV2', {
-          method: 'POST',
-          headers: {
-            'authorization': process.env.FAST2SMS_API_KEY,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            route: 'v3',
-            sender_id: 'JANSEV',
-            message: messageContent,
-            language: 'english',
-            flash: 0,
-            numbers: phone.replace(/\D/g, '')
-          })
-        });
+        if (clean10.length === 10) {
+          const fast2smsRes = await fetch('https://www.fast2sms.com/dev/bulkV2', {
+            method: 'POST',
+            headers: {
+              'authorization': process.env.FAST2SMS_API_KEY.trim(),
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              route: 'q',
+              message: messageContent,
+              language: 'english',
+              flash: 0,
+              numbers: clean10
+            })
+          });
+          const fast2smsJson = await fast2smsRes.json();
+          receipt.gatewayResponse = fast2smsJson;
+          if (fast2smsJson && fast2smsJson.return) {
+            receipt.status = 'DELIVERED_REAL_SMS';
+            receipt.fast2smsRequestId = fast2smsJson.request_id;
+            console.log(`[Fast2SMS] Successfully dispatched real SMS to ${clean10}. Request ID: ${fast2smsJson.request_id}`);
+          } else {
+            receipt.status = 'DISPATCHED_LOCAL';
+            receipt.gatewayError = fast2smsJson?.message || 'Fast2SMS returned false';
+            console.warn(`[Fast2SMS Gateway Notice] Provider response:`, fast2smsJson);
+          }
+        }
       } catch (err) {
-        console.warn('[Fast2SMS Gateway Notice] Real SMS relay failed, fallback to local delivery:', err.message);
+        console.warn('[Fast2SMS Gateway Error]:', err.message);
+        receipt.gatewayError = err.message;
       }
     }
 

@@ -1132,8 +1132,31 @@ export default function AdminDashboard({
                 </div>
               </form>
               {testResult && (
-                <div style={{ marginTop: '10px', padding: '8px', borderRadius: '6px', background: 'rgba(34, 197, 94, 0.1)', color: '#16a34a', fontSize: '0.78rem' }}>
-                  ✓ Dispatched {testResult.receipts?.length || 2} alerts successfully via National DLT Relay!
+                <div style={{ marginTop: '10px', padding: '10px', borderRadius: '6px', background: 'rgba(34, 197, 94, 0.1)', color: '#16a34a', fontSize: '0.78rem' }}>
+                  <div>✓ Dispatched {testResult.receipts?.length || 2} alerts successfully via National DLT Relay!</div>
+                  {testResult.receipts?.find(r => r.channel === 'WHATSAPP' && r.whatsappUrl) && (
+                    <div style={{ marginTop: '8px' }}>
+                      <a
+                        href={testResult.receipts.find(r => r.channel === 'WHATSAPP').whatsappUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '5px 12px',
+                          background: '#25D366',
+                          color: '#fff',
+                          borderRadius: '4px',
+                          fontWeight: 700,
+                          textDecoration: 'none',
+                          fontSize: '0.78rem'
+                        }}
+                      >
+                        <MessageSquare size={13} /> Open in WhatsApp
+                      </a>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1202,72 +1225,103 @@ export default function AdminDashboard({
                   <th>Message Excerpt</th>
                   <th>Delivery Status</th>
                   <th>Timestamp</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {notifLogs.length === 0 ? (
                   <tr>
-                    <td colSpan={7} style={{ textAlign: 'center', padding: '30px' }} className="text-muted">
+                    <td colSpan={8} style={{ textAlign: 'center', padding: '30px' }} className="text-muted">
                       No statutory notifications logged yet. Lodge a grievance or test above to see live dispatches.
                     </td>
                   </tr>
                 ) : (
-                  notifLogs.map(log => (
-                    <tr key={log.id}>
-                      <td className="td-id">
-                        <strong style={{ fontSize: '0.78rem' }}>{log.id}</strong>
-                        {log.relatedEntityId && <span className="td-sub">{log.relatedEntityId}</span>}
-                      </td>
-                      <td>
-                        <strong>{log.recipientPhone}</strong>
-                      </td>
-                      <td>
-                        <span style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          fontSize: '0.72rem',
-                          padding: '2px 8px',
-                          borderRadius: '12px',
-                          fontWeight: 700,
-                          background: log.channel === 'WHATSAPP' ? 'rgba(37, 211, 102, 0.15)' : 'rgba(37, 99, 235, 0.15)',
-                          color: log.channel === 'WHATSAPP' ? '#16a34a' : '#2563eb'
-                        }}>
-                          {log.channel === 'WHATSAPP' ? <MessageSquare size={11} /> : <Smartphone size={11} />}
-                          {log.channel}
-                        </span>
-                      </td>
-                      <td>
-                        <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'var(--text-main)' }}>
-                          {log.dltHeader || 'JANSEV'}
-                        </span>
-                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{log.dltEntityId || 'DLT-GOV-IND'}</div>
-                      </td>
-                      <td style={{ maxWidth: '300px' }}>
-                        <div style={{ fontSize: '0.78rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={log.message}>
-                          {log.message}
-                        </div>
-                      </td>
-                      <td>
-                        <span style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          fontSize: '0.72rem',
-                          padding: '2px 8px',
-                          borderRadius: '12px',
-                          background: 'rgba(34, 197, 94, 0.15)',
-                          color: '#16a34a',
-                          fontWeight: 700
-                        }}>
-                          <CheckCircle2 size={11} /> {log.status}
-                        </span>
-                      </td>
-                      <td style={{ fontSize: '0.75rem', whiteSpace: 'nowrap' }} className="text-muted">
-                        {new Date(log.dispatchedAt).toLocaleString()}
-                      </td>
-                    </tr>
-                  ))
+                  notifLogs.map(log => {
+                    const cleanPhone = (log.recipientPhone || '').replace(/\D/g, '').slice(-10);
+                    const waLink = log.whatsappUrl || (cleanPhone ? `https://api.whatsapp.com/send?phone=91${cleanPhone}&text=${encodeURIComponent(log.message || '')}` : null);
+                    return (
+                      <tr key={log.id}>
+                        <td className="td-id">
+                          <strong style={{ fontSize: '0.78rem' }}>{log.id}</strong>
+                          {log.relatedEntityId && <span className="td-sub">{log.relatedEntityId}</span>}
+                        </td>
+                        <td>
+                          <strong>{log.recipientPhone}</strong>
+                        </td>
+                        <td>
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            fontSize: '0.72rem',
+                            padding: '2px 8px',
+                            borderRadius: '12px',
+                            fontWeight: 700,
+                            background: log.channel === 'WHATSAPP' ? 'rgba(37, 211, 102, 0.15)' : 'rgba(37, 99, 235, 0.15)',
+                            color: log.channel === 'WHATSAPP' ? '#16a34a' : '#2563eb'
+                          }}>
+                            {log.channel === 'WHATSAPP' ? <MessageSquare size={11} /> : <Smartphone size={11} />}
+                            {log.channel}
+                          </span>
+                        </td>
+                        <td>
+                          <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'var(--text-main)' }}>
+                            {log.dltHeader || 'JANSEV'}
+                          </span>
+                          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{log.dltEntityId || 'DLT-GOV-IND'}</div>
+                        </td>
+                        <td style={{ maxWidth: '280px' }}>
+                          <div style={{ fontSize: '0.78rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={log.message}>
+                            {log.message}
+                          </div>
+                        </td>
+                        <td>
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            fontSize: '0.72rem',
+                            padding: '2px 8px',
+                            borderRadius: '12px',
+                            background: 'rgba(34, 197, 94, 0.15)',
+                            color: '#16a34a',
+                            fontWeight: 700
+                          }}>
+                            <CheckCircle2 size={11} /> {log.status}
+                          </span>
+                        </td>
+                        <td style={{ fontSize: '0.75rem', whiteSpace: 'nowrap' }} className="text-muted">
+                          {new Date(log.dispatchedAt).toLocaleString()}
+                        </td>
+                        <td>
+                          {waLink && (
+                            <a
+                              href={waLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="btn btn-secondary btn-sm"
+                              style={{
+                                padding: '3px 8px',
+                                fontSize: '0.72rem',
+                                background: '#25D366',
+                                color: '#ffffff',
+                                border: 'none',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                textDecoration: 'none',
+                                fontWeight: 600,
+                                borderRadius: '4px'
+                              }}
+                              title="Open message in WhatsApp"
+                            >
+                              <MessageSquare size={12} /> WhatsApp
+                            </a>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>

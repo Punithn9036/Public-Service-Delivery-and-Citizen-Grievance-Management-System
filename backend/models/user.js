@@ -13,6 +13,16 @@ module.exports = {
     return await db.findUserByEmail(email);
   },
 
+  // Find a user by phone
+  async findByPhone(phone) {
+    return await db.findUserByPhone(phone);
+  },
+
+  // Update user phone number
+  async updatePhone(idOrUserId, phone) {
+    return await db.updateUserPhone(idOrUserId, phone);
+  },
+
   // Find a user by ID
   async findById(id) {
     return await db.findUserById(id);
