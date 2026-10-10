@@ -41,6 +41,11 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/blockchain', blockchainRoutes);
 app.use('/api/webhook/whatsapp', notificationController.handleWhatsAppWebhook);
 
+const whatsappService = require('./src/services/whatsappService');
+
 app.listen(PORT, () => {
   console.log(`[JanSeva Backend] Server running on http://localhost:${PORT}`);
+  whatsappService.initWhatsApp().catch(err => {
+    console.warn('[WhatsApp Service Init Warning]:', err.message);
+  });
 });

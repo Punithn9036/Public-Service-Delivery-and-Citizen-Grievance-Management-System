@@ -320,12 +320,27 @@ class DatabaseManager {
     return this.store.users.find(u => u.email.toLowerCase() === email.toLowerCase()) || null;
   }
 
+  async findUserByPhone(phone) {
+    if (!phone) return null;
+    const clean = phone.replace(/\D/g, '').slice(-10);
+    return this.store.users.find(u => (u.phone || '').replace(/\D/g, '').includes(clean)) || null;
+  }
+
   async findUserById(id) {
     return this.store.users.find(u => u.id === Number(id)) || null;
   }
 
   async findUserByUserId(userId) {
     return this.store.users.find(u => u.userId === userId) || null;
+  }
+
+  async updateUserPhone(idOrUserId, phone) {
+    const user = this.store.users.find(u => u.id === Number(idOrUserId) || u.userId === idOrUserId || u.email === idOrUserId);
+    if (user && phone) {
+      user.phone = phone;
+      this.saveStore();
+    }
+    return user;
   }
 
   async createUser(userData) {

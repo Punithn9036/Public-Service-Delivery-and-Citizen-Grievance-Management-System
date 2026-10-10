@@ -100,8 +100,37 @@ const handleWhatsAppWebhook = async (req, res) => {
   }
 };
 
+/**
+ * Get WhatsApp Linked Device connection status and current QR code
+ */
+const getWhatsAppStatus = (req, res) => {
+  try {
+    const whatsappService = require('../services/whatsappService');
+    const status = whatsappService.getStatus();
+    return res.json(status);
+  } catch (err) {
+    return res.status(500).json({ error: 'STATUS_ERROR', message: err.message });
+  }
+};
+
+/**
+ * Disconnect/Unlink current WhatsApp device
+ */
+const disconnectWhatsApp = async (req, res) => {
+  try {
+    const whatsappService = require('../services/whatsappService');
+    const result = await whatsappService.disconnect();
+    return res.json(result);
+  } catch (err) {
+    return res.status(500).json({ error: 'DISCONNECT_ERROR', message: err.message });
+  }
+};
+
 module.exports = {
   getLogs,
   sendTestNotification,
-  handleWhatsAppWebhook
+  handleWhatsAppWebhook,
+  getWhatsAppStatus,
+  disconnectWhatsApp
 };
+

@@ -46,6 +46,9 @@ Thumbs.db
 
 # Runtime data
 backend/data/
+auth_info_baileys/
+backend/auth_info_baileys/
 foodie-admin/
 foodie-backend/
+
 

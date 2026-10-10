@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FileText, CheckCircle2, Send, Clock, ShieldCheck, User, Phone, Mail, Upload, Database, ExternalLink, RefreshCw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { ipfsAPI } from '../api/apiClient';
@@ -15,6 +15,17 @@ export default function ServiceApplicationModal({ service, onClose, onSubmitAppl
     address: '',
     declarationAgreed: false
   });
+
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        applicantName: user.fullName || prev.applicantName,
+        applicantEmail: user.email || prev.applicantEmail,
+        applicantPhone: user.phone || prev.applicantPhone
+      }));
+    }
+  }, [user]);
 
   const [docFile, setDocFile] = useState(null);
   const [docFileName, setDocFileName] = useState('');

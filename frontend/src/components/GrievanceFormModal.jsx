@@ -139,6 +139,18 @@ export default function GrievanceFormModal({
   const [upvotedTicket, setUpvotedTicket] = useState(null);
   const [ignoreDuplicateWarning, setIgnoreDuplicateWarning] = useState(false);
 
+  // Sync citizen contact details with logged-in user session
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        citizenName: user.fullName || prev.citizenName,
+        citizenPhone: user.phone || prev.citizenPhone,
+        citizenEmail: user.email || prev.citizenEmail
+      }));
+    }
+  }, [user]);
+
   // Proximity & Category De-duplication Engine
   useEffect(() => {
     if (!gpsData || ignoreDuplicateWarning) {

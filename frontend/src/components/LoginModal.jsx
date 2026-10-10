@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, UserCheck, ShieldCheck, Mail, Key, LogIn, AlertCircle } from 'lucide-react';
+import { Lock, UserCheck, ShieldCheck, Mail, Key, LogIn, AlertCircle, Phone, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function LoginModal({ onClose, onSuccess }) {
@@ -54,7 +54,7 @@ export default function LoginModal({ onClose, onSuccess }) {
       if (isRegisterView) {
         await register({ ...formData, role: selectedRole });
       } else {
-        await login(formData.email, formData.password);
+        await login(formData.email, formData.password, formData.phone);
       }
       setLoading(false);
       onSuccess();
@@ -112,6 +112,24 @@ export default function LoginModal({ onClose, onSuccess }) {
             </button>
           </div>
 
+          {isRegisterView && (
+            <div className="form-group mb-3">
+              <label>Full Name <span className="req">*</span></label>
+              <div className="input-group">
+                <User size={16} className="input-icon" />
+                <input 
+                  type="text" 
+                  required
+                  placeholder="e.g. Ramesh Kumar"
+                  value={formData.fullName}
+                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                  className="track-input"
+                  style={{ fontSize: '0.9rem', padding: '10px 10px 10px 38px' }}
+                />
+              </div>
+            </div>
+          )}
+
           <div className="form-group mb-3">
             <label>Email Address <span className="req">*</span></label>
             <div className="input-group">
@@ -126,6 +144,27 @@ export default function LoginModal({ onClose, onSuccess }) {
               />
             </div>
           </div>
+
+          {(isRegisterView || selectedRole === 'CITIZEN') && (
+            <div className="form-group mb-3">
+              <label>Mobile Number (for Real Fast2SMS & WhatsApp Alerts) <span className="req">*</span></label>
+              <div className="input-group">
+                <Phone size={16} className="input-icon" />
+                <input 
+                  type="tel" 
+                  required
+                  placeholder="e.g. +91 98765 43210 or 10-digit mobile"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  className="track-input"
+                  style={{ fontSize: '0.9rem', padding: '10px 10px 10px 38px' }}
+                />
+              </div>
+              <span style={{ fontSize: '0.72rem', color: '#16a34a', display: 'block', marginTop: '3px' }}>
+                ✓ Real SMS (Fast2SMS) and WhatsApp grievance alerts will be sent to this number
+              </span>
+            </div>
+          )}
 
           <div className="form-group mb-3">
             <label>Password <span className="req">*</span></label>
