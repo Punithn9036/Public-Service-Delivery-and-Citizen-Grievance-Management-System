@@ -195,11 +195,14 @@ const createGrievance = async (req, res) => {
     const slaHours = calculateSlaHours(assignedPriority);
     const newId = `GRV-2026-${Math.floor(8000 + Math.random() * 1900)}`;
 
-    const fabricResult = await FabricClient.submitTransaction('CreateGrievance', [
+    const fabricResult = await FabricClient.submitTransaction('RecordGrievanceState', [
       newId,
       department,
       assignedPriority,
-      citizenPhone
+      'Submitted',
+      'Control Room Officer (Pending Dispatch)',
+      finalCid || '',
+      `Grievance ticket lodged online via JanSeva Citizen Portal for ${department}.`
     ]);
 
     const grievanceData = {
@@ -219,6 +222,8 @@ const createGrievance = async (req, res) => {
       assignedOfficerContact: '+91 1800-425-GOV',
       ipfsDocumentCid: finalCid,
       fabricTxId: fabricResult.txId,
+      fabricBlockNumber: fabricResult.blockNumber,
+      fabricBlockHash: fabricResult.blockHash,
       slaDeadline: new Date(Date.now() + slaHours * 60 * 60 * 1000).toISOString()
     };
 
@@ -237,6 +242,8 @@ const createGrievance = async (req, res) => {
             officerName: 'System Gateway',
             note: 'Grievance lodged online via JanSeva Citizen Portal.',
             fabricTxId: fabricResult.txId,
+            fabricBlockNumber: fabricResult.blockNumber,
+            fabricBlockHash: fabricResult.blockHash,
             timestamp: new Date().toISOString()
           }
         ],
@@ -265,6 +272,8 @@ const createGrievance = async (req, res) => {
       message: 'Grievance ticket created successfully.',
       id: newId,
       fabricTxId: fabricResult.txId,
+      fabricBlockNumber: fabricResult.blockNumber,
+      fabricBlockHash: fabricResult.blockHash,
       grievance: createdGrievance
     });
 
@@ -307,11 +316,14 @@ const updateGrievanceStatus = async (req, res) => {
       });
     }
 
-    const fabricResult = await FabricClient.submitTransaction('UpdateGrievanceStatus', [
+    const fabricResult = await FabricClient.submitTransaction('RecordGrievanceState', [
       id,
+      grievance.department || 'General Administration',
+      grievance.priority || 'Medium',
       nextStatus,
-      officerName || 'Nodal Officer',
-      note || ''
+      officerName || req.user?.fullName || 'Nodal Officer',
+      grievance.ipfsDocumentCid || '',
+      note || `Status updated to ${nextStatus}.`
     ]);
 
     let updatedGrievance;
@@ -321,18 +333,24 @@ const updateGrievanceStatus = async (req, res) => {
         officerName: officerName || req.user?.fullName || 'Nodal Officer',
         officerContact,
         note: note || `Status updated to ${nextStatus}.`,
-        fabricTxId: fabricResult.txId
+        fabricTxId: fabricResult.txId,
+        fabricBlockNumber: fabricResult.blockNumber,
+        fabricBlockHash: fabricResult.blockHash
       });
     } catch (dbErr) {
       grievance.status = nextStatus;
       if (officerName) grievance.assignedOfficer = officerName;
       grievance.fabricTxId = fabricResult.txId;
+      grievance.fabricBlockNumber = fabricResult.blockNumber;
+      grievance.fabricBlockHash = fabricResult.blockHash;
       grievance.updatedAt = new Date().toISOString();
       grievance.timeline.push({
         status: nextStatus,
         officerName: officerName || req.user?.fullName || 'Nodal Officer',
         note: note || `Status updated to ${nextStatus}.`,
         fabricTxId: fabricResult.txId,
+        fabricBlockNumber: fabricResult.blockNumber,
+        fabricBlockHash: fabricResult.blockHash,
         timestamp: new Date().toISOString()
       });
       updatedGrievance = grievance;
@@ -370,6 +388,8 @@ const updateGrievanceStatus = async (req, res) => {
     return res.json({
       message: `Grievance status updated to '${nextStatus}'.`,
       fabricTxId: fabricResult.txId,
+      fabricBlockNumber: fabricResult.blockNumber,
+      fabricBlockHash: fabricResult.blockHash,
       grievance: updatedGrievance
     });
   } catch (err) {
@@ -460,9 +480,14 @@ const reopenGrievance = async (req, res) => {
       });
     }
 
-    const fabricResult = await FabricClient.submitTransaction('ReopenGrievance', [
+    const fabricResult = await FabricClient.submitTransaction('RecordGrievanceState', [
       id,
-      reason || 'Incomplete resolution'
+      grievance.department || 'General Administration',
+      grievance.priority || 'Medium',
+      'Under Review',
+      'Citizen Escalation Gateway',
+      grievance.ipfsDocumentCid || '',
+      `Ticket Re-opened by citizen. Reason: ${reason || 'Incomplete resolution.'}`
     ]);
 
     let updated;
@@ -471,16 +496,23 @@ const reopenGrievance = async (req, res) => {
         nextStatus: 'Under Review',
         officerName: 'Citizen Escalation Gateway',
         note: `Ticket Re-opened by citizen. Reason: ${reason || 'Incomplete field resolution.'}`,
-        fabricTxId: fabricResult.txId
+        fabricTxId: fabricResult.txId,
+        fabricBlockNumber: fabricResult.blockNumber,
+        fabricBlockHash: fabricResult.blockHash
       });
     } catch (e) {
       grievance.status = 'Under Review';
+      grievance.fabricTxId = fabricResult.txId;
+      grievance.fabricBlockNumber = fabricResult.blockNumber;
+      grievance.fabricBlockHash = fabricResult.blockHash;
       grievance.updatedAt = new Date().toISOString();
       grievance.timeline.push({
         status: 'Under Review',
         officerName: 'Citizen Escalation Gateway',
         note: `Ticket Re-opened by citizen. Reason: ${reason || 'Incomplete field resolution.'}`,
         fabricTxId: fabricResult.txId,
+        fabricBlockNumber: fabricResult.blockNumber,
+        fabricBlockHash: fabricResult.blockHash,
         timestamp: new Date().toISOString()
       });
       updated = grievance;
@@ -502,6 +534,9 @@ const reopenGrievance = async (req, res) => {
 
     return res.json({
       message: 'Grievance ticket re-opened and escalated to Nodal Officer.',
+      fabricTxId: fabricResult.txId,
+      fabricBlockNumber: fabricResult.blockNumber,
+      fabricBlockHash: fabricResult.blockHash,
       grievance: updated
     });
   } catch (err) {

@@ -8,6 +8,7 @@ const applicationRoutes = require('./src/routes/applicationRoutes');
 const serviceRoutes = require('./src/routes/serviceRoutes');
 const ipfsRoutes = require('./src/routes/ipfsRoutes');
 const notificationRoutes = require('./src/routes/notificationRoutes');
+const blockchainRoutes = require('./src/routes/blockchainRoutes');
 const notificationController = require('./src/controllers/notificationController');
 
 const app = express();
@@ -23,7 +24,7 @@ app.get('/api/health', (req, res) => {
     status: 'HEALTHY',
     service: 'JanSeva / DIGIT CMS REST API Backend Gateway',
     timestamp: new Date().toISOString(),
-    hyperledgerFabric: 'PortalOrg / GovOrg Gateway Configured',
+    hyperledgerFabric: 'Channel janseva-channel / Chaincode grievance_cc Active',
     ipfsStorage: 'Active / Local Content-Addressed Store',
     statutoryNotifications: 'Active / SMS & WhatsApp DLT Gateway'
   });
@@ -37,6 +38,7 @@ app.use('/api/services', serviceRoutes);
 app.use('/api/ipfs', ipfsRoutes);
 app.use('/api/upload', ipfsRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/blockchain', blockchainRoutes);
 app.use('/api/webhook/whatsapp', notificationController.handleWhatsAppWebhook);
 
 app.listen(PORT, () => {

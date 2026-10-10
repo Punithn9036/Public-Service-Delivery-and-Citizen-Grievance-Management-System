@@ -407,6 +407,8 @@ class DatabaseManager {
       assignedOfficerContact: data.assignedOfficerContact || '+91 1800-425-GOV',
       ipfsDocumentCid: data.ipfsDocumentCid || null,
       fabricTxId: data.fabricTxId || null,
+      fabricBlockNumber: data.fabricBlockNumber || 1,
+      fabricBlockHash: data.fabricBlockHash || null,
       slaDeadline: data.slaDeadline,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -417,6 +419,8 @@ class DatabaseManager {
           officerName: 'System Gateway',
           note: 'Grievance lodged online via JanSeva Citizen Portal.',
           fabricTxId: data.fabricTxId || null,
+          fabricBlockNumber: data.fabricBlockNumber || 1,
+          fabricBlockHash: data.fabricBlockHash || null,
           timestamp: new Date().toISOString()
         }
       ],
@@ -428,13 +432,16 @@ class DatabaseManager {
     return newGrievance;
   }
 
-  async updateGrievanceStatus(id, { nextStatus, officerName, officerContact, note, fabricTxId }) {
+  async updateGrievanceStatus(id, { nextStatus, officerName, officerContact, note, fabricTxId, fabricBlockNumber, fabricBlockHash }) {
     const grievance = await this.findGrievanceById(id);
     if (!grievance) return null;
 
     grievance.status = nextStatus;
     if (officerName) grievance.assignedOfficer = officerName;
     if (officerContact) grievance.assignedOfficerContact = officerContact;
+    if (fabricTxId) grievance.fabricTxId = fabricTxId;
+    if (fabricBlockNumber) grievance.fabricBlockNumber = fabricBlockNumber;
+    if (fabricBlockHash) grievance.fabricBlockHash = fabricBlockHash;
     grievance.updatedAt = new Date().toISOString();
 
     const nextTimelineId = (grievance.timeline?.length || 0) + 1;
@@ -444,6 +451,8 @@ class DatabaseManager {
       officerName: officerName || grievance.assignedOfficer || 'Municipal Controller',
       note: note || `Status updated to ${nextStatus}.`,
       fabricTxId: fabricTxId || null,
+      fabricBlockNumber: fabricBlockNumber || null,
+      fabricBlockHash: fabricBlockHash || null,
       timestamp: new Date().toISOString()
     };
 

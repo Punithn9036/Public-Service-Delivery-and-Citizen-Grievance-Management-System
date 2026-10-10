@@ -103,11 +103,24 @@ export const notificationAPI = {
   queryWhatsAppBot: (from, body) => request('/webhook/whatsapp', { method: 'POST', body: JSON.stringify({ from, body }) })
 };
 
+export const blockchainAPI = {
+  getInfo: () => request('/blockchain/info', { method: 'GET' }),
+  getBlocks: (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return request(`/blockchain/blocks?${query}`, { method: 'GET' });
+  },
+  getBlockByNumber: (number) => request(`/blockchain/blocks/${number}`, { method: 'GET' }),
+  getTransaction: (txId) => request(`/blockchain/transactions/${txId}`, { method: 'GET' }),
+  getHistory: (grievanceId) => request(`/blockchain/history/${grievanceId}`, { method: 'GET' }),
+  verifyTx: (txId) => request(`/blockchain/verify/${txId}`, { method: 'POST' })
+};
+
 export default {
   auth: authAPI,
   grievance: grievanceAPI,
   application: applicationAPI,
   service: serviceAPI,
   ipfs: ipfsAPI,
-  notifications: notificationAPI
+  notifications: notificationAPI,
+  blockchain: blockchainAPI
 };
