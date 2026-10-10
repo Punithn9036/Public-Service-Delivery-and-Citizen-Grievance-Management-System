@@ -13,7 +13,9 @@ import {
   Building2, 
   Sparkles,
   CheckCircle2,
-  HelpCircle
+  HelpCircle,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { authAPI } from '../api/apiClient';
@@ -31,6 +33,10 @@ export default function LoginModal({ onClose, onSuccess }) {
     department: 'Water Supply & Sanitation',
     employeeId: 'EMP-GOV-2001'
   });
+
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [verifiedOfficer, setVerifiedOfficer] = useState(null);
   const [verifyingId, setVerifyingId] = useState(false);
@@ -127,6 +133,24 @@ export default function LoginModal({ onClose, onSuccess }) {
 
     try {
       if (isRegisterView) {
+        if (!formData.password || !confirmPassword) {
+          setError('Please enter and confirm your password.');
+          setLoading(false);
+          return;
+        }
+
+        if (formData.password !== confirmPassword) {
+          setError('Passwords do not match. Please enter the same password in both fields.');
+          setLoading(false);
+          return;
+        }
+
+        if (formData.password.length < 6) {
+          setError('Password must be at least 6 characters long.');
+          setLoading(false);
+          return;
+        }
+
         if (selectedRole === 'OFFICER' && !formData.employeeId) {
           setError('Government Employee ID is strictly required to register as an Officer.');
           setLoading(false);
@@ -394,21 +418,110 @@ export default function LoginModal({ onClose, onSuccess }) {
             </div>
           )}
 
-          {/* Password Field */}
+          {/* Password Field with Eye Toggle */}
           <div className="form-group mb-3">
             <label>Password <span className="req">*</span></label>
-            <div className="input-group">
+            <div className="input-group" style={{ position: 'relative' }}>
               <Key size={16} className="input-icon" />
               <input 
-                type="password" 
+                type={showPassword ? 'text' : 'password'} 
                 required
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 className="track-input"
-                style={{ fontSize: '0.9rem', padding: '10px 10px 10px 38px' }}
+                style={{ fontSize: '0.9rem', padding: '10px 40px 10px 38px' }}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'var(--text-muted)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '4px'
+                }}
+                title={showPassword ? "Hide password" : "Show password"}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
             </div>
           </div>
+
+          {/* Confirm Password Field (Registration View Only) */}
+          {isRegisterView && (
+            <div className="form-group mb-3">
+              <label>Confirm Password <span className="req">*</span></label>
+              <div className="input-group" style={{ position: 'relative' }}>
+                <Key size={16} className="input-icon" />
+                <input 
+                  type={showConfirmPassword ? 'text' : 'password'} 
+                  required
+                  placeholder="Re-enter password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="track-input"
+                  style={{
+                    fontSize: '0.9rem',
+                    padding: '10px 40px 10px 38px',
+                    borderColor: confirmPassword ? (formData.password === confirmPassword ? '#16a34a' : '#ef4444') : undefined
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '10px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--text-muted)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '4px'
+                  }}
+                  title={showConfirmPassword ? "Hide password" : "Show password"}
+                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                >
+                  {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+
+              {confirmPassword.length > 0 && (
+                <div style={{
+                  marginTop: '5px',
+                  fontSize: '0.75rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  color: formData.password === confirmPassword ? '#16a34a' : '#ef4444',
+                  fontWeight: 500
+                }}>
+                  {formData.password === confirmPassword ? (
+                    <>
+                      <CheckCircle2 size={14} />
+                      <span>Passwords match</span>
+                    </>
+                  ) : (
+                    <>
+                      <AlertCircle size={14} />
+                      <span>Passwords do not match</span>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="modal-footer">
             <button 
