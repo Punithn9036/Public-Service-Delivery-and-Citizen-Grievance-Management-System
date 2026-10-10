@@ -12,7 +12,9 @@ import {
   CheckCircle2, 
   Globe,
   BadgeCheck,
-  Building2
+  Building2,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -26,6 +28,9 @@ export default function AuthScreen() {
   const [role, setRole] = useState('CITIZEN'); // 'CITIZEN' | 'OFFICER' | 'ADMIN'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [department, setDepartment] = useState('Water Supply & Sanitation');
@@ -92,8 +97,16 @@ export default function AuthScreen() {
 
     try {
       if (isRegister) {
-        if (!fullName || !email || !phone || !password) {
-          throw new Error('Please fill in all required fields.');
+        if (!fullName || !email || !phone || !password || !confirmPassword) {
+          throw new Error('Please fill in all required fields, including password confirmation.');
+        }
+
+        if (password !== confirmPassword) {
+          throw new Error('Passwords do not match. Please enter the same password in both fields.');
+        }
+
+        if (password.length < 6) {
+          throw new Error('Password must be at least 6 characters long.');
         }
 
         if (role === 'OFFICER' && !employeeId.trim()) {
@@ -559,21 +572,115 @@ export default function AuthScreen() {
             )}
           </div>
 
-          {/* Password Field */}
-          <div style={{ marginBottom: '22px' }}>
-            <label className="small-text font-bold" style={{ display: 'block', marginBottom: '6px', color: 'var(--text-main)' }}>Password</label>
+          {/* Password Field with Eye Toggle */}
+          <div style={{ marginBottom: isRegister ? '14px' : '22px' }}>
+            <label className="small-text font-bold" style={{ display: 'block', marginBottom: '6px', color: 'var(--text-main)' }}>
+              Password <span style={{ color: '#ef4444' }}>*</span>
+            </label>
             <div style={{ position: 'relative' }}>
               <Lock size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 required
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="auth-input-field"
+                style={{ paddingRight: '40px' }}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'var(--text-muted)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '4px'
+                }}
+                title={showPassword ? "Hide password" : "Show password"}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
             </div>
           </div>
+
+          {/* Confirm Password Field (Registration View Only) */}
+          {isRegister && (
+            <div style={{ marginBottom: '22px' }}>
+              <label className="small-text font-bold" style={{ display: 'block', marginBottom: '6px', color: 'var(--text-main)' }}>
+                Confirm Password <span style={{ color: '#ef4444' }}>*</span>
+              </label>
+              <div style={{ position: 'relative' }}>
+                <Lock size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  required
+                  placeholder="Re-enter your password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="auth-input-field"
+                  style={{
+                    paddingRight: '40px',
+                    borderColor: confirmPassword ? (password === confirmPassword ? '#16a34a' : '#ef4444') : undefined
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '10px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--text-muted)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '4px'
+                  }}
+                  title={showConfirmPassword ? "Hide password" : "Show password"}
+                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                >
+                  {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+
+              {/* Real-time Match Indicator */}
+              {confirmPassword.length > 0 && (
+                <div style={{
+                  marginTop: '5px',
+                  fontSize: '0.75rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  color: password === confirmPassword ? '#16a34a' : '#ef4444',
+                  fontWeight: 500
+                }}>
+                  {password === confirmPassword ? (
+                    <>
+                      <CheckCircle2 size={14} />
+                      <span>Passwords match</span>
+                    </>
+                  ) : (
+                    <>
+                      <AlertCircle size={14} />
+                      <span>Passwords do not match</span>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           <button
             type="submit"
