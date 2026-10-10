@@ -35,7 +35,9 @@ async function request(endpoint, options = {}) {
 export const authAPI = {
   login: (credentials) => request('/auth/login', { method: 'POST', body: JSON.stringify(credentials) }),
   register: (userData) => request('/auth/register', { method: 'POST', body: JSON.stringify(userData) }),
-  getProfile: () => request('/auth/me', { method: 'GET' })
+  getProfile: () => request('/auth/me', { method: 'GET' }),
+  verifyEmployee: (employeeId) => request('/auth/verify-employee', { method: 'POST', body: JSON.stringify({ employeeId }) }),
+  getEligibleEmployees: () => request('/auth/eligible-employees', { method: 'GET' })
 };
 
 export const grievanceAPI = {

@@ -1,11 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { register, login, getProfile } = require('../controllers/authController');
+const { register, login, getProfile, verifyEmployee, getEligibleEmployees } = require('../controllers/authController');
 const { verifyToken, requireRole } = require('../middleware/authMiddleware');
 
 // Public Auth Endpoints
 router.post('/register', register);
 router.post('/login', login);
+router.post('/verify-employee', verifyEmployee);
+router.get('/eligible-employees', getEligibleEmployees);
 
 // Protected Auth Profile
 router.get('/me', verifyToken, getProfile);
