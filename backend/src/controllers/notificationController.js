@@ -126,11 +126,60 @@ const disconnectWhatsApp = async (req, res) => {
   }
 };
 
+/**
+ * Pause live SMS and WhatsApp notifications
+ */
+const pauseNotifications = (req, res) => {
+  try {
+    process.env.PAUSE_NOTIFICATIONS = 'true';
+    const whatsappService = require('../services/whatsappService');
+    whatsappService.pause();
+    return res.json({
+      success: true,
+      paused: true,
+      message: 'All live SMS and WhatsApp dispatches have been PAUSED.'
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'PAUSE_ERROR', message: err.message });
+  }
+};
+
+/**
+ * Resume live SMS and WhatsApp notifications
+ */
+const resumeNotifications = (req, res) => {
+  try {
+    process.env.PAUSE_NOTIFICATIONS = 'false';
+    const whatsappService = require('../services/whatsappService');
+    whatsappService.resume();
+    return res.json({
+      success: true,
+      paused: false,
+      message: 'Live SMS and WhatsApp dispatches have been RESUMED.'
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'RESUME_ERROR', message: err.message });
+  }
+};
+
+/**
+ * Get notification pause status
+ */
+const getPauseStatus = (req, res) => {
+  return res.json({
+    paused: process.env.PAUSE_NOTIFICATIONS === 'true'
+  });
+};
+
 module.exports = {
   getLogs,
   sendTestNotification,
   handleWhatsAppWebhook,
   getWhatsAppStatus,
-  disconnectWhatsApp
+  disconnectWhatsApp,
+  pauseNotifications,
+  resumeNotifications,
+  getPauseStatus
 };
+
 
