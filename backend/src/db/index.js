@@ -40,35 +40,113 @@ const SEED_DATA = {
     {
       id: 3,
       userId: 'USR-OFF-012',
+      employeeId: 'EMP-GOV-2001',
       fullName: 'Er. Rajesh Varma',
       email: 'rajesh.varma@gov.in',
       phone: '+91 94433 11223',
       passwordHash: '$2a$10$eE0oXG9r1mU66t3kY5rEee4zG5U9Oq1u5JkQ4WfUeK.U6FqO8Oa5u', // Officer123!
       role: 'OFFICER',
       department: 'Water Supply & Sanitation',
+      designation: 'Executive Engineer (EE)',
       createdAt: '2026-08-15T09:00:00.000Z'
     },
     {
       id: 4,
       userId: 'USR-OFF-008',
+      employeeId: 'EMP-GOV-2008',
       fullName: 'Vikram Singh',
       email: 'vikram.singh@gov.in',
       phone: '+91 98700 55443',
       passwordHash: '$2a$10$eE0oXG9r1mU66t3kY5rEee4zG5U9Oq1u5JkQ4WfUeK.U6FqO8Oa5u', // Officer123!
       role: 'OFFICER',
       department: 'Public Works & Infrastructure',
+      designation: 'Assistant Executive Engineer (AEE)',
       createdAt: '2026-08-15T09:30:00.000Z'
     },
     {
       id: 5,
       userId: 'USR-ADM-001',
+      employeeId: 'ADMIN-GOV-001',
       fullName: 'Smt. Kavitha Reddi',
       email: 'admin.controlroom@gov.in',
       phone: '+91 94411 99887',
       passwordHash: '$2a$10$eE0oXG9r1mU66t3kY5rEee4zG5U9Oq1u5JkQ4WfUeK.U6FqO8Oa5u', // Admin123!
       role: 'ADMIN',
       department: 'Municipal Governance',
+      designation: 'Nodal Governance Commissioner',
       createdAt: '2026-08-14T08:00:00.000Z'
+    }
+  ],
+  governmentEmployees: [
+    {
+      employeeId: 'EMP-GOV-2001',
+      fullName: 'Er. Rajesh Varma',
+      email: 'rajesh.varma@gov.in',
+      department: 'Water Supply & Sanitation',
+      designation: 'Executive Engineer (EE)',
+      cadre: 'Karnataka Municipal Engineering Service (KMES)',
+      isRegistered: true,
+      registeredUserId: 'USR-OFF-012'
+    },
+    {
+      employeeId: 'EMP-GOV-2008',
+      fullName: 'Vikram Singh',
+      email: 'vikram.singh@gov.in',
+      department: 'Public Works & Infrastructure',
+      designation: 'Assistant Executive Engineer (AEE)',
+      cadre: 'Public Works Department (PWD)',
+      isRegistered: true,
+      registeredUserId: 'USR-OFF-008'
+    },
+    {
+      employeeId: 'EMP-GOV-2002',
+      fullName: 'Er. Ananya Sen',
+      email: 'ananya.sen@gov.in',
+      department: 'Public Works & Infrastructure',
+      designation: 'Zonal Field Engineer',
+      cadre: 'Public Works Department (PWD)',
+      isRegistered: false,
+      registeredUserId: null
+    },
+    {
+      employeeId: 'EMP-GOV-2003',
+      fullName: 'Dr. Vikram Malhotra',
+      email: 'vikram.malhotra@gov.in',
+      department: 'Health & Sanitation',
+      designation: 'Chief Sanitary Inspector',
+      cadre: 'Directorate of Municipal Health',
+      isRegistered: false,
+      registeredUserId: null
+    },
+    {
+      employeeId: 'EMP-GOV-2004',
+      fullName: 'Shri. Suresh Patil',
+      email: 'suresh.patil@gov.in',
+      department: 'Electricity & Street Lighting',
+      designation: 'Assistant Electrical Engineer',
+      cadre: 'Urban Power & Street Infrastructure',
+      isRegistered: false,
+      registeredUserId: null
+    },
+    {
+      employeeId: 'EMP-GOV-2005',
+      fullName: 'Smt. Meena Krishnan',
+      email: 'meena.krishnan@gov.in',
+      department: 'Town Planning & Building',
+      designation: 'Municipal Ward Officer',
+      cadre: 'Urban Development Authority (UDA)',
+      isRegistered: false,
+      registeredUserId: null
+    },
+    {
+      employeeId: 'EMP-GOV-2006',
+      fullName: 'Shri. Mohammed Rafiq',
+      email: 'mohammed.rafiq@gov.in',
+      department: 'Revenue & Land Records',
+      designation: 'Tahsildar / Revenue Inspector',
+      cadre: 'Karnataka Administrative Revenue Service',
+      isRegistered: false,
+      registeredUserId: null
     }
   ],
   public_services: [
@@ -292,6 +370,17 @@ class DatabaseManager {
       try {
         const raw = fs.readFileSync(DB_FILE, 'utf8');
         this.store = JSON.parse(raw);
+        if (!this.store.governmentEmployees) {
+          this.store.governmentEmployees = JSON.parse(JSON.stringify(SEED_DATA.governmentEmployees));
+        }
+        // Ensure seeded officers & admins have their official employeeId
+        const rajesh = this.store.users.find(u => u.userId === 'USR-OFF-012' || u.email === 'rajesh.varma@gov.in');
+        if (rajesh && !rajesh.employeeId) rajesh.employeeId = 'EMP-GOV-2001';
+        const vikram = this.store.users.find(u => u.userId === 'USR-OFF-008' || u.email === 'vikram.singh@gov.in');
+        if (vikram && !vikram.employeeId) vikram.employeeId = 'EMP-GOV-2008';
+        const kavitha = this.store.users.find(u => u.userId === 'USR-ADM-001' || u.email === 'admin.controlroom@gov.in');
+        if (kavitha && !kavitha.employeeId) kavitha.employeeId = 'ADMIN-GOV-001';
+        this.saveStore();
       } catch (e) {
         this.store = JSON.parse(JSON.stringify(SEED_DATA));
         this.saveStore();
@@ -334,6 +423,26 @@ class DatabaseManager {
     return this.store.users.find(u => u.userId === userId) || null;
   }
 
+  async findUserByEmployeeId(employeeId) {
+    if (!employeeId) return null;
+    const clean = employeeId.trim().toUpperCase();
+    return this.store.users.find(u => (u.employeeId || '').toUpperCase() === clean) || null;
+  }
+
+  async findUserByIdentifier(identifier) {
+    if (!identifier) return null;
+    const clean = identifier.trim().toLowerCase();
+    const cleanUpper = identifier.trim().toUpperCase();
+    const cleanPhone = identifier.replace(/\D/g, '').slice(-10);
+
+    return this.store.users.find(u => 
+      u.email.toLowerCase() === clean ||
+      (u.employeeId && u.employeeId.toUpperCase() === cleanUpper) ||
+      (u.userId && u.userId.toUpperCase() === cleanUpper) ||
+      (cleanPhone.length === 10 && (u.phone || '').replace(/\D/g, '').includes(cleanPhone))
+    ) || null;
+  }
+
   async updateUserPhone(idOrUserId, phone) {
     const user = this.store.users.find(u => u.id === Number(idOrUserId) || u.userId === idOrUserId || u.email === idOrUserId);
     if (user && phone) {
@@ -351,18 +460,43 @@ class DatabaseManager {
     const newUser = {
       id: nextId,
       userId: userData.userId || `USR-${(userData.role || 'CIT').slice(0, 3)}-${String(nextId).padStart(3, '0')}`,
+      employeeId: userData.employeeId || null,
       fullName: userData.fullName,
       email: userData.email.toLowerCase(),
       phone: userData.phone,
       passwordHash: userData.passwordHash,
       role: userData.role || 'CITIZEN',
       department: userData.department || null,
+      designation: userData.designation || null,
       createdAt: new Date().toISOString()
     };
 
     this.store.users.push(newUser);
     this.saveStore();
     return newUser;
+  }
+
+  // ==================== GOVERNMENT EMPLOYEES ====================
+  async getGovernmentEmployees() {
+    return this.store.governmentEmployees || [];
+  }
+
+  async findGovernmentEmployeeById(employeeId) {
+    if (!employeeId) return null;
+    const clean = employeeId.trim().toUpperCase();
+    return (this.store.governmentEmployees || []).find(e => e.employeeId.toUpperCase() === clean) || null;
+  }
+
+  async markEmployeeAsRegistered(employeeId, userId) {
+    if (!employeeId) return null;
+    const clean = employeeId.trim().toUpperCase();
+    const emp = (this.store.governmentEmployees || []).find(e => e.employeeId.toUpperCase() === clean);
+    if (emp) {
+      emp.isRegistered = true;
+      emp.registeredUserId = userId;
+      this.saveStore();
+    }
+    return emp;
   }
 
   // ==================== GRIEVANCES ====================

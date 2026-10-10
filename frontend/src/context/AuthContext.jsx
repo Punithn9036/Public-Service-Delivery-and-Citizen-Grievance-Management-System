@@ -65,13 +65,13 @@ export function AuthProvider({ children }) {
     }
   }, [user]);
 
-  const login = async (email, password, phoneOverride = null) => {
+  const login = async (emailOrId, password, phoneOverride = null) => {
     setLoading(true);
-    const cleanEmail = email.toLowerCase().trim();
+    const identifier = (emailOrId || '').trim();
 
     try {
       // Try live backend API first
-      const data = await authAPI.login({ email: cleanEmail, password, phone: phoneOverride });
+      const data = await authAPI.login({ email: identifier, password, phone: phoneOverride });
       if (data && data.user) {
         if (phoneOverride) {
           data.user.phone = phoneOverride;
@@ -82,8 +82,9 @@ export function AuthProvider({ children }) {
         return data;
       }
     } catch (apiErr) {
+      const lower = identifier.toLowerCase();
       // If backend is offline or returned error, check demo and local fallback
-      const demoUser = DEMO_USERS[cleanEmail];
+      const demoUser = DEMO_USERS[lower];
       if (demoUser) {
         const dummyToken = `demo_jwt_token_${demoUser.role}_${Date.now()}`;
         const activeUser = phoneOverride ? { ...demoUser, phone: phoneOverride } : demoUser;
@@ -95,7 +96,11 @@ export function AuthProvider({ children }) {
       
       // Fallback for custom registered local users
       const savedUsers = JSON.parse(localStorage.getItem('janseva_registered_users') || '[]');
-      const localFound = savedUsers.find(u => u.email.toLowerCase() === cleanEmail || (u.phone && phoneOverride && u.phone.includes(phoneOverride)));
+      const localFound = savedUsers.find(u => 
+        u.email.toLowerCase() === lower || 
+        (u.employeeId && u.employeeId.toUpperCase() === identifier.toUpperCase()) ||
+        (u.phone && phoneOverride && u.phone.includes(phoneOverride))
+      );
       if (localFound) {
         const activeUser = phoneOverride ? { ...localFound, phone: phoneOverride } : localFound;
         const dummyToken = `demo_jwt_token_${activeUser.role}_${Date.now()}`;
@@ -106,13 +111,13 @@ export function AuthProvider({ children }) {
       }
 
       setLoading(false);
-      throw new Error(apiErr.response?.data?.message || apiErr.message || 'Invalid email or password.');
+      throw new Error(apiErr.response?.data?.message || apiErr.message || 'Invalid credentials.');
     }
   };
 
   const register = async (userData) => {
     setLoading(true);
-    const cleanEmail = userData.email.toLowerCase().trim();
+    const cleanEmail = (userData.email || '').toLowerCase().trim();
 
     try {
       const data = await authAPI.register(userData);
@@ -123,28 +128,8 @@ export function AuthProvider({ children }) {
         return data;
       }
     } catch (apiErr) {
-      // Offline fallback registration
-      const newUserId = `USR-${userData.role.slice(0, 3)}-${Math.floor(100 + Math.random() * 899)}`;
-      const newUser = {
-        id: Date.now(),
-        userId: newUserId,
-        fullName: userData.fullName,
-        email: cleanEmail,
-        phone: userData.phone,
-        role: userData.role,
-        department: userData.role === 'CITIZEN' ? null : (userData.department || 'General Administration'),
-        createdAt: new Date().toISOString()
-      };
-
-      const savedUsers = JSON.parse(localStorage.getItem('janseva_registered_users') || '[]');
-      savedUsers.push(newUser);
-      localStorage.setItem('janseva_registered_users', JSON.stringify(savedUsers));
-
-      const dummyToken = `demo_jwt_token_${newUser.role}_${Date.now()}`;
-      setToken(dummyToken);
-      setUser(newUser);
       setLoading(false);
-      return { token: dummyToken, user: newUser };
+      throw apiErr;
     }
   };
 

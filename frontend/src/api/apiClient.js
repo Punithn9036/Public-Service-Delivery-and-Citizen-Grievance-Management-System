@@ -35,7 +35,9 @@ async function request(endpoint, options = {}) {
 export const authAPI = {
   login: (credentials) => request('/auth/login', { method: 'POST', body: JSON.stringify(credentials) }),
   register: (userData) => request('/auth/register', { method: 'POST', body: JSON.stringify(userData) }),
-  getProfile: () => request('/auth/me', { method: 'GET' })
+  getProfile: () => request('/auth/me', { method: 'GET' }),
+  verifyEmployee: (employeeId) => request('/auth/verify-employee', { method: 'POST', body: JSON.stringify({ employeeId }) }),
+  getEligibleEmployees: () => request('/auth/eligible-employees', { method: 'GET' })
 };
 
 export const grievanceAPI = {
@@ -48,7 +50,8 @@ export const grievanceAPI = {
   updateStatus: (id, updateData) => request(`/grievances/${id}/status`, { method: 'PATCH', body: JSON.stringify(updateData) }),
   submitFeedback: (id, feedback) => request(`/grievances/${id}/feedback`, { method: 'POST', body: JSON.stringify(feedback) }),
   reopen: (id, reason) => request(`/grievances/${id}/reopen`, { method: 'POST', body: JSON.stringify({ reason }) }),
-  upvote: (id, citizenName) => request(`/grievances/${id}/upvote`, { method: 'POST', body: JSON.stringify({ citizenName }) })
+  upvote: (id, citizenName) => request(`/grievances/${id}/upvote`, { method: 'POST', body: JSON.stringify({ citizenName }) }),
+  getOfficerRoster: () => request('/grievances/officers/roster', { method: 'GET' })
 };
 
 export const applicationAPI = {

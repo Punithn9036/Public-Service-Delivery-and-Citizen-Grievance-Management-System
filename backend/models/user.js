@@ -4,8 +4,8 @@ const db = require('../src/db');
 
 module.exports = {
   // Insert a new user and return the created record
-  async create({ userId, email, passwordHash, role = 'CITIZEN', fullName, phone, department = null }) {
-    return await db.createUser({ userId, email, passwordHash, role, fullName, phone, department });
+  async create({ userId, employeeId = null, email, passwordHash, role = 'CITIZEN', fullName, phone, department = null, designation = null }) {
+    return await db.createUser({ userId, employeeId, email, passwordHash, role, fullName, phone, department, designation });
   },
 
   // Find a user by email
@@ -16,6 +16,16 @@ module.exports = {
   // Find a user by phone
   async findByPhone(phone) {
     return await db.findUserByPhone(phone);
+  },
+
+  // Find a user by employeeId
+  async findByEmployeeId(employeeId) {
+    return await db.findUserByEmployeeId(employeeId);
+  },
+
+  // Find a user by any identifier (email, phone, employeeId, userId)
+  async findByIdentifier(identifier) {
+    return await db.findUserByIdentifier(identifier);
   },
 
   // Update user phone number
@@ -36,5 +46,18 @@ module.exports = {
   // Get all users
   async findAll() {
     return await db.getUsers();
+  },
+
+  // ==================== GOVERNMENT EMPLOYEES ====================
+  async findGovernmentEmployeeById(employeeId) {
+    return await db.findGovernmentEmployeeById(employeeId);
+  },
+
+  async getGovernmentEmployees() {
+    return await db.getGovernmentEmployees();
+  },
+
+  async markEmployeeAsRegistered(employeeId, userId) {
+    return await db.markEmployeeAsRegistered(employeeId, userId);
   }
 };

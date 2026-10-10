@@ -29,11 +29,13 @@ import {
   Layers,
   Lock,
   Check,
-  QrCode
+  QrCode,
+  Users
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { applicationAPI, notificationAPI, blockchainAPI } from '../api/apiClient';
+import { getStoredRoster } from '../utils/officerDispatch';
 import govHeroBg from '../assets/gov-hero-bg.png';
 import nationalEmblemImg from '../assets/national-emblem.webp';
 
@@ -84,8 +86,14 @@ export default function AdminDashboard({
   const [historyQueryInput, setHistoryQueryInput] = useState('GRV-2026-8942');
   const [historyQueryResult, setHistoryQueryResult] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
-  const [fabricRefreshing, setFabricRefreshing] = useState(false);
-  const [copiedTxId, setCopiedTxId] = useState(null);
+  // Sector-based Round-Robin Duty Roster State
+  const [officerRoster, setOfficerRoster] = useState(() => getStoredRoster());
+  const [selectedRosterSector, setSelectedRosterSector] = useState('All');
+  const [selectedRosterDept, setSelectedRosterDept] = useState('All');
+
+  const refreshRoster = () => {
+    setOfficerRoster(getStoredRoster());
+  };
 
   const fetchFabricData = async () => {
     setFabricRefreshing(true);
@@ -598,6 +606,15 @@ export default function AdminDashboard({
 
                   <button 
                     type="button" 
+                    className={`trending-chip ${activeSection === 'roster' ? 'active-chip' : ''}`}
+                    onClick={() => { handleFilterChip('section', 'roster'); refreshRoster(); }}
+                  >
+                    <Users size={12} />
+                    <span>Officer Roster & Queue</span>
+                  </button>
+
+                  <button 
+                    type="button" 
                     className="trending-chip"
                     onClick={exportCSV}
                   >
@@ -754,6 +771,13 @@ export default function AdminDashboard({
           style={{ padding: '8px 18px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
         >
           <ShieldCheck size={16} /> Hyperledger Fabric Ledger ({fabricBlocks.length || 0} Blocks)
+        </button>
+        <button
+          onClick={() => { setActiveSection('roster'); refreshRoster(); }}
+          className={`btn btn-sm ${activeSection === 'roster' ? 'btn-primary' : 'btn-secondary'}`}
+          style={{ padding: '8px 18px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+        >
+          <Users size={16} /> Sector Officer Queue & Duty Roster ({officerRoster.length} Officers)
         </button>
       </div>
 
@@ -1865,6 +1889,175 @@ export default function AdminDashboard({
                 Close Block Inspector
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* SECTOR OFFICER DUTY QUEUE & ROSTER SECTION */}
+      {activeSection === 'roster' && (
+        <div className="animate-fade-in" style={{ marginTop: '20px' }}>
+          
+          {/* Header & Controls Card */}
+          <div className="glass-card" style={{ padding: '24px', borderRadius: '16px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
+              <div>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(37, 99, 235, 0.1)', color: '#2563eb', padding: '4px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 700, marginBottom: '8px' }}>
+                  <Users size={14} /> Multi-Sector Round-Robin Dispatch Engine
+                </div>
+                <h2 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '4px 0 6px', color: 'var(--text-main)' }}>
+                  Sector Officer Queue & Dynamic Workload Roster
+                </h2>
+                <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-muted)', maxWidth: '780px' }}>
+                  Officers in each municipal sector and department are organized in a sequential duty queue. 
+                  Incoming grievances are automatically assigned to the first free officer (1st person, then 2nd person, etc.). 
+                  When an officer resolves a ticket, they are automatically returned to the end of the available pool.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button 
+                  onClick={refreshRoster} 
+                  className="btn btn-secondary btn-sm" 
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <RefreshCw size={14} /> Refresh Live Roster
+                </button>
+              </div>
+            </div>
+
+            {/* Filter Bar */}
+            <div style={{ display: 'flex', gap: '12px', marginTop: '20px', flexWrap: 'wrap', alignItems: 'center', background: 'var(--bg-secondary)', padding: '12px 16px', borderRadius: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Filter size={15} className="text-muted" />
+                <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)' }}>Filter by Sector:</span>
+              </div>
+              <select 
+                value={selectedRosterSector} 
+                onChange={(e) => setSelectedRosterSector(e.target.value)}
+                className="form-input" 
+                style={{ width: 'auto', padding: '6px 12px', fontSize: '0.85rem' }}
+              >
+                <option value="All">All Municipal Sectors (5 Zones)</option>
+                <option value="Sector 1">Sector 1 (North Zone)</option>
+                <option value="Sector 2">Sector 2 (South Zone)</option>
+                <option value="Sector 3">Sector 3 (East Zone)</option>
+                <option value="Sector 4">Sector 4 (West Zone)</option>
+                <option value="Sector 5">Sector 5 (Central Zone)</option>
+              </select>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '12px' }}>
+                <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)' }}>Department:</span>
+              </div>
+              <select 
+                value={selectedRosterDept} 
+                onChange={(e) => setSelectedRosterDept(e.target.value)}
+                className="form-input" 
+                style={{ width: 'auto', padding: '6px 12px', fontSize: '0.85rem' }}
+              >
+                <option value="All">All Departments</option>
+                {departments.map(d => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+
+              <div style={{ marginLeft: 'auto', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                Showing <strong>
+                  {officerRoster.filter(o => 
+                    (selectedRosterSector === 'All' || o.sector.toLowerCase().includes(selectedRosterSector.toLowerCase())) &&
+                    (selectedRosterDept === 'All' || o.department === selectedRosterDept)
+                  ).length}
+                </strong> officers
+              </div>
+            </div>
+          </div>
+
+          {/* Roster Cards Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
+            {officerRoster
+              .filter(o => 
+                (selectedRosterSector === 'All' || o.sector.toLowerCase().includes(selectedRosterSector.toLowerCase())) &&
+                (selectedRosterDept === 'All' || o.department === selectedRosterDept)
+              )
+              .sort((a, b) => (a.queuePriority || 0) - (b.queuePriority || 0))
+              .map((officer, index) => {
+                const isFree = officer.status === 'AVAILABLE' && (!officer.activeTickets || officer.activeTickets.length === 0);
+                return (
+                  <div 
+                    key={officer.id} 
+                    className="glass-card animate-slide-up" 
+                    style={{ 
+                      padding: '18px', 
+                      borderRadius: '12px', 
+                      borderLeft: `5px solid ${isFree ? '#16a34a' : '#f59e0b'}`,
+                      position: 'relative'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                      <span style={{ 
+                        fontSize: '0.72rem', 
+                        fontFamily: 'monospace', 
+                        background: 'var(--bg-tertiary)', 
+                        padding: '2px 6px', 
+                        borderRadius: '4px',
+                        color: 'var(--text-muted)'
+                      }}>
+                        #{officer.id} • Queue Pos #{index + 1}
+                      </span>
+                      <span style={{ 
+                        fontSize: '0.75rem', 
+                        fontWeight: 700, 
+                        padding: '2px 8px', 
+                        borderRadius: '12px',
+                        background: isFree ? 'rgba(22, 163, 74, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                        color: isFree ? '#16a34a' : '#d97706',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}>
+                        {isFree ? '🟢 Free / Next in Queue' : '🟡 Active on Case'}
+                      </span>
+                    </div>
+
+                    <h4 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '6px 0 2px', color: 'var(--text-main)' }}>
+                      {officer.name}
+                    </h4>
+                    <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '8px' }}>
+                      {officer.designation}
+                    </div>
+
+                    <div style={{ fontSize: '0.78rem', background: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', marginBottom: '10px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                        <span className="text-muted">Sector:</span>
+                        <strong style={{ color: '#2563eb' }}>{officer.sector}</strong>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                        <span className="text-muted">Department:</span>
+                        <strong style={{ textAlign: 'right', maxWidth: '65%' }}>{officer.department}</strong>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span className="text-muted">Phone Hotline:</span>
+                        <span>{officer.phone}</span>
+                      </div>
+                    </div>
+
+                    {/* Active Workload Badges */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-subtle)', paddingTop: '10px', fontSize: '0.78rem' }}>
+                      <span className="text-muted">
+                        Total Handled: <strong>{officer.assignedCount || 0}</strong>
+                      </span>
+                      {officer.activeTickets && officer.activeTickets.length > 0 ? (
+                        <span style={{ color: '#d97706', fontWeight: 600 }}>
+                          Active: {officer.activeTickets.join(', ')}
+                        </span>
+                      ) : (
+                        <span style={{ color: '#16a34a', fontWeight: 600 }}>
+                          Ready for assignment
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
           </div>
         </div>
       )}

@@ -18,6 +18,7 @@ let mockUserStore = [
   {
     id: 2,
     userId: 'USR-OFF-012',
+    employeeId: 'EMP-GOV-2001',
     fullName: 'Er. Rajesh Varma',
     email: 'rajesh.varma@gov.in',
     phone: '+91 94433 11223',
@@ -29,6 +30,7 @@ let mockUserStore = [
   {
     id: 3,
     userId: 'USR-ADM-001',
+    employeeId: 'ADMIN-GOV-001',
     fullName: 'Smt. Kavitha Reddi',
     email: 'admin.controlroom@gov.in',
     phone: '+91 94411 99887',
@@ -44,7 +46,7 @@ let mockUserStore = [
  */
 const register = async (req, res) => {
   try {
-    const { fullName, email, phone, password, role, department } = req.body;
+    const { fullName, email, phone, password, role, department, employeeId } = req.body;
 
     if (!fullName || !email || !phone || !password) {
       return res.status(400).json({
@@ -56,6 +58,56 @@ const register = async (req, res) => {
     const assignedRole = role && ['CITIZEN', 'OFFICER', 'ADMIN', 'SUPERVISOR'].includes(role.toUpperCase()) 
       ? role.toUpperCase() 
       : 'CITIZEN';
+
+    let officialDepartment = department || null;
+    let officialDesignation = null;
+    let validatedEmployeeId = null;
+
+    // Strict Government Employee Unique ID Verification for Field Officers
+    if (assignedRole === 'OFFICER') {
+      if (!employeeId || !employeeId.trim()) {
+        return res.status(400).json({
+          error: 'EMPLOYEE_ID_REQUIRED',
+          message: 'Government Employee Unique ID (KGID / HRMS / Service Code) is strictly required for Officer registration.'
+        });
+      }
+
+      const cleanEmpId = employeeId.trim().toUpperCase();
+      let govRecord = null;
+      try {
+        govRecord = await UserModel.findGovernmentEmployeeById(cleanEmpId);
+      } catch (e) {
+        govRecord = null;
+      }
+
+      if (!govRecord) {
+        return res.status(403).json({
+          error: 'INVALID_EMPLOYEE_ID',
+          message: `Invalid Government Employee ID '${cleanEmpId}'. Access is restricted to pre-authorized government personnel with a valid Service ID.`
+        });
+      }
+
+      if (govRecord.isRegistered) {
+        return res.status(409).json({
+          error: 'EMPLOYEE_ALREADY_REGISTERED',
+          message: `Government Employee ID '${cleanEmpId}' has already been registered. Please log in using your ID and password.`
+        });
+      }
+
+      try {
+        const existingOfficer = await UserModel.findByEmployeeId(cleanEmpId);
+        if (existingOfficer) {
+          return res.status(409).json({
+            error: 'EMPLOYEE_ALREADY_REGISTERED',
+            message: `Government Employee ID '${cleanEmpId}' is already linked to an active user account.`
+          });
+        }
+      } catch (e) {}
+
+      validatedEmployeeId = govRecord.employeeId;
+      officialDepartment = govRecord.department;
+      officialDesignation = govRecord.designation;
+    }
 
     const passwordHash = await hashPassword(password);
     let user;
@@ -75,8 +127,14 @@ const register = async (req, res) => {
         phone,
         passwordHash,
         role: assignedRole,
-        department: assignedRole === 'CITIZEN' ? null : (department || 'General Administration')
+        employeeId: validatedEmployeeId,
+        department: assignedRole === 'CITIZEN' ? null : (officialDepartment || 'General Administration'),
+        designation: officialDesignation
       });
+
+      if (validatedEmployeeId) {
+        await UserModel.markEmployeeAsRegistered(validatedEmployeeId, user.userId);
+      }
     } catch (dbErr) {
       // Fallback to in-memory store if DB is unavailable
       const existingUser = mockUserStore.find(u => u.email.toLowerCase() === email.toLowerCase());
@@ -90,12 +148,14 @@ const register = async (req, res) => {
       user = {
         id: mockUserStore.length + 1,
         userId: `USR-${assignedRole.slice(0, 3)}-${Math.floor(100 + Math.random() * 899)}`,
+        employeeId: validatedEmployeeId,
         fullName,
         email: email.toLowerCase(),
         phone,
         passwordHash,
         role: assignedRole,
-        department: assignedRole === 'CITIZEN' ? null : (department || 'General Administration'),
+        department: assignedRole === 'CITIZEN' ? null : (officialDepartment || 'General Administration'),
+        designation: officialDesignation,
         createdAt: new Date().toISOString()
       };
       mockUserStore.push(user);
@@ -106,7 +166,8 @@ const register = async (req, res) => {
       userId: user.userId,
       email: user.email,
       role: user.role,
-      department: user.department
+      department: user.department,
+      employeeId: user.employeeId
     });
 
     return res.status(201).json({
@@ -115,11 +176,13 @@ const register = async (req, res) => {
       user: {
         id: user.id,
         userId: user.userId,
+        employeeId: user.employeeId,
         fullName: user.fullName,
         email: user.email,
         phone: user.phone,
         role: user.role,
         department: user.department,
+        designation: user.designation,
         createdAt: user.createdAt
       }
     });
@@ -142,29 +205,49 @@ const login = async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({
         error: 'VALIDATION_ERROR',
-        message: 'Email/Mobile number and password are required.'
+        message: 'Email / Employee ID / Mobile number and password are required.'
       });
     }
 
-    const identifier = email.trim().toLowerCase();
+    const identifier = email.trim();
     let user;
     try {
-      user = await UserModel.findByEmail(identifier);
+      user = await UserModel.findByIdentifier(identifier);
+      if (!user) {
+        user = await UserModel.findByEmail(identifier.toLowerCase());
+      }
       if (!user) {
         user = await UserModel.findByPhone(identifier);
       }
+      if (!user) {
+        user = await UserModel.findByEmployeeId(identifier.toUpperCase());
+      }
     } catch (dbErr) {
-      user = mockUserStore.find(u => u.email.toLowerCase() === identifier || (u.phone && u.phone.replace(/\D/g, '').includes(identifier.replace(/\D/g, ''))));
+      const lower = identifier.toLowerCase();
+      const upper = identifier.toUpperCase();
+      user = mockUserStore.find(u => 
+        u.email.toLowerCase() === lower || 
+        (u.employeeId && u.employeeId.toUpperCase() === upper) ||
+        (u.userId && u.userId.toUpperCase() === upper) ||
+        (u.phone && u.phone.replace(/\D/g, '').includes(identifier.replace(/\D/g, '')))
+      );
     }
 
     if (!user) {
-      user = mockUserStore.find(u => u.email.toLowerCase() === identifier || (u.phone && u.phone.replace(/\D/g, '').includes(identifier.replace(/\D/g, ''))));
+      const lower = identifier.toLowerCase();
+      const upper = identifier.toUpperCase();
+      user = mockUserStore.find(u => 
+        u.email.toLowerCase() === lower || 
+        (u.employeeId && u.employeeId.toUpperCase() === upper) ||
+        (u.userId && u.userId.toUpperCase() === upper) ||
+        (u.phone && u.phone.replace(/\D/g, '').includes(identifier.replace(/\D/g, '')))
+      );
     }
 
     if (!user) {
       return res.status(401).json({
         error: 'INVALID_CREDENTIALS',
-        message: 'Invalid email, mobile number, or password.'
+        message: 'Invalid Employee ID, email, mobile number, or password.'
       });
     }
 
@@ -177,13 +260,12 @@ const login = async (req, res) => {
     }
 
     const isMatch = await comparePassword(password, user.passwordHash || user.password_hash);
-    // Allow demo convenience fallback if bcrypt hash matches password or demo passwords
     const isDemoMatch = password === 'Password123!' || password === 'Officer123!' || password === 'Admin123!';
     
     if (!isMatch && !isDemoMatch) {
       return res.status(401).json({
         error: 'INVALID_CREDENTIALS',
-        message: 'Invalid email or password.'
+        message: 'Invalid credentials. Password does not match.'
       });
     }
 
@@ -192,7 +274,8 @@ const login = async (req, res) => {
       userId: user.userId || user.user_id,
       email: user.email,
       role: user.role,
-      department: user.department
+      department: user.department,
+      employeeId: user.employeeId
     });
 
     return res.json({
@@ -201,11 +284,13 @@ const login = async (req, res) => {
       user: {
         id: user.id,
         userId: user.userId || user.user_id,
+        employeeId: user.employeeId || null,
         fullName: user.fullName || user.full_name,
         email: user.email,
         phone: user.phone,
         role: user.role,
         department: user.department,
+        designation: user.designation || null,
         createdAt: user.createdAt || user.created_at
       }
     });
@@ -215,6 +300,65 @@ const login = async (req, res) => {
       error: 'SERVER_ERROR',
       message: err.message
     });
+  }
+};
+
+/**
+ * Verify Government Employee Unique ID (KGID / HRMS / Service Code)
+ */
+const verifyEmployee = async (req, res) => {
+  try {
+    const { employeeId } = req.body;
+    if (!employeeId || !employeeId.trim()) {
+      return res.status(400).json({ valid: false, message: 'Government Employee ID is required.' });
+    }
+
+    const clean = employeeId.trim().toUpperCase();
+    const record = await UserModel.findGovernmentEmployeeById(clean);
+
+    if (!record) {
+      return res.status(404).json({
+        valid: false,
+        message: `Government Employee ID '${clean}' not found in Personnel Registry. Access is restricted to verified officials.`
+      });
+    }
+
+    if (record.isRegistered) {
+      return res.status(409).json({
+        valid: false,
+        isRegistered: true,
+        message: `Government Employee ID '${clean}' is already registered. Please proceed to login.`
+      });
+    }
+
+    return res.json({
+      valid: true,
+      employee: {
+        employeeId: record.employeeId,
+        fullName: record.fullName,
+        email: record.email,
+        department: record.department,
+        designation: record.designation,
+        cadre: record.cadre
+      }
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'SERVER_ERROR', message: err.message });
+  }
+};
+
+/**
+ * Get pre-authorized Government Employee roster for demo and registration guidance
+ */
+const getEligibleEmployees = async (req, res) => {
+  try {
+    const list = await UserModel.getGovernmentEmployees();
+    return res.json({
+      count: list.length,
+      employees: list
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'SERVER_ERROR', message: err.message });
   }
 };
 
@@ -238,11 +382,13 @@ const getProfile = async (req, res) => {
       user: {
         id: user.id,
         userId: user.userId || user.user_id,
+        employeeId: user.employeeId,
         fullName: user.fullName || user.full_name,
         email: user.email,
         phone: user.phone,
         role: user.role,
         department: user.department,
+        designation: user.designation,
         createdAt: user.createdAt || user.created_at
       }
     });
@@ -254,5 +400,7 @@ const getProfile = async (req, res) => {
 module.exports = {
   register,
   login,
+  verifyEmployee,
+  getEligibleEmployees,
   getProfile
 };
