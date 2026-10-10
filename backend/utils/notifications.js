@@ -165,7 +165,7 @@ async function sendNotification({ phone, template, data = {}, channels = ['SMS',
     }
 
     // Live WhatsApp Dispatch if Admin / Officer device is linked
-    if (!isSms) {
+    if (!isSms && process.env.NODE_ENV !== 'test') {
       try {
         const whatsappService = require('../src/services/whatsappService');
         if (whatsappService && whatsappService.isConnected()) {
