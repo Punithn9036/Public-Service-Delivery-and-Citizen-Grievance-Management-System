@@ -9,6 +9,10 @@ router.get('/', notificationController.getLogs);
 // Send manual/test notification
 router.post('/test', notificationController.sendTestNotification);
 
+// WhatsApp Multi-Device Linking & Status
+router.get('/whatsapp-status', notificationController.getWhatsAppStatus);
+router.post('/whatsapp-disconnect', notificationController.disconnectWhatsApp);
+
 // Interactive Two-Way WhatsApp Webhook endpoints
 router.post('/whatsapp-webhook', notificationController.handleWhatsAppWebhook);
 router.post('/webhook', notificationController.handleWhatsAppWebhook);

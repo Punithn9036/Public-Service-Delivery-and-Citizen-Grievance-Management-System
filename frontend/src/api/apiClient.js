@@ -100,7 +100,9 @@ export const notificationAPI = {
     return request(`/notifications?${query}`, { method: 'GET' });
   },
   sendTest: (data) => request('/notifications/test', { method: 'POST', body: JSON.stringify(data) }),
-  queryWhatsAppBot: (from, body) => request('/webhook/whatsapp', { method: 'POST', body: JSON.stringify({ from, body }) })
+  queryWhatsAppBot: (from, body) => request('/webhook/whatsapp', { method: 'POST', body: JSON.stringify({ from, body }) }),
+  getWhatsAppStatus: () => request('/notifications/whatsapp-status', { method: 'GET' }),
+  disconnectWhatsApp: () => request('/notifications/whatsapp-disconnect', { method: 'POST' })
 };
 
 export const blockchainAPI = {

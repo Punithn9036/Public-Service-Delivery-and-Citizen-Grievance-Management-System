@@ -28,7 +28,8 @@ import {
   RefreshCw,
   Layers,
   Lock,
-  Check
+  Check,
+  QrCode
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
@@ -70,6 +71,8 @@ export default function AdminDashboard({
   const [whatsappInput, setWhatsappInput] = useState('STATUS GRV-2026-8910');
   const [whatsappReply, setWhatsappReply] = useState(null);
   const [whatsappLoading, setWhatsappLoading] = useState(false);
+  const [waDeviceStatus, setWaDeviceStatus] = useState(null);
+  const [waDeviceLoading, setWaDeviceLoading] = useState(false);
 
   // Phase 4: Hyperledger Fabric Explorer States
   const [fabricInfo, setFabricInfo] = useState(null);
@@ -149,11 +152,47 @@ export default function AdminDashboard({
     }
   };
 
+  const fetchWhatsAppDeviceStatus = async () => {
+    try {
+      const res = await notificationAPI.getWhatsAppStatus();
+      if (res) {
+        setWaDeviceStatus(res);
+      }
+    } catch (e) {
+      console.warn("Error fetching WhatsApp device status:", e);
+    }
+  };
+
+  const handleDisconnectWhatsApp = async () => {
+    if (!window.confirm("Are you sure you want to disconnect this WhatsApp account?")) return;
+    setWaDeviceLoading(true);
+    try {
+      await notificationAPI.disconnectWhatsApp();
+      await fetchWhatsAppDeviceStatus();
+    } catch (e) {
+      alert("Error unlinking WhatsApp: " + e.message);
+    } finally {
+      setWaDeviceLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchNotifLogs();
+    fetchWhatsAppDeviceStatus();
     if (activeSection === 'blockchain' || !fabricInfo) {
       fetchFabricData();
     }
+
+    let interval = null;
+    if (activeSection === 'notifications') {
+      interval = setInterval(() => {
+        fetchWhatsAppDeviceStatus();
+      }, 3500);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [activeSection]);
 
   const handleSendTestAlert = async (e) => {
@@ -1079,10 +1118,97 @@ export default function AdminDashboard({
             </button>
           </div>
 
-          {/* Interactive Tools Grid (Trigger Alert + WhatsApp Bot Simulator) */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+          {/* Interactive Tools Grid (WhatsApp Device Linking + Trigger Alert + WhatsApp Bot Simulator) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(310px, 1fr))', gap: '16px', marginBottom: '24px' }}>
             
-            {/* 1. Quick Test Alert Dispatcher */}
+            {/* 1. Official WhatsApp Sender Device Linker */}
+            <div style={{
+              background: 'var(--bg-tertiary)',
+              border: waDeviceStatus?.isConnected ? '1px solid #22c55e' : '1px solid var(--border-subtle)',
+              borderRadius: '10px',
+              padding: '16px',
+              display: 'flex',
+              flexDirection: 'column'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                <h3 style={{ fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
+                  <QrCode size={18} style={{ color: '#25D366' }} /> Link WhatsApp as Official Sender
+                </h3>
+                <span style={{
+                  fontSize: '0.72rem',
+                  padding: '2px 8px',
+                  borderRadius: '12px',
+                  fontWeight: 700,
+                  background: waDeviceStatus?.isConnected ? 'rgba(34, 197, 94, 0.15)' : 'rgba(234, 179, 8, 0.15)',
+                  color: waDeviceStatus?.isConnected ? '#16a34a' : '#ca8a04'
+                }}>
+                  {waDeviceStatus?.isConnected ? '● CONNECTED' : (waDeviceStatus?.status === 'AWAITING_SCAN' ? 'SCAN QR' : 'INITIALIZING')}
+                </span>
+              </div>
+
+              {waDeviceStatus?.isConnected ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1, justifyContent: 'center' }}>
+                  <div style={{ background: 'rgba(34, 197, 94, 0.1)', border: '1px solid #22c55e', borderRadius: '8px', padding: '14px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#15803d', fontWeight: 700, fontSize: '0.9rem' }}>
+                      <CheckCircle2 size={18} /> Official WhatsApp Sender Active
+                    </div>
+                    <p style={{ margin: '8px 0 0', fontSize: '0.82rem', color: 'var(--text-main)' }}>
+                      Sender Account: <strong>+{waDeviceStatus.connectedNumber || '919449524516'}</strong>
+                    </p>
+                    <p style={{ margin: '6px 0 0', fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+                      Real grievance updates and resolution notices are automatically dispatched to citizens directly from your mobile number.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    onClick={handleDisconnectWhatsApp}
+                    disabled={waDeviceLoading}
+                    style={{ color: '#ef4444', borderColor: '#ef4444', marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                  >
+                    {waDeviceLoading ? <RefreshCw size={14} className="animate-spin" /> : null}
+                    <span>{waDeviceLoading ? 'Disconnecting...' : 'Unlink WhatsApp Account'}</span>
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                  <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', margin: '0 0 10px' }}>
+                    Scan with WhatsApp on <strong>9449524516</strong> to use your number as the official alert sender:
+                  </p>
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    background: '#ffffff',
+                    borderRadius: '8px',
+                    padding: '12px',
+                    border: '1px solid var(--border-color)',
+                    margin: 'auto 0'
+                  }}>
+                    {waDeviceStatus?.qrCodeDataUrl ? (
+                      <img 
+                        src={waDeviceStatus.qrCodeDataUrl} 
+                        alt="WhatsApp Web QR Code" 
+                        style={{ width: '180px', height: '180px', borderRadius: '4px' }}
+                      />
+                    ) : (
+                      <div style={{ width: '180px', height: '180px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontSize: '0.76rem', gap: '8px', textAlign: 'center' }}>
+                        <RefreshCw size={24} className="animate-spin text-blue" />
+                        <span>Generating WhatsApp QR Code...</span>
+                      </div>
+                    )}
+                    <div style={{ marginTop: '8px', fontSize: '0.72rem', color: '#1e293b', textAlign: 'center', lineHeight: '1.4' }}>
+                      <strong>1.</strong> Open WhatsApp on your phone<br />
+                      <strong>2.</strong> Tap <strong>Linked Devices</strong> &gt; <strong>Link a Device</strong><br />
+                      <strong>3.</strong> Scan this QR code
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 2. Quick Test Alert Dispatcher */}
             <div style={{
               background: 'var(--bg-tertiary)',
               border: '1px solid var(--border-subtle)',

@@ -164,6 +164,26 @@ async function sendNotification({ phone, template, data = {}, channels = ['SMS',
       }
     }
 
+    // Live WhatsApp Dispatch if Admin / Officer device is linked
+    if (!isSms) {
+      try {
+        const whatsappService = require('../src/services/whatsappService');
+        if (whatsappService && whatsappService.isConnected()) {
+          const waRes = await whatsappService.sendMessage(intlDigits, messageContent);
+          if (waRes && waRes.success) {
+            receipt.status = 'DELIVERED_REAL_WHATSAPP';
+            receipt.whatsappMessageId = waRes.messageId;
+            receipt.senderNumber = whatsappService.getStatus().connectedNumber;
+            console.log(`[WhatsApp Service] Dispatched real WhatsApp message to ${intlDigits} from linked device (${receipt.senderNumber}).`);
+          } else {
+            receipt.whatsappSendNotice = waRes?.reason || 'Not sent via linked device';
+          }
+        }
+      } catch (err) {
+        console.warn('[WhatsApp Service Error]:', err.message);
+      }
+    }
+
     logs.unshift(receipt);
     receipts.push(receipt);
   }
