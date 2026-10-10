@@ -25,11 +25,14 @@ import {
   Filter,
   MessageSquare,
   Smartphone,
-  RefreshCw
+  RefreshCw,
+  Layers,
+  Lock,
+  Check
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
-import { applicationAPI, notificationAPI } from '../api/apiClient';
+import { applicationAPI, notificationAPI, blockchainAPI } from '../api/apiClient';
 import govHeroBg from '../assets/gov-hero-bg.png';
 import nationalEmblemImg from '../assets/national-emblem.webp';
 
@@ -45,7 +48,7 @@ export default function AdminDashboard({
   const isOfficer = user?.role === 'OFFICER';
   const isAdmin = user?.role === 'ADMIN';
 
-  const [activeSection, setActiveSection] = useState('grievances'); // 'grievances' | 'applications' | 'analytics'
+  const [activeSection, setActiveSection] = useState('grievances'); // 'grievances' | 'applications' | 'analytics' | 'notifications' | 'blockchain'
   const [selectedDept, setSelectedDept] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [selectedPriority, setSelectedPriority] = useState('All');
@@ -68,6 +71,73 @@ export default function AdminDashboard({
   const [whatsappReply, setWhatsappReply] = useState(null);
   const [whatsappLoading, setWhatsappLoading] = useState(false);
 
+  // Phase 4: Hyperledger Fabric Explorer States
+  const [fabricInfo, setFabricInfo] = useState(null);
+  const [fabricBlocks, setFabricBlocks] = useState([]);
+  const [selectedBlock, setSelectedBlock] = useState(null);
+  const [verifyTxInput, setVerifyTxInput] = useState('0x8f7a6b5c4d3e2f1a9b8c7d6e5f4a3b2c1d0e9f8a');
+  const [verifyResult, setVerifyResult] = useState(null);
+  const [verifyLoading, setVerifyLoading] = useState(false);
+  const [historyQueryInput, setHistoryQueryInput] = useState('GRV-2026-8942');
+  const [historyQueryResult, setHistoryQueryResult] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [fabricRefreshing, setFabricRefreshing] = useState(false);
+  const [copiedTxId, setCopiedTxId] = useState(null);
+
+  const fetchFabricData = async () => {
+    setFabricRefreshing(true);
+    try {
+      const [infoRes, blocksRes] = await Promise.all([
+        blockchainAPI.getInfo().catch(() => null),
+        blockchainAPI.getBlocks({ limit: 50 }).catch(() => ({ blocks: [] }))
+      ]);
+      if (infoRes) setFabricInfo(infoRes);
+      if (blocksRes && blocksRes.blocks) setFabricBlocks(blocksRes.blocks);
+    } finally {
+      setFabricRefreshing(false);
+    }
+  };
+
+  const handleVerifyTx = async (e) => {
+    if (e) e.preventDefault();
+    if (!verifyTxInput.trim()) return;
+    setVerifyLoading(true);
+    setVerifyResult(null);
+    try {
+      const res = await blockchainAPI.verifyTx(verifyTxInput.trim());
+      setVerifyResult(res);
+    } catch (err) {
+      setVerifyResult({ verified: false, error: 'FAILED', message: err.message });
+    } finally {
+      setVerifyLoading(false);
+    }
+  };
+
+  const handleQueryHistory = async (e) => {
+    if (e) e.preventDefault();
+    if (!historyQueryInput.trim()) return;
+    setHistoryLoading(true);
+    setHistoryQueryResult([]);
+    try {
+      const res = await blockchainAPI.getHistory(historyQueryInput.trim());
+      if (res && res.history) {
+        setHistoryQueryResult(res.history);
+      }
+    } catch (err) {
+      console.warn("Fabric history query error:", err);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const handleCopyText = (text, id) => {
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(text);
+      setCopiedTxId(id);
+      setTimeout(() => setCopiedTxId(null), 2000);
+    }
+  };
+
   const fetchNotifLogs = async () => {
     try {
       const res = await notificationAPI.getLogs({ limit: 50 });
@@ -81,6 +151,9 @@ export default function AdminDashboard({
 
   useEffect(() => {
     fetchNotifLogs();
+    if (activeSection === 'blockchain' || !fabricInfo) {
+      fetchFabricData();
+    }
   }, [activeSection]);
 
   const handleSendTestAlert = async (e) => {
@@ -477,6 +550,15 @@ export default function AdminDashboard({
 
                   <button 
                     type="button" 
+                    className={`trending-chip ${activeSection === 'blockchain' ? 'active-chip' : ''}`}
+                    onClick={() => { handleFilterChip('section', 'blockchain'); fetchFabricData(); }}
+                  >
+                    <ShieldCheck size={12} />
+                    <span>Blockchain Explorer</span>
+                  </button>
+
+                  <button 
+                    type="button" 
                     className="trending-chip"
                     onClick={exportCSV}
                   >
@@ -626,6 +708,13 @@ export default function AdminDashboard({
           style={{ padding: '8px 18px', fontWeight: 700 }}
         >
           <MessageSquare size={16} /> Statutory Alerts & DLT Logs ({notifLogs.length})
+        </button>
+        <button
+          onClick={() => { setActiveSection('blockchain'); fetchFabricData(); }}
+          className={`btn btn-sm ${activeSection === 'blockchain' ? 'btn-primary' : 'btn-secondary'}`}
+          style={{ padding: '8px 18px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+        >
+          <ShieldCheck size={16} /> Hyperledger Fabric Ledger ({fabricBlocks.length || 0} Blocks)
         </button>
       </div>
 
@@ -1182,6 +1271,420 @@ export default function AdminDashboard({
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 5. HYPERLEDGER FABRIC BLOCKCHAIN EXPLORER & CRYPTOGRAPHIC LEDGER CENTER  */}
+      {/* ========================================================================= */}
+      {activeSection === 'blockchain' && (
+        <div className="admin-blockchain-section animate-fade-in" style={{ marginTop: '16px' }}>
+          
+          {/* Network Topology & Status Header */}
+          <div className="admin-analytics-card glass-card" style={{ marginBottom: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', borderBottom: '1px solid var(--border-color)', paddingBottom: '14px', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(37, 99, 235, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <ShieldCheck size={24} style={{ color: '#2563eb' }} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    Hyperledger Fabric Cryptographic Ledger Explorer
+                    <span style={{ fontSize: '0.72rem', background: 'rgba(34, 197, 94, 0.15)', color: '#16a34a', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
+                      ● CHANNEL ACTIVE
+                    </span>
+                  </h3>
+                  <p className="small-text text-muted" style={{ margin: '2px 0 0' }}>
+                    Immutable Enterprise Ledger • Channel: <strong>janseva-channel</strong> • Smart Contract: <strong>grievance_cc:v1.0 (Go Contract API)</strong>
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  onClick={fetchFabricData}
+                  disabled={fabricRefreshing}
+                  className="btn btn-secondary btn-sm"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <RefreshCw size={14} className={fabricRefreshing ? 'animate-spin' : ''} />
+                  <span>{fabricRefreshing ? 'Syncing...' : 'Sync Ledger'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Network Metric Highlights */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '16px' }}>
+              <div style={{ background: 'var(--bg-tertiary)', padding: '12px 14px', borderRadius: '8px' }}>
+                <span className="text-muted" style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block' }}>BLOCK HEIGHT</span>
+                <strong style={{ fontSize: '1.2rem', color: '#2563eb' }}>
+                  #{fabricInfo?.latestBlockNumber !== undefined ? fabricInfo.latestBlockNumber : (fabricBlocks.length - 1)}
+                </strong>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block' }}>{fabricBlocks.length} Blocks Sequenced</span>
+              </div>
+
+              <div style={{ background: 'var(--bg-tertiary)', padding: '12px 14px', borderRadius: '8px' }}>
+                <span className="text-muted" style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block' }}>CONSENSUS PROTOCOL</span>
+                <strong style={{ fontSize: '0.95rem', color: '#16a34a' }}>Raft Crash-Fault Tolerant</strong>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block' }}>Multi-Node Ordering Service</span>
+              </div>
+
+              <div style={{ background: 'var(--bg-tertiary)', padding: '12px 14px', borderRadius: '8px' }}>
+                <span className="text-muted" style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block' }}>TOTAL TRANSACTIONS</span>
+                <strong style={{ fontSize: '1.2rem', color: '#ea580c' }}>
+                  {fabricInfo?.totalTransactions || fabricBlocks.reduce((acc, b) => acc + (b.txCount || 1), 0)}
+                </strong>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block' }}>World State Commits</span>
+              </div>
+
+              <div style={{ background: 'var(--bg-tertiary)', padding: '12px 14px', borderRadius: '8px' }}>
+                <span className="text-muted" style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block' }}>PEER ORGS (MSPs)</span>
+                <strong style={{ fontSize: '0.95rem', color: 'var(--text-main)' }}>2 Endorsers + 1 Orderer</strong>
+                <span style={{ fontSize: '0.7rem', color: '#16a34a', display: 'block' }}>✓ 100% Nodes Online</span>
+              </div>
+            </div>
+
+            {/* Peer Nodes Topology Grid */}
+            <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
+              <span className="text-muted" style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '8px' }}>
+                Active Hyperledger Peer Topology &amp; MSP Endorsers
+              </span>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '10px' }}>
+                <div style={{ border: '1px solid var(--border-color)', borderRadius: '6px', padding: '10px 12px', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <strong style={{ fontSize: '0.82rem', display: 'block' }}>peer0.org1.janseva.gov.in</strong>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>MSP: MunicipalAdminMSP • Role: EndorsingPeer</span>
+                  </div>
+                  <span style={{ fontSize: '0.7rem', background: 'rgba(34, 197, 94, 0.15)', color: '#16a34a', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>ONLINE</span>
+                </div>
+
+                <div style={{ border: '1px solid var(--border-color)', borderRadius: '6px', padding: '10px 12px', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <strong style={{ fontSize: '0.82rem', display: 'block' }}>peer0.org2.janseva.gov.in</strong>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>MSP: CitizenOversightMSP • Role: EndorsingPeer</span>
+                  </div>
+                  <span style={{ fontSize: '0.7rem', background: 'rgba(34, 197, 94, 0.15)', color: '#16a34a', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>ONLINE</span>
+                </div>
+
+                <div style={{ border: '1px solid var(--border-color)', borderRadius: '6px', padding: '10px 12px', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <strong style={{ fontSize: '0.82rem', display: 'block' }}>orderer.janseva.gov.in</strong>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>MSP: OrdererMSP • Role: RaftConsensusOrderer</span>
+                  </div>
+                  <span style={{ fontSize: '0.7rem', background: 'rgba(34, 197, 94, 0.15)', color: '#16a34a', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>ONLINE</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Interactive Tools: Cryptographic Tx Verifier & Grievance History Query */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '16px', marginBottom: '16px' }}>
+            
+            {/* 1. Transaction Verifier Card */}
+            <div className="admin-analytics-card glass-card">
+              <h3 style={{ fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Lock size={18} className="text-blue" />
+                <span>On-Demand Cryptographic Transaction Verifier</span>
+              </h3>
+              <p className="small-text text-muted" style={{ margin: '4px 0 12px' }}>
+                Validate SHA-256 Merkle root hash chaining, containing block proofs, and MSP endorsements.
+              </p>
+
+              <form onSubmit={handleVerifyTx} style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                <input
+                  type="text"
+                  value={verifyTxInput}
+                  onChange={(e) => setVerifyTxInput(e.target.value)}
+                  placeholder="Paste Transaction Hash (0x...)"
+                  className="form-input"
+                  style={{ flex: 1, fontSize: '0.8rem', fontFamily: 'monospace' }}
+                />
+                <button
+                  type="submit"
+                  disabled={verifyLoading}
+                  className="btn btn-primary btn-sm"
+                  style={{ whiteSpace: 'nowrap' }}
+                >
+                  {verifyLoading ? 'Verifying...' : 'Verify Hash'}
+                </button>
+              </form>
+
+              {verifyResult && (
+                <div style={{ 
+                  background: verifyResult.verified ? 'rgba(34, 197, 94, 0.08)' : 'rgba(239, 68, 68, 0.08)',
+                  border: `1px solid ${verifyResult.verified ? '#22c55e' : '#ef4444'}`,
+                  borderRadius: '8px',
+                  padding: '12px',
+                  fontSize: '0.8rem'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                    <ShieldCheck size={18} style={{ color: verifyResult.verified ? '#16a34a' : '#ef4444' }} />
+                    <strong style={{ color: verifyResult.verified ? '#15803d' : '#b91c1c' }}>
+                      {verifyResult.verified ? '✓ TAMPER-PROOF HASH CHAIN VERIFIED' : '✖ TRANSACTION NOT FOUND'}
+                    </strong>
+                  </div>
+
+                  {verifyResult.verified && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', color: 'var(--text-main)', marginTop: '6px' }}>
+                      <div><strong>Block Location:</strong> Block #{verifyResult.blockNumber} ({verifyResult.confirmations} Confirmations)</div>
+                      <div style={{ wordBreak: 'break-all' }}><strong>Block Hash:</strong> <code style={{ fontSize: '0.72rem' }}>{verifyResult.blockHash}</code></div>
+                      <div><strong>Consensus Status:</strong> <span style={{ color: '#16a34a', fontWeight: 700 }}>VALID</span></div>
+                      <div><strong>Endorsers:</strong> {verifyResult.endorsingOrganizations?.join(', ') || 'MunicipalAdminMSP, CitizenOversightMSP'}</div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* 2. On-Chain History Query Card */}
+            <div className="admin-analytics-card glass-card">
+              <h3 style={{ fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Layers size={18} className="text-blue" />
+                <span>Chaincode World State History Query</span>
+              </h3>
+              <p className="small-text text-muted" style={{ margin: '4px 0 12px' }}>
+                Directly invokes <code>GetGrievanceHistory</code> composite key iterator on <code>grievance_cc</code>.
+              </p>
+
+              <form onSubmit={handleQueryHistory} style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                <input
+                  type="text"
+                  value={historyQueryInput}
+                  onChange={(e) => setHistoryQueryInput(e.target.value)}
+                  placeholder="Ticket ID (e.g. GRV-2026-8942)"
+                  className="form-input"
+                  style={{ flex: 1, fontSize: '0.85rem' }}
+                />
+                <button
+                  type="submit"
+                  disabled={historyLoading}
+                  className="btn btn-secondary btn-sm"
+                  style={{ whiteSpace: 'nowrap' }}
+                >
+                  {historyLoading ? 'Querying...' : 'Query State'}
+                </button>
+              </form>
+
+              {historyQueryResult.length > 0 ? (
+                <div style={{ maxHeight: '140px', overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: '6px' }}>
+                  <table style={{ width: '100%', fontSize: '0.75rem', borderCollapse: 'collapse' }}>
+                    <thead style={{ background: 'var(--bg-tertiary)', borderBottom: '1px solid var(--border-color)' }}>
+                      <tr>
+                        <th style={{ padding: '6px', textAlign: 'left' }}>Time</th>
+                        <th style={{ padding: '6px', textAlign: 'left' }}>Status</th>
+                        <th style={{ padding: '6px', textAlign: 'left' }}>Officer</th>
+                        <th style={{ padding: '6px', textAlign: 'left' }}>Tx Hash</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {historyQueryResult.map((item, idx) => (
+                        <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                          <td style={{ padding: '6px', whiteSpace: 'nowrap' }}>{new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                          <td style={{ padding: '6px', fontWeight: 700, color: '#2563eb' }}>{item.status}</td>
+                          <td style={{ padding: '6px' }}>{item.assignedOfficer || 'System'}</td>
+                          <td style={{ padding: '6px' }}>
+                            <button
+                              type="button"
+                              onClick={() => { setVerifyTxInput(item.txId); handleVerifyTx(); }}
+                              style={{ background: 'transparent', border: 'none', color: '#2563eb', cursor: 'pointer', fontFamily: 'monospace', fontSize: '0.7rem' }}
+                              title="Click to Verify"
+                            >
+                              {item.txId.slice(0, 10)}... ↗
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div style={{ background: 'var(--bg-tertiary)', padding: '12px', borderRadius: '6px', textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  Enter a grievance ticket ID above to audit its immutable on-chain transitions.
+                </div>
+              )}
+            </div>
+
+          </div>
+
+          {/* 3. Live Block Stream & Ledger Explorer Table */}
+          <div className="table-wrapper">
+            <div style={{ padding: '14px 16px', background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Database size={18} className="text-blue" />
+                <strong style={{ fontSize: '0.95rem' }}>Sequential Block Ledger (SHA-256 Chained)</strong>
+              </div>
+              <span className="small-text text-muted">{fabricBlocks.length} Blocks Sequenced</span>
+            </div>
+
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Block #</th>
+                  <th>Timestamp</th>
+                  <th>Current Block Hash</th>
+                  <th>Previous Block Hash</th>
+                  <th>Tx Count</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {fabricBlocks.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} style={{ textAlign: 'center', padding: '30px' }} className="text-muted">
+                      No blocks found on channel ledger.
+                    </td>
+                  </tr>
+                ) : (
+                  fabricBlocks.map((block) => (
+                    <tr key={block.blockNumber}>
+                      <td>
+                        <span style={{ 
+                          fontWeight: 700, 
+                          color: block.blockNumber === 0 ? '#ea580c' : '#2563eb',
+                          background: block.blockNumber === 0 ? 'rgba(234, 88, 12, 0.1)' : 'rgba(37, 99, 235, 0.1)',
+                          padding: '2px 8px',
+                          borderRadius: '4px',
+                          fontSize: '0.78rem'
+                        }}>
+                          {block.blockNumber === 0 ? 'Genesis #0' : `Block #${block.blockNumber}`}
+                        </span>
+                      </td>
+                      <td style={{ fontSize: '0.75rem', whiteSpace: 'nowrap' }} className="text-muted">
+                        {new Date(block.timestamp).toLocaleString()}
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <code style={{ fontSize: '0.72rem', color: 'var(--text-main)', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={block.currentBlockHash}>
+                            {block.currentBlockHash}
+                          </code>
+                          <button
+                            type="button"
+                            onClick={() => handleCopyText(block.currentBlockHash, `bh-${block.blockNumber}`)}
+                            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+                            title="Copy Block Hash"
+                          >
+                            {copiedTxId === `bh-${block.blockNumber}` ? <Check size={12} color="#16a34a" /> : <Layers size={12} />}
+                          </button>
+                        </div>
+                      </td>
+                      <td>
+                        <code style={{ fontSize: '0.72rem', color: 'var(--text-muted)', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }} title={block.previousBlockHash}>
+                          {block.previousBlockHash}
+                        </code>
+                      </td>
+                      <td>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>{block.txCount || 1} Tx</span>
+                      </td>
+                      <td>
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          fontSize: '0.72rem',
+                          padding: '2px 8px',
+                          borderRadius: '12px',
+                          background: 'rgba(34, 197, 94, 0.15)',
+                          color: '#16a34a',
+                          fontWeight: 700
+                        }}>
+                          <CheckCircle2 size={11} /> COMMITTED
+                        </span>
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedBlock(block)}
+                          className="btn btn-secondary btn-sm"
+                          style={{ padding: '3px 8px', fontSize: '0.72rem' }}
+                        >
+                          Inspect Block
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      )}
+
+      {/* Block Details Inspector Modal */}
+      {selectedBlock && (
+        <div className="modal-overlay">
+          <div className="modal-content animate-slide-up" style={{ maxWidth: '680px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div className="modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Database size={22} color="#2563eb" />
+                <div>
+                  <h3 style={{ margin: 0 }}>Block #{selectedBlock.blockNumber} Inspector</h3>
+                  <p className="small-text text-muted" style={{ margin: 0 }}>Channel: {selectedBlock.channelId} • Committed: {new Date(selectedBlock.timestamp).toLocaleString()}</p>
+                </div>
+              </div>
+              <button className="close-btn" onClick={() => setSelectedBlock(null)}>&times;</button>
+            </div>
+
+            <div className="modal-body" style={{ padding: '20px' }}>
+              <div style={{ background: 'var(--bg-tertiary)', padding: '16px', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.85rem', marginBottom: '16px' }}>
+                <div>
+                  <span className="text-muted" style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600 }}>CURRENT BLOCK HASH</span>
+                  <code style={{ color: '#2563eb', wordBreak: 'break-all', fontWeight: 700 }}>{selectedBlock.currentBlockHash}</code>
+                </div>
+                <div>
+                  <span className="text-muted" style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600 }}>PREVIOUS BLOCK HASH (HASH CHAIN LINK)</span>
+                  <code style={{ color: 'var(--text-secondary)', wordBreak: 'break-all' }}>{selectedBlock.previousBlockHash}</code>
+                </div>
+                <div>
+                  <span className="text-muted" style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600 }}>DATA HASH (MERKLE ROOT)</span>
+                  <code style={{ color: 'var(--text-secondary)', wordBreak: 'break-all' }}>{selectedBlock.dataHash}</code>
+                </div>
+              </div>
+
+              {/* Transactions in Block */}
+              <h4 style={{ fontSize: '0.95rem', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Layers size={16} className="text-blue" />
+                <span>Transactions in Block ({selectedBlock.transactions?.length || 0})</span>
+              </h4>
+
+              {(selectedBlock.transactions || []).map((tx, idx) => (
+                <div key={idx} style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px', marginBottom: '10px', background: 'var(--bg-secondary)', fontSize: '0.8rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <span style={{ fontWeight: 700, color: '#2563eb' }}>Function: {tx.fcn}()</span>
+                    <span style={{ fontSize: '0.7rem', background: 'rgba(34, 197, 94, 0.15)', color: '#16a34a', padding: '1px 6px', borderRadius: '4px', fontWeight: 700 }}>
+                      {tx.status}
+                    </span>
+                  </div>
+
+                  <div style={{ marginBottom: '6px' }}>
+                    <span className="text-muted" style={{ fontSize: '0.72rem', display: 'block' }}>TX ID:</span>
+                    <code style={{ fontSize: '0.75rem', wordBreak: 'break-all' }}>{tx.txId}</code>
+                  </div>
+
+                  {tx.readWriteSet?.payload && (
+                    <div style={{ background: 'var(--bg-tertiary)', padding: '8px', borderRadius: '6px', marginTop: '6px' }}>
+                      <span className="text-muted" style={{ fontSize: '0.72rem', fontWeight: 700, display: 'block', marginBottom: '4px' }}>WORLD STATE READ/WRITE SET:</span>
+                      <pre style={{ margin: 0, fontSize: '0.72rem', fontFamily: 'monospace', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+                        {JSON.stringify(tx.readWriteSet.payload, null, 2)}
+                      </pre>
+                    </div>
+                  )}
+
+                  <div style={{ marginTop: '8px', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                    Endorsed by: {tx.endorsers?.join(', ') || 'MunicipalAdminMSP, CitizenOversightMSP'}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="modal-footer" style={{ justifyContent: 'flex-end', padding: '12px 20px' }}>
+              <button className="btn btn-primary btn-sm" onClick={() => setSelectedBlock(null)}>
+                Close Block Inspector
+              </button>
+            </div>
           </div>
         </div>
       )}

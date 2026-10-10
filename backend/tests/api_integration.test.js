@@ -9,6 +9,7 @@ const applicationRoutes = require('../src/routes/applicationRoutes');
 const serviceRoutes = require('../src/routes/serviceRoutes');
 const ipfsRoutes = require('../src/routes/ipfsRoutes');
 const notificationRoutes = require('../src/routes/notificationRoutes');
+const blockchainRoutes = require('../src/routes/blockchainRoutes');
 const notificationController = require('../src/controllers/notificationController');
 
 const app = express();
@@ -19,6 +20,7 @@ app.use('/api/applications', applicationRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/ipfs', ipfsRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/blockchain', blockchainRoutes);
 app.use('/api/webhook/whatsapp', notificationController.handleWhatsAppWebhook);
 
 describe('Phase 1 REST API Integration Tests', () => {
@@ -377,6 +379,113 @@ describe('Phase 1 REST API Integration Tests', () => {
 
       expect(res.statusCode).toBe(400);
       expect(res.body.error).toBe('INVALID_TEMPLATE');
+    });
+  });
+
+  // 6. Phase 4: Hyperledger Fabric Blockchain Smart Contract Tests
+  describe('6. Hyperledger Fabric Blockchain & Verification', () => {
+    let capturedTxId = '';
+    let testGrievanceBlockNum = 0;
+
+    test('GET /api/blockchain/info should return channel topology, Raft consensus, and peer status', async () => {
+      const res = await request(app).get('/api/blockchain/info');
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.channelId).toBe('janseva-channel');
+      expect(res.body.chaincodeId).toBe('grievance_cc');
+      expect(res.body.status).toBe('SYNCHRONIZED');
+      expect(res.body.consensus).toContain('Raft');
+      expect(Array.isArray(res.body.peers)).toBe(true);
+      expect(res.body.peers.length).toBeGreaterThanOrEqual(3);
+    });
+
+    test('GET /api/blockchain/blocks should return paginated list of sequential cryptographic blocks', async () => {
+      const res = await request(app).get('/api/blockchain/blocks?limit=10&offset=0');
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.total).toBeGreaterThanOrEqual(1);
+      expect(Array.isArray(res.body.blocks)).toBe(true);
+
+      const latestBlock = res.body.blocks[0];
+      expect(latestBlock.blockNumber).toBeDefined();
+      expect(latestBlock.currentBlockHash).toMatch(/^0x[a-f0-9]{64}$/);
+      expect(latestBlock.previousBlockHash).toMatch(/^0x[a-f0-9]{64}$/);
+      expect(latestBlock.dataHash).toMatch(/^0x[a-f0-9]{64}$/);
+    });
+
+    test('GET /api/blockchain/blocks/0 should return Genesis Block #0 with OrdererMSP initialization', async () => {
+      const res = await request(app).get('/api/blockchain/blocks/0');
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.block).toBeDefined();
+      expect(res.body.block.blockNumber).toBe(0);
+      expect(res.body.block.previousBlockHash).toBe('0x0000000000000000000000000000000000000000000000000000000000000000');
+      expect(res.body.block.transactions[0].fcn).toBe('InitLedger');
+    });
+
+    test('Lodging a grievance should execute RecordGrievanceState on chaincode and chain a new block', async () => {
+      const newGrievance = {
+        title: 'Blockchain Verification Sewer Leakage',
+        category: 'Water & Sanitation',
+        department: 'Water Supply & Sanitation',
+        description: 'Testing immutable smart contract state transitions.',
+        location: 'Ward 10, Sector 4',
+        priority: 'High',
+        citizenName: 'Aarav Sharma',
+        citizenPhone: '+91 98765 43210'
+      };
+
+      const res = await request(app)
+        .post('/api/grievances')
+        .set('Authorization', `Bearer ${citizenToken}`)
+        .send(newGrievance);
+
+      expect(res.statusCode).toBe(201);
+      expect(res.body.fabricTxId).toBeDefined();
+      expect(res.body.fabricTxId).toMatch(/^0x[a-f0-9]{64}$/);
+      expect(res.body.fabricBlockNumber).toBeGreaterThan(0);
+      expect(res.body.fabricBlockHash).toMatch(/^0x[a-f0-9]{64}$/);
+
+      capturedTxId = res.body.fabricTxId;
+      testGrievanceBlockNum = res.body.fabricBlockNumber;
+    });
+
+    test('POST /api/blockchain/verify/:txId should cryptographically verify transaction and hash integrity', async () => {
+      expect(capturedTxId).toBeDefined();
+
+      const res = await request(app).post(`/api/blockchain/verify/${capturedTxId}`);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.verified).toBe(true);
+      expect(res.body.txId.toLowerCase()).toBe(capturedTxId.toLowerCase());
+      expect(res.body.blockNumber).toBe(testGrievanceBlockNum);
+      expect(res.body.channelId).toBe('janseva-channel');
+      expect(res.body.hashIntegrityVerified).toBe(true);
+      expect(res.body.confirmations).toBeGreaterThanOrEqual(1);
+    });
+
+    test('GET /api/blockchain/history/:grievanceId should return smart contract audit transitions', async () => {
+      const res = await request(app).get('/api/blockchain/history/GRV-2026-8942');
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.grievanceId).toBe('GRV-2026-8942');
+      expect(res.body.channelId).toBe('janseva-channel');
+      expect(res.body.count).toBeGreaterThanOrEqual(1);
+      expect(Array.isArray(res.body.history)).toBe(true);
+
+      const firstState = res.body.history[0];
+      expect(firstState.txId).toBeDefined();
+      expect(firstState.status).toBeDefined();
+      expect(firstState.updatedByOrg).toBeDefined();
+    });
+
+    test('GET /api/blockchain/verify/:txId with nonexistent hash should return 404', async () => {
+      const fakeTx = '0x0000000000000000000000000000000000000000000000000000000000000000';
+      const res = await request(app).get(`/api/blockchain/verify/${fakeTx}`);
+
+      expect(res.statusCode).toBe(404);
+      expect(res.body.verified).toBe(false);
+      expect(res.body.error).toBe('TRANSACTION_NOT_FOUND');
     });
   });
 
