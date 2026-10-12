@@ -29,6 +29,7 @@ import {
   Smartphone
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import { notificationAPI, blockchainAPI } from '../api/apiClient';
 
 export default function TrackingView({ 
@@ -46,8 +47,22 @@ export default function TrackingView({
   onToggleSidebar
 }) {
   const { lang, setLang, t } = useLanguage();
+  const { user } = useAuth();
   const gList = Array.isArray(grievances) ? grievances : [];
   const aList = Array.isArray(applications) ? applications : [];
+
+  const cleanUserPhone = (user?.phone || '').replace(/\D/g, '').slice(-10);
+  const cleanUserEmail = (user?.email || '').toLowerCase().trim();
+  const cleanUserName = (user?.fullName || '').toLowerCase().trim();
+
+  const myUserGrievances = user ? gList.filter(g => {
+    if (!g) return false;
+    const cleanGPhone = (g.citizenPhone || '').replace(/\D/g, '').slice(-10);
+    const matchPhone = cleanUserPhone && cleanGPhone && cleanGPhone === cleanUserPhone;
+    const matchEmail = g.citizenEmail && cleanUserEmail && g.citizenEmail.toLowerCase().trim() === cleanUserEmail;
+    const matchName = g.citizenName && cleanUserName && g.citizenName.toLowerCase().trim() === cleanUserName;
+    return Boolean(matchPhone || matchEmail || matchName);
+  }) : [];
 
   const [trackInput, setTrackInput] = useState(selectedTrackId || '');
 
@@ -55,7 +70,10 @@ export default function TrackingView({
     if (selectedTrackId) {
       return gList.find(g => g && g.id === selectedTrackId) || aList.find(a => a && a.id === selectedTrackId);
     }
-    return gList[0] || null;
+    if (user && myUserGrievances.length > 0) {
+      return myUserGrievances[0];
+    }
+    return null;
   });
 
   // Sync search input and result when selectedTrackId changes from external navigation
@@ -299,21 +317,29 @@ export default function TrackingView({
         </form>
 
         <div className="quick-suggestions">
-          <span>Quick Test IDs: </span>
-          {grievances.slice(0, 3).map(g => (
-            <button 
-              key={g.id} 
-              type="button" 
-              className="chip-btn"
-              onClick={() => {
-                setTrackInput(g.id);
-                setActiveSearchResult(g);
-                setFeedbackSubmitted(false);
-              }}
-            >
-              {g.id} ({g.status})
-            </button>
-          ))}
+          {myUserGrievances.length > 0 ? (
+            <>
+              <span>Your Registered Complaints: </span>
+              {myUserGrievances.slice(0, 4).map(g => (
+                <button 
+                  key={g.id} 
+                  type="button" 
+                  className="chip-btn"
+                  onClick={() => {
+                    setTrackInput(g.id);
+                    setActiveSearchResult(g);
+                    setFeedbackSubmitted(false);
+                  }}
+                >
+                  {g.id} ({g.status})
+                </button>
+              ))}
+            </>
+          ) : (
+            <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>
+              Tip: Enter your Reference Code (e.g. GRV-2026-XXXX) or Service Application ID to view live progress.
+            </span>
+          )}
         </div>
       </div>
 
@@ -751,10 +777,22 @@ export default function TrackingView({
 
         </div>
       ) : (
-        <div className="empty-state glass-card">
-          <AlertCircle size={48} className="empty-icon text-amber" />
-          <h3>Reference Ticket Not Found</h3>
-          <p>We couldn't find a grievance or application matching "{trackInput}". Please verify your Tracking ID.</p>
+        <div className="empty-state glass-card" style={{ padding: '42px 24px', textAlign: 'center' }}>
+          {trackInput.trim() ? (
+            <>
+              <AlertCircle size={48} className="empty-icon text-amber" style={{ margin: '0 auto 12px' }} />
+              <h3>Reference Ticket Not Found</h3>
+              <p className="text-muted small-text">We couldn't find a grievance or application matching "{trackInput}". Please verify your Tracking ID.</p>
+            </>
+          ) : (
+            <>
+              <Search size={48} className="empty-icon" style={{ margin: '0 auto 12px', opacity: 0.5 }} />
+              <h3>Enter a Tracking ID to Inspect Live Progress</h3>
+              <p className="text-muted small-text" style={{ maxWidth: '500px', margin: '0 auto' }}>
+                Enter your Grievance Reference Code (e.g. <code>GRV-2026-XXXX</code>) or Service Application ID above to inspect officer dispatches, SLA countdown, and blockchain audit proofs.
+              </p>
+            </>
+          )}
         </div>
       )}
 
