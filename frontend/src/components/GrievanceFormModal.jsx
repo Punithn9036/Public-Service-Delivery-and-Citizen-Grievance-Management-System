@@ -41,6 +41,73 @@ function dmsToDecimal(degrees, minutes, seconds, direction) {
   return Number(dd.toFixed(6));
 }
 
+// Normalize coordinate string handling OCR missing decimal point (e.g. 13168309 -> 13.168309)
+function parseCoordinateVal(rawStr, isLat = true) {
+  if (!rawStr) return NaN;
+  let str = String(rawStr).trim();
+  let v = parseFloat(str);
+  if (v > (isLat ? 90 : 180)) {
+    const digitsOnly = str.replace(/[^\d]/g, '');
+    if (digitsOnly.length >= 7) {
+      v = parseFloat(digitsOnly.slice(0, 2) + '.' + digitsOnly.slice(2));
+    }
+  }
+  return v;
+}
+
+// Extract clean human-readable address lines from OCR stamp while stripping all OCR artifacts
+function extractCleanAddressFromOcr(ocrText) {
+  if (!ocrText) return null;
+  const lines = ocrText.split('\n');
+  const validParts = [];
+  
+  for (const rawLine of lines) {
+    // 1. Strip OCR punctuation noise, symbols and bracket junk
+    let clean = rawLine.replace(/[;{}<>[\]~=|\\^_`•»«'"]/g, ' ');
+    // 2. Remove Google Plus Codes (e.g. 5g9m+g75, 599m+g75)
+    clean = clean.replace(/\b[a-z0-9]{4,5}\+[a-z0-9]{3,4}\b/gi, ' ');
+    // 3. Remove camera icon / flag / border artifacts (e.g. 'ak', 'ssr', 'bl', 'ha', 'jet', '0 ssr')
+    clean = clean.replace(/\b(?:ak|ssr|ha|jet|bl)\b/gi, ' ');
+    // 4. Remove isolated stray single letters / digits left behind by icons (e.g. 'a', 'i', '0')
+    clean = clean.replace(/(?:^|\s)[a-zA-Z0-9](?=\s|$)/g, ' ');
+    clean = clean.replace(/(?:^|\s)[a-zA-Z0-9](?=\s|$)/g, ' ');
+    // 5. Normalize whitespace
+    clean = clean.replace(/\s+/g, ' ').trim();
+
+    if (!clean || clean.length < 4) continue;
+    // Skip coordinates, times, dates, and camera watermarks
+    if (/^(?:lat|long|lon|gmt|monday|tuesday|wednesday|thursday|friday|saturday|sunday|\d{1,2}\/\d{1,2}\/)/i.test(clean)) continue;
+    if (/(?:gps map camera|google)/i.test(clean)) continue;
+    
+    // Check if line contains meaningful geographic keywords, institutions, or PIN codes
+    if (/(?:india|karnataka|delhi|mumbai|bengaluru|bangalore|presidency|university|college|school|road|street|ward|layout|cross|main|nagar|halli|puram|dibbur|sector|block|lane|avenue|\b\d{6}\b)/i.test(clean)) {
+      validParts.push(clean);
+    }
+  }
+
+  if (validParts.length === 0) return null;
+
+  // Join lines and clean up commas
+  let combined = validParts.join(', ')
+    .replace(/\s*,\s*/g, ', ')
+    .replace(/(?:,\s*){2,}/g, ', ')
+    .replace(/^[,.\s]+|[,.\s]+$/g, '');
+
+  // Deduplicate repeated address segments (e.g. repeated "Dibbur" or "India")
+  const segments = combined.split(',').map(s => s.trim()).filter(Boolean);
+  const seen = new Set();
+  const deduped = [];
+  for (const seg of segments) {
+    const key = seg.toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      deduped.push(seg);
+    }
+  }
+
+  return deduped.length > 0 ? deduped.join(', ') : null;
+}
+
 // Genuine EXIF & OCR GPS Address Extractor (Web & Mobile Compatible)
 async function extractGeoCoordinatesFromImage(file, fileBase64) {
   // 1. Try standard EXIF GPS Metadata via exifr
@@ -50,7 +117,6 @@ async function extractGeoCoordinatesFromImage(file, fileBase64) {
       try {
         exifData = await exifr.gps(file);
       } catch (fErr) {
-        // Fallback to arrayBuffer if file pointer fails in browser web context
         if (typeof file.arrayBuffer === 'function') {
           const ab = await file.arrayBuffer();
           exifData = await exifr.gps(ab);
@@ -86,25 +152,15 @@ async function extractGeoCoordinatesFromImage(file, fileBase64) {
     await worker.terminate();
 
     const ocrText = ret?.data?.text || '';
+    const visualAddressFromStamp = extractCleanAddressFromOcr(ocrText);
 
-    // Extract textual address lines from the OCR stamp (e.g., "Dibbur, Karnataka, India", "Presidency University")
-    let visualAddressFromStamp = null;
-    const stampLines = ocrText.split('\n').map(l => l.trim()).filter(Boolean);
-    const nonGpsLines = stampLines.filter(line => 
-      !/^(?:lat|long|lon|gmt|monday|tuesday|wednesday|thursday|friday|saturday|sunday|\d{1,2}\/\d{1,2}\/)/i.test(line) &&
-      !/gps map camera/i.test(line)
-    );
-    if (nonGpsLines.length > 0) {
-      visualAddressFromStamp = nonGpsLines.slice(0, 3).join(', ');
-    }
-
-    // Pattern 1: Combined Lat & Long/Lon on the same line/statement (e.g. "Lat 13.168309° Long 77.533026°")
-    const combinedRegex = /(?:lat|latitude)[:\s]*([+-]?\d{1,2}\.\d{3,8})\s*°?\s*([ns])?[\s,/|]+(?:lon|long|longitude)[:\s]*([+-]?\d{1,3}\.\d{3,8})\s*°?\s*([ew])?/i;
+    // Pattern 1: Combined Lat & Long/Lon on the same line/statement (e.g. "Lat 13.168309° Long 77.533026°" or "Lat 13168309° Long 77.533026°")
+    const combinedRegex = /(?:lat|latitude)[:\s]*([+-]?\d{1,8}(?:\.\d{1,8})?)\s*°?\s*([ns])?[\s,/|]+(?:lon|long|longitude)[:\s]*([+-]?\d{1,8}(?:\.\d{1,8})?)\s*°?\s*([ew])?/i;
     const combMatch = ocrText.match(combinedRegex);
 
     if (combMatch) {
-      let latVal = parseFloat(combMatch[1]);
-      let lonVal = parseFloat(combMatch[3]);
+      let latVal = parseCoordinateVal(combMatch[1], true);
+      let lonVal = parseCoordinateVal(combMatch[3], false);
       if (combMatch[2] && combMatch[2].toUpperCase() === 'S') latVal = -latVal;
       if (combMatch[4] && combMatch[4].toUpperCase() === 'W') lonVal = -lonVal;
 
@@ -112,22 +168,22 @@ async function extractGeoCoordinatesFromImage(file, fileBase64) {
         return {
           lat: Number(latVal.toFixed(6)),
           lon: Number(lonVal.toFixed(6)),
-          ocrAddressText: visualAddressFromStamp || ocrText,
+          ocrAddressText: visualAddressFromStamp,
           source: 'GPS Map Camera Visual Stamp (OCR Extracted)'
         };
       }
     }
 
     // Pattern 2: Explicit prefix matches requiring dedicated keyword boundaries
-    const explicitLatRegex = /(?:lat|latitude)[:\s]+([+-]?\d{1,2}\.\d{3,8})\s*°?\s*([ns])?/i;
-    const explicitLonRegex = /(?:lon|long|longitude)[:\s]+([+-]?\d{1,3}\.\d{3,8})\s*°?\s*([ew])?/i;
+    const explicitLatRegex = /(?:lat|latitude)[:\s]+([+-]?\d{1,8}(?:\.\d{1,8})?)\s*°?\s*([ns])?/i;
+    const explicitLonRegex = /(?:lon|long|longitude)[:\s]+([+-]?\d{1,8}(?:\.\d{1,8})?)\s*°?\s*([ew])?/i;
 
     const latMatch = ocrText.match(explicitLatRegex);
     const lonMatch = ocrText.match(explicitLonRegex);
 
     if (latMatch && lonMatch) {
-      let latVal = parseFloat(latMatch[1]);
-      let lonVal = parseFloat(lonMatch[1]);
+      let latVal = parseCoordinateVal(latMatch[1], true);
+      let lonVal = parseCoordinateVal(lonMatch[1], false);
       if (latMatch[2] && latMatch[2].toUpperCase() === 'S') latVal = -latVal;
       if (lonMatch[2] && lonMatch[2].toUpperCase() === 'W') lonVal = -lonVal;
 
@@ -135,7 +191,7 @@ async function extractGeoCoordinatesFromImage(file, fileBase64) {
         return {
           lat: Number(latVal.toFixed(6)),
           lon: Number(lonVal.toFixed(6)),
-          ocrAddressText: visualAddressFromStamp || ocrText,
+          ocrAddressText: visualAddressFromStamp,
           source: 'GPS Map Camera Visual Stamp (OCR Extracted)'
         };
       }
@@ -155,7 +211,7 @@ async function extractGeoCoordinatesFromImage(file, fileBase64) {
         return {
           lat: latDd,
           lon: lonDd,
-          ocrAddressText: visualAddressFromStamp || ocrText,
+          ocrAddressText: visualAddressFromStamp,
           source: 'GPS Map Camera DMS Visual Stamp (OCR Extracted)'
         };
       }
@@ -171,7 +227,7 @@ async function extractGeoCoordinatesFromImage(file, fileBase64) {
         return {
           lat: Number(latP.toFixed(6)),
           lon: Number(lonP.toFixed(6)),
-          ocrAddressText: visualAddressFromStamp || ocrText,
+          ocrAddressText: visualAddressFromStamp,
           source: 'GPS Coordinates Stamp (OCR Extracted)'
         };
       }
@@ -436,10 +492,15 @@ export default function GrievanceFormModal({
         // Auto-detect and sync municipal sector based on genuine latitude, longitude and resolved address
         const detectedSector = resolveSector(coords.ocrAddressText || resolvedAddress, '', coords.lat, coords.lon);
 
-        // If the GPS camera had a clear visual address stamp printed on it (e.g. "Dibbur, Karnataka, India"), use it for high accuracy
-        const finalLocation = coords.ocrAddressText && coords.ocrAddressText.length > 5
-          ? coords.ocrAddressText
-          : resolvedAddress;
+        // Intelligently construct clean final location:
+        // If we have a verified visual address from the stamp (e.g. "Dibbur, Karnataka, India, Presidency University"), use it.
+        // Otherwise, fall back to high-accuracy reverse-geocoded locality (e.g. "Yelahanka, Karnataka, 560064, India").
+        let finalLocation = resolvedAddress;
+        if (coords.ocrAddressText && coords.ocrAddressText.length >= 8) {
+          finalLocation = coords.ocrAddressText;
+        } else if (resolvedAddress && !resolvedAddress.startsWith('Latitude:')) {
+          finalLocation = resolvedAddress;
+        }
 
         // Auto-populate formData location automatically with genuine extracted address
         setFormData(prev => ({
