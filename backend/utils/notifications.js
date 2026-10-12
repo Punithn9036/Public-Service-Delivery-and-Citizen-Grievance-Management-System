@@ -44,9 +44,9 @@ function saveNotifications(logs) {
  * India DLT & GIGW 3.0 Approved Government Message Templates
  */
 const TEMPLATES = {
-  GRIEVANCE_LODGED: ({ id, department, priority, slaHours, phone }) => ({
+  GRIEVANCE_LODGED: ({ id, title, department, priority, slaHours, location, phone }) => ({
     sms: `JanSeva Alert: Your grievance [${id}] for ${department} has been registered with ${priority} priority. Guaranteed SLA: ${slaHours} hrs. Track live: http://localhost:5173/?track=${id} - Govt of India`,
-    whatsapp: `🇮🇳 *JanSeva Citizen Grievance Redressal*\n\nYour grievance *${id}* has been successfully lodged.\n\n🏛 *Department:* ${department}\n⚡ *Priority:* ${priority}\n⏱ *Guaranteed SLA Resolution:* ${slaHours} Hours\n\nTrack real-time progress on public ledger:\nhttp://localhost:5173/?track=${id}`
+    whatsapp: `🇮🇳 *JanSeva Citizen Grievance Portal*\n\n✅ *Grievance Registered Successfully!*\n\nYour complaint has been officially registered in the municipal grievance ledger.\n\n📋 *Complaint Details:*\n• *Ticket ID:* ${id}\n• *Title:* ${title || 'Citizen Grievance'}\n• *Department:* ${department}\n• *Location:* ${location || 'Municipal Ward'}\n• *Priority Level:* ${priority}\n• *Guaranteed SLA Resolution:* ${slaHours} Hours\n\n🔍 Track real-time progress on public ledger:\nhttp://localhost:5173/?track=${id}\n\n_Note: This is an automated official confirmation receipt (broadcast only, not a chatbot)._`
   }),
 
   OFFICER_ASSIGNED: ({ id, officerName, officerPhone, department }) => ({
@@ -174,8 +174,10 @@ async function sendNotification({ phone, template, data = {}, channels = ['SMS',
         }
       }
 
-      // Live WhatsApp Dispatch if Admin / Officer device is linked
-      if (!isSms && process.env.NODE_ENV !== 'test') {
+      // Live WhatsApp Dispatch: Strictly for Successful Grievance / Service Registration Only (No Chatbot)
+      const isRegistrationNotice = template === 'GRIEVANCE_LODGED' || template === 'APPLICATION_SUBMITTED';
+
+      if (!isSms && isRegistrationNotice && process.env.NODE_ENV !== 'test') {
         try {
           const whatsappService = require('../src/services/whatsappService');
           if (whatsappService && whatsappService.isConnected()) {
@@ -184,7 +186,7 @@ async function sendNotification({ phone, template, data = {}, channels = ['SMS',
               receipt.status = 'DELIVERED_REAL_WHATSAPP';
               receipt.whatsappMessageId = waRes.messageId;
               receipt.senderNumber = whatsappService.getStatus().connectedNumber;
-              console.log(`[WhatsApp Service] Dispatched real WhatsApp message to ${intlDigits} from linked device (${receipt.senderNumber}).`);
+              console.log(`[WhatsApp Service] Dispatched registration confirmation to ${intlDigits} from linked device (${receipt.senderNumber}).`);
             } else {
               receipt.whatsappSendNotice = waRes?.reason || 'Not sent via linked device';
             }
@@ -192,6 +194,9 @@ async function sendNotification({ phone, template, data = {}, channels = ['SMS',
         } catch (err) {
           console.warn('[WhatsApp Service Error]:', err.message);
         }
+      } else if (!isSms && !isRegistrationNotice) {
+        receipt.status = 'SKIPPED';
+        receipt.notice = 'WhatsApp is policy-restricted exclusively to registration confirmation notices (chatbot disabled).';
       }
     }
 

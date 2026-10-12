@@ -269,6 +269,9 @@ const createGrievance = async (req, res) => {
         template: 'GRIEVANCE_LODGED',
         data: {
           id: newId,
+          title,
+          category,
+          location,
           department,
           priority: assignedPriority,
           slaHours

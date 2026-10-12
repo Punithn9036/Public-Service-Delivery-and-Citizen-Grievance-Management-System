@@ -82,33 +82,8 @@ async function initWhatsApp() {
       }
     });
 
-    // 2-Way automated citizen query responses
-    sock.ev.on('messages.upsert', async (m) => {
-      try {
-        if (m.type === 'notify' && m.messages) {
-          for (const msg of m.messages) {
-            if (!msg.key.fromMe && msg.message) {
-              const fromJid = msg.key.remoteJid;
-              const text = msg.message.conversation || msg.message.extendedTextMessage?.text || '';
-              if (text && fromJid && !fromJid.endsWith('@g.us')) {
-                const { processWhatsAppWebhook } = require('../../utils/notifications');
-                const db = require('../db');
-                const cleanFrom = fromJid.replace('@s.whatsapp.net', '');
-                const response = await processWhatsAppWebhook({ from: cleanFrom, body: text }, {
-                  findGrievanceById: async (id) => db.findGrievanceById(id),
-                  findApplicationById: async (id) => db.findApplicationById(id)
-                });
-                if (response && response.reply) {
-                  await sock.sendMessage(fromJid, { text: response.reply });
-                }
-              }
-            }
-          }
-        }
-      } catch (err) {
-        console.error('[WhatsApp Bot Error]:', err.message);
-      }
-    });
+    // Chatbot listener disabled: WhatsApp is strictly used for 1-way outbound registration notifications only
+    // Incoming messages will NOT trigger automated bot responses.
 
   } catch (err) {
     console.error('[WhatsApp Service Init Failure]:', err.message);
