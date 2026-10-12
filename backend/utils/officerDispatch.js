@@ -55,7 +55,20 @@ let officerRoster = loadRoster();
 /**
  * Normalize sector string from user input or GPS location string
  */
-function resolveSector(inputLocation = '', inputSector = '') {
+function resolveSector(inputLocation = '', inputSector = '', lat = null, lon = null) {
+  // If coordinates provided, detect zone geographically
+  if (lat !== null && lon !== null) {
+    const latNum = parseFloat(lat);
+    const lonNum = parseFloat(lon);
+    if (!isNaN(latNum) && !isNaN(lonNum)) {
+      if (latNum > 13.01) return SECTORS[0]; // Sector 1 (North Zone)
+      if (latNum < 12.92) return SECTORS[1]; // Sector 2 (South Zone)
+      if (lonNum > 77.65) return SECTORS[2]; // Sector 3 (East Zone)
+      if (lonNum < 77.53) return SECTORS[3]; // Sector 4 (West Zone)
+      return SECTORS[4]; // Sector 5 (Central Zone)
+    }
+  }
+
   if (inputSector) {
     const directMatch = SECTORS.find(s => s.toLowerCase().includes(inputSector.toLowerCase()));
     if (directMatch) return directMatch;

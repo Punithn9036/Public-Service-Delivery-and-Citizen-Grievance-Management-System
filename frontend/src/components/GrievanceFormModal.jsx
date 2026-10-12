@@ -32,12 +32,39 @@ import { allocateNextOfficer, resolveSector, SECTORS } from '../utils/officerDis
 import exifr from 'exifr';
 import { createWorker } from 'tesseract.js';
 
-// Genuine EXIF & OCR GPS Address Extractor
+// Convert DMS (degrees, minutes, seconds) to Decimal Degrees
+function dmsToDecimal(degrees, minutes, seconds, direction) {
+  let dd = Number(degrees) + (Number(minutes || 0) / 60) + (Number(seconds || 0) / 3600);
+  if (direction && ['S', 'W', 's', 'w'].includes(direction)) {
+    dd = -dd;
+  }
+  return Number(dd.toFixed(6));
+}
+
+// Genuine EXIF & OCR GPS Address Extractor (Web & Mobile Compatible)
 async function extractGeoCoordinatesFromImage(file, fileBase64) {
   // 1. Try standard EXIF GPS Metadata via exifr
   try {
-    const exifData = await exifr.gps(file);
-    if (exifData && typeof exifData.latitude === 'number' && typeof exifData.longitude === 'number') {
+    let exifData = null;
+    if (file) {
+      try {
+        exifData = await exifr.gps(file);
+      } catch (fErr) {
+        // Fallback to arrayBuffer if file pointer fails in browser web context
+        if (typeof file.arrayBuffer === 'function') {
+          const ab = await file.arrayBuffer();
+          exifData = await exifr.gps(ab);
+        }
+      }
+    }
+
+    if (!exifData && fileBase64) {
+      try {
+        exifData = await exifr.gps(fileBase64);
+      } catch (bErr) {}
+    }
+
+    if (exifData && typeof exifData.latitude === 'number' && typeof exifData.longitude === 'number' && !isNaN(exifData.latitude)) {
       return {
         lat: Number(exifData.latitude.toFixed(6)),
         lon: Number(exifData.longitude.toFixed(6)),
@@ -50,13 +77,17 @@ async function extractGeoCoordinatesFromImage(file, fileBase64) {
 
   // 2. Try OCR on GPS Map Camera timestamp & coordinate overlay burnt onto the image
   try {
-    const worker = await createWorker('eng');
-    const ret = await worker.recognize(fileBase64);
+    const worker = await createWorker('eng', 1, {
+      workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@v5.0.0/dist/worker.min.js',
+      corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@v5.0.0',
+      langPath: 'https://tessdata.projectnaptha.com/4.0.0'
+    });
+    const ret = await worker.recognize(fileBase64 || file);
     await worker.terminate();
 
     const ocrText = ret?.data?.text || '';
-    
-    // Match patterns like: Lat 12.9716° N / Long 77.5946° E or 12.9716, 77.5946 or GPS: 12.971594 77.594563
+
+    // Pattern A: Standard Decimal Coordinates (e.g., Lat: 12.9716, Long: 77.5946 or 12.971594° N, 77.594563° E)
     const latRegex = /(?:lat|latitude)?[:\s]*([+-]?\d{1,2}\.\d{3,7})\s*°?\s*([ns])?/i;
     const lonRegex = /(?:lon|long|longitude)?[:\s]*([+-]?\d{1,3}\.\d{3,7})\s*°?\s*([ew])?/i;
 
@@ -69,15 +100,53 @@ async function extractGeoCoordinatesFromImage(file, fileBase64) {
       if (latMatch[2] && latMatch[2].toUpperCase() === 'S') latVal = -latVal;
       if (lonMatch[2] && lonMatch[2].toUpperCase() === 'W') lonVal = -lonVal;
 
-      return {
-        lat: Number(latVal.toFixed(6)),
-        lon: Number(lonVal.toFixed(6)),
-        ocrAddressText: ocrText,
-        source: 'GPS Map Camera Visual Stamp (OCR Extracted)'
-      };
+      if (!isNaN(latVal) && !isNaN(lonVal) && Math.abs(latVal) <= 90 && Math.abs(lonVal) <= 180) {
+        return {
+          lat: Number(latVal.toFixed(6)),
+          lon: Number(lonVal.toFixed(6)),
+          ocrAddressText: ocrText,
+          source: 'GPS Map Camera Visual Stamp (OCR Extracted)'
+        };
+      }
+    }
+
+    // Pattern B: DMS Coordinates (e.g. 12°58'17"N 77°35'40"E or 12° 58' 17.5" N, 77° 35' 40.2" E)
+    const dmsLatRegex = /(\d{1,2})[°\s]+(\d{1,2})['\s]+(\d{1,2}(?:\.\d+)?)[″"\s]*([NSns])/;
+    const dmsLonRegex = /(\d{1,3})[°\s]+(\d{1,2})['\s]+(\d{1,2}(?:\.\d+)?)[″"\s]*([EWew])/;
+
+    const dmsLatMatch = ocrText.match(dmsLatRegex);
+    const dmsLonMatch = ocrText.match(dmsLonRegex);
+
+    if (dmsLatMatch && dmsLonMatch) {
+      const latDd = dmsToDecimal(dmsLatMatch[1], dmsLatMatch[2], dmsLatMatch[3], dmsLatMatch[4]);
+      const lonDd = dmsToDecimal(dmsLonMatch[1], dmsLonMatch[2], dmsLonMatch[3], dmsLonMatch[4]);
+      if (!isNaN(latDd) && !isNaN(lonDd)) {
+        return {
+          lat: latDd,
+          lon: lonDd,
+          ocrAddressText: ocrText,
+          source: 'GPS Map Camera DMS Visual Stamp (OCR Extracted)'
+        };
+      }
+    }
+
+    // Pattern C: Comma separated pair (e.g., "12.971594, 77.594563")
+    const pairRegex = /([+-]?\d{1,2}\.\d{4,7})\s*,\s*([+-]?\d{1,3}\.\d{4,7})/;
+    const pairMatch = ocrText.match(pairRegex);
+    if (pairMatch) {
+      const latP = parseFloat(pairMatch[1]);
+      const lonP = parseFloat(pairMatch[2]);
+      if (!isNaN(latP) && !isNaN(lonP) && Math.abs(latP) <= 90 && Math.abs(lonP) <= 180) {
+        return {
+          lat: Number(latP.toFixed(6)),
+          lon: Number(lonP.toFixed(6)),
+          ocrAddressText: ocrText,
+          source: 'GPS Coordinates Stamp (OCR Extracted)'
+        };
+      }
     }
   } catch (ocrErr) {
-    console.warn("OCR recognition fallback:", ocrErr);
+    console.warn("OCR recognition fallback notice:", ocrErr);
   }
 
   // No real GPS data found in image
@@ -289,19 +358,52 @@ export default function GrievanceFormModal({
         let resolvedAddress = `Latitude: ${coords.lat}, Longitude: ${coords.lon}`;
         let resolvedLandmark = `${coords.source} (${coords.lat}° N, ${coords.lon}° E)`;
 
+        // Tier 1: BigDataCloud Client Reverse Geocoder (Free, CORS-native, High uptime on web)
         try {
-          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.lat}&lon=${coords.lon}`, {
+          const bdcRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${coords.lat}&longitude=${coords.lon}&localityLanguage=en`, {
             headers: { 'Accept': 'application/json' }
           });
-          const geoData = await response.json();
-          if (geoData && geoData.display_name) {
-            const parts = geoData.display_name.split(',');
-            resolvedAddress = parts.slice(0, 4).join(',').trim();
-            resolvedLandmark = `${coords.source}: ${coords.lat}° N, ${coords.lon}° E (${geoData.address?.suburb || geoData.address?.neighbourhood || geoData.address?.road || 'Local Area'})`;
+          if (bdcRes.ok) {
+            const bdcData = await bdcRes.json();
+            const localityParts = [
+              bdcData.locality || bdcData.subLocality || bdcData.principalSubdivisionDistrict,
+              bdcData.city || bdcData.principalSubdivision,
+              bdcData.postcode,
+              bdcData.countryName
+            ].filter(Boolean);
+
+            if (localityParts.length > 0) {
+              resolvedAddress = localityParts.join(', ');
+              const neighborhood = bdcData.locality || bdcData.subLocality || bdcData.city || 'Municipal Area';
+              resolvedLandmark = `${coords.source}: ${coords.lat}° N, ${coords.lon}° E (${neighborhood})`;
+            }
           }
-        } catch (apiErr) {
-          console.warn("Reverse geocode fetch notice:", apiErr);
+        } catch (bdcErr) {
+          console.warn("BigDataCloud geocode fallback:", bdcErr);
         }
+
+        // Tier 2: OpenStreetMap Nominatim Fallback if needed
+        if (resolvedAddress.startsWith('Latitude:')) {
+          try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.lat}&lon=${coords.lon}&addressdetails=1`, {
+              headers: { 'Accept': 'application/json' }
+            });
+            if (response.ok) {
+              const geoData = await response.json();
+              if (geoData && geoData.display_name) {
+                const parts = geoData.display_name.split(',');
+                resolvedAddress = parts.slice(0, 4).join(',').trim();
+                const localityName = geoData.address?.suburb || geoData.address?.neighbourhood || geoData.address?.road || geoData.address?.city || 'Local Area';
+                resolvedLandmark = `${coords.source}: ${coords.lat}° N, ${coords.lon}° E (${localityName})`;
+              }
+            }
+          } catch (apiErr) {
+            console.warn("Reverse geocode fetch notice:", apiErr);
+          }
+        }
+
+        // Auto-detect and sync municipal sector based on genuine latitude, longitude and resolved address
+        const detectedSector = resolveSector(resolvedAddress, '', coords.lat, coords.lon);
 
         // Auto-populate formData location automatically with genuine extracted address
         setFormData(prev => ({
@@ -309,7 +411,8 @@ export default function GrievanceFormModal({
           attachmentName: file.name,
           fileContent: fileBase64,
           location: resolvedAddress,
-          landmark: resolvedLandmark
+          landmark: resolvedLandmark,
+          sector: detectedSector
         }));
 
         setGpsData({
@@ -317,6 +420,7 @@ export default function GrievanceFormModal({
           lon: coords.lon,
           address: resolvedAddress,
           landmark: resolvedLandmark,
+          sector: detectedSector,
           fileName: file.name,
           source: coords.source,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -343,15 +447,38 @@ export default function GrievanceFormModal({
     setIsProcessingImage(true);
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
-        const lat = pos.coords.latitude.toFixed(4);
-        const lon = pos.coords.longitude.toFixed(4);
-        const liveAddress = `Ward 14, Main Market Road, Indiranagar, Bengaluru 560038`;
-        const liveLandmark = `Live Device GPS: ${lat}° N, ${lon}° E (Accuracy: ±${Math.round(pos.coords.accuracy || 10)}m)`;
+        const lat = Number(pos.coords.latitude.toFixed(6));
+        const lon = Number(pos.coords.longitude.toFixed(6));
+        let liveAddress = `Latitude: ${lat}, Longitude: ${lon}`;
+        let liveLandmark = `Live Device GPS: ${lat}° N, ${lon}° E (Accuracy: ±${Math.round(pos.coords.accuracy || 10)}m)`;
+
+        try {
+          const bdcRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`, {
+            headers: { 'Accept': 'application/json' }
+          });
+          if (bdcRes.ok) {
+            const bdcData = await bdcRes.json();
+            const localityParts = [
+              bdcData.locality || bdcData.subLocality || bdcData.principalSubdivisionDistrict,
+              bdcData.city || bdcData.principalSubdivision,
+              bdcData.postcode,
+              bdcData.countryName
+            ].filter(Boolean);
+
+            if (localityParts.length > 0) {
+              liveAddress = localityParts.join(', ');
+              liveLandmark = `Live Device GPS: ${lat}° N, ${lon}° E (${bdcData.locality || bdcData.city || 'Local Area'})`;
+            }
+          }
+        } catch (e) {}
+
+        const detectedSector = resolveSector(liveAddress, '', lat, lon);
 
         setFormData(prev => ({
           ...prev,
           location: liveAddress,
-          landmark: liveLandmark
+          landmark: liveLandmark,
+          sector: detectedSector
         }));
 
         setGpsData({
@@ -359,6 +486,7 @@ export default function GrievanceFormModal({
           lon,
           address: liveAddress,
           landmark: liveLandmark,
+          sector: detectedSector,
           fileName: 'Live GPS Sensor',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         });
