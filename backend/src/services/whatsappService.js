@@ -16,7 +16,7 @@ let isStarted = false;
 const AUTH_FOLDER = path.join(__dirname, '../../auth_info_baileys');
 
 async function initWhatsApp() {
-  const isPaused = process.env.PAUSE_WHATSAPP === 'true' || process.env.PAUSE_NOTIFICATIONS === 'true';
+  const isPaused = process.env.PAUSE_WHATSAPP === 'true' || (process.env.PAUSE_NOTIFICATIONS === 'true' && process.env.PAUSE_WHATSAPP !== 'false');
   if (isPaused) {
     connectionStatus = 'PAUSED';
     console.log('⏸️ [WhatsApp Service] WhatsApp notifications are currently PAUSED.');
@@ -163,6 +163,16 @@ async function disconnect() {
   connectedPhone = null;
   setTimeout(() => initWhatsApp(), 2000);
   return { success: true };
+}
+
+// Keep Render free instances awake so cloud services & WhatsApp WebSockets remain alive even when idle
+const RENDER_LIVE_URL = process.env.RENDER_EXTERNAL_URL || (process.env.NODE_ENV === 'production' ? 'https://public-service-delivery-and-citizen.onrender.com' : null);
+if (RENDER_LIVE_URL) {
+  setInterval(async () => {
+    try {
+      await fetch(`${RENDER_LIVE_URL.replace(/\/$/, '')}/api/health`);
+    } catch (e) {}
+  }, 12 * 60 * 1000); // Ping every 12 minutes to beat 15-minute idle spin-down
 }
 
 module.exports = {

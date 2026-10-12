@@ -87,12 +87,43 @@ async function extractGeoCoordinatesFromImage(file, fileBase64) {
 
     const ocrText = ret?.data?.text || '';
 
-    // Pattern A: Standard Decimal Coordinates (e.g., Lat: 12.9716, Long: 77.5946 or 12.971594° N, 77.594563° E)
-    const latRegex = /(?:lat|latitude)?[:\s]*([+-]?\d{1,2}\.\d{3,7})\s*°?\s*([ns])?/i;
-    const lonRegex = /(?:lon|long|longitude)?[:\s]*([+-]?\d{1,3}\.\d{3,7})\s*°?\s*([ew])?/i;
+    // Extract textual address lines from the OCR stamp (e.g., "Dibbur, Karnataka, India", "Presidency University")
+    let visualAddressFromStamp = null;
+    const stampLines = ocrText.split('\n').map(l => l.trim()).filter(Boolean);
+    const nonGpsLines = stampLines.filter(line => 
+      !/^(?:lat|long|lon|gmt|monday|tuesday|wednesday|thursday|friday|saturday|sunday|\d{1,2}\/\d{1,2}\/)/i.test(line) &&
+      !/gps map camera/i.test(line)
+    );
+    if (nonGpsLines.length > 0) {
+      visualAddressFromStamp = nonGpsLines.slice(0, 3).join(', ');
+    }
 
-    const latMatch = ocrText.match(latRegex);
-    const lonMatch = ocrText.match(lonRegex);
+    // Pattern 1: Combined Lat & Long/Lon on the same line/statement (e.g. "Lat 13.168309° Long 77.533026°")
+    const combinedRegex = /(?:lat|latitude)[:\s]*([+-]?\d{1,2}\.\d{3,8})\s*°?\s*([ns])?[\s,/|]+(?:lon|long|longitude)[:\s]*([+-]?\d{1,3}\.\d{3,8})\s*°?\s*([ew])?/i;
+    const combMatch = ocrText.match(combinedRegex);
+
+    if (combMatch) {
+      let latVal = parseFloat(combMatch[1]);
+      let lonVal = parseFloat(combMatch[3]);
+      if (combMatch[2] && combMatch[2].toUpperCase() === 'S') latVal = -latVal;
+      if (combMatch[4] && combMatch[4].toUpperCase() === 'W') lonVal = -lonVal;
+
+      if (!isNaN(latVal) && !isNaN(lonVal) && Math.abs(latVal) <= 90 && Math.abs(lonVal) <= 180) {
+        return {
+          lat: Number(latVal.toFixed(6)),
+          lon: Number(lonVal.toFixed(6)),
+          ocrAddressText: visualAddressFromStamp || ocrText,
+          source: 'GPS Map Camera Visual Stamp (OCR Extracted)'
+        };
+      }
+    }
+
+    // Pattern 2: Explicit prefix matches requiring dedicated keyword boundaries
+    const explicitLatRegex = /(?:lat|latitude)[:\s]+([+-]?\d{1,2}\.\d{3,8})\s*°?\s*([ns])?/i;
+    const explicitLonRegex = /(?:lon|long|longitude)[:\s]+([+-]?\d{1,3}\.\d{3,8})\s*°?\s*([ew])?/i;
+
+    const latMatch = ocrText.match(explicitLatRegex);
+    const lonMatch = ocrText.match(explicitLonRegex);
 
     if (latMatch && lonMatch) {
       let latVal = parseFloat(latMatch[1]);
@@ -104,13 +135,13 @@ async function extractGeoCoordinatesFromImage(file, fileBase64) {
         return {
           lat: Number(latVal.toFixed(6)),
           lon: Number(lonVal.toFixed(6)),
-          ocrAddressText: ocrText,
+          ocrAddressText: visualAddressFromStamp || ocrText,
           source: 'GPS Map Camera Visual Stamp (OCR Extracted)'
         };
       }
     }
 
-    // Pattern B: DMS Coordinates (e.g. 12°58'17"N 77°35'40"E or 12° 58' 17.5" N, 77° 35' 40.2" E)
+    // Pattern 3: DMS Coordinates (e.g. 12°58'17"N 77°35'40"E or 12° 58' 17.5" N, 77° 35' 40.2" E)
     const dmsLatRegex = /(\d{1,2})[°\s]+(\d{1,2})['\s]+(\d{1,2}(?:\.\d+)?)[″"\s]*([NSns])/;
     const dmsLonRegex = /(\d{1,3})[°\s]+(\d{1,2})['\s]+(\d{1,2}(?:\.\d+)?)[″"\s]*([EWew])/;
 
@@ -120,18 +151,18 @@ async function extractGeoCoordinatesFromImage(file, fileBase64) {
     if (dmsLatMatch && dmsLonMatch) {
       const latDd = dmsToDecimal(dmsLatMatch[1], dmsLatMatch[2], dmsLatMatch[3], dmsLatMatch[4]);
       const lonDd = dmsToDecimal(dmsLonMatch[1], dmsLonMatch[2], dmsLonMatch[3], dmsLonMatch[4]);
-      if (!isNaN(latDd) && !isNaN(lonDd)) {
+      if (!isNaN(latDd) && !isNaN(lonDd) && Math.abs(latDd) <= 90 && Math.abs(lonDd) <= 180) {
         return {
           lat: latDd,
           lon: lonDd,
-          ocrAddressText: ocrText,
+          ocrAddressText: visualAddressFromStamp || ocrText,
           source: 'GPS Map Camera DMS Visual Stamp (OCR Extracted)'
         };
       }
     }
 
-    // Pattern C: Comma separated pair (e.g., "12.971594, 77.594563")
-    const pairRegex = /([+-]?\d{1,2}\.\d{4,7})\s*,\s*([+-]?\d{1,3}\.\d{4,7})/;
+    // Pattern 4: Strict Comma-separated or whitespace coordinate pair (e.g., "13.168309, 77.533026")
+    const pairRegex = /([+-]?\d{1,2}\.\d{4,8})\s*°?[,\s]+\s*([+-]?\d{1,3}\.\d{4,8})\s*°?/;
     const pairMatch = ocrText.match(pairRegex);
     if (pairMatch) {
       const latP = parseFloat(pairMatch[1]);
@@ -140,7 +171,7 @@ async function extractGeoCoordinatesFromImage(file, fileBase64) {
         return {
           lat: Number(latP.toFixed(6)),
           lon: Number(lonP.toFixed(6)),
-          ocrAddressText: ocrText,
+          ocrAddressText: visualAddressFromStamp || ocrText,
           source: 'GPS Coordinates Stamp (OCR Extracted)'
         };
       }
@@ -403,14 +434,19 @@ export default function GrievanceFormModal({
         }
 
         // Auto-detect and sync municipal sector based on genuine latitude, longitude and resolved address
-        const detectedSector = resolveSector(resolvedAddress, '', coords.lat, coords.lon);
+        const detectedSector = resolveSector(coords.ocrAddressText || resolvedAddress, '', coords.lat, coords.lon);
+
+        // If the GPS camera had a clear visual address stamp printed on it (e.g. "Dibbur, Karnataka, India"), use it for high accuracy
+        const finalLocation = coords.ocrAddressText && coords.ocrAddressText.length > 5
+          ? coords.ocrAddressText
+          : resolvedAddress;
 
         // Auto-populate formData location automatically with genuine extracted address
         setFormData(prev => ({
           ...prev,
           attachmentName: file.name,
           fileContent: fileBase64,
-          location: resolvedAddress,
+          location: finalLocation,
           landmark: resolvedLandmark,
           sector: detectedSector
         }));
@@ -418,7 +454,7 @@ export default function GrievanceFormModal({
         setGpsData({
           lat: coords.lat,
           lon: coords.lon,
-          address: resolvedAddress,
+          address: finalLocation,
           landmark: resolvedLandmark,
           sector: detectedSector,
           fileName: file.name,

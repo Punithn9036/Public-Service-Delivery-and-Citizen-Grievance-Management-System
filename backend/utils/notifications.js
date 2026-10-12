@@ -40,24 +40,43 @@ function saveNotifications(logs) {
   }
 }
 
+function getPortalBaseUrl() {
+  if (process.env.PORTAL_URL && process.env.PORTAL_URL.trim()) {
+    return process.env.PORTAL_URL.trim().replace(/\/$/, '');
+  }
+  if (process.env.RENDER_EXTERNAL_URL && process.env.RENDER_EXTERNAL_URL.trim()) {
+    return process.env.RENDER_EXTERNAL_URL.trim().replace(/\/$/, '');
+  }
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://public-service-delivery-and-citizen.onrender.com';
+  }
+  return 'http://localhost:5173';
+}
+
 /**
  * India DLT & GIGW 3.0 Approved Government Message Templates
  */
 const TEMPLATES = {
-  GRIEVANCE_LODGED: ({ id, title, department, priority, slaHours, location, phone }) => ({
-    sms: `JanSeva Alert: Your grievance [${id}] for ${department} has been registered with ${priority} priority. Guaranteed SLA: ${slaHours} hrs. Track live: http://localhost:5173/?track=${id} - Govt of India`,
-    whatsapp: `🇮🇳 *JanSeva Citizen Grievance Portal*\n\n✅ *Grievance Registered Successfully!*\n\nYour complaint has been officially registered in the municipal grievance ledger.\n\n📋 *Complaint Details:*\n• *Ticket ID:* ${id}\n• *Title:* ${title || 'Citizen Grievance'}\n• *Department:* ${department}\n• *Location:* ${location || 'Municipal Ward'}\n• *Priority Level:* ${priority}\n• *Guaranteed SLA Resolution:* ${slaHours} Hours\n\n🔍 Track real-time progress on public ledger:\nhttp://localhost:5173/?track=${id}\n\n_Note: This is an automated official confirmation receipt (broadcast only, not a chatbot)._`
-  }),
+  GRIEVANCE_LODGED: ({ id, title, department, priority, slaHours, location, phone }) => {
+    const portalUrl = getPortalBaseUrl();
+    return {
+      sms: `JanSeva Alert: Your grievance [${id}] for ${department} has been registered with ${priority} priority. Guaranteed SLA: ${slaHours} hrs. Track live: ${portalUrl}/?track=${id} - Govt of India`,
+      whatsapp: `🇮🇳 *JanSeva Citizen Grievance Portal*\n\n✅ *Grievance Registered Successfully!*\n\nYour complaint has been officially registered in the municipal grievance ledger.\n\n📋 *Complaint Details:*\n• *Ticket ID:* ${id}\n• *Title:* ${title || 'Citizen Grievance'}\n• *Department:* ${department}\n• *Location:* ${location || 'Municipal Ward'}\n• *Priority Level:* ${priority}\n• *Guaranteed SLA Resolution:* ${slaHours} Hours\n\n🔍 Track real-time progress on public ledger:\n${portalUrl}/?track=${id}\n\n_Note: This is an automated official confirmation receipt (broadcast only, not a chatbot)._`
+    };
+  },
 
   OFFICER_ASSIGNED: ({ id, officerName, officerPhone, department }) => ({
     sms: `JanSeva Update: Field Officer ${officerName} (${officerPhone}) assigned to Grievance [${id}]. Investigation in progress. - JanSeva`,
     whatsapp: `👮 *JanSeva Field Officer Dispatched*\n\nOfficer assigned for grievance *${id}*:\n\n👤 *Officer:* ${officerName}\n📞 *Contact:* ${officerPhone}\n🏛 *Department:* ${department}\n\nStatus: *In Progress & Field Verified*`
   }),
 
-  GRIEVANCE_RESOLVED: ({ id, officerName, resolutionNote }) => ({
-    sms: `JanSeva Notice: Grievance [${id}] has been marked RESOLVED by ${officerName}. Remarks: ${resolutionNote || 'Work Completed'}. Please verify and rate service on portal. - JanSeva`,
-    whatsapp: `✅ *JanSeva Grievance Resolved*\n\nYour complaint *${id}* has been successfully addressed.\n\n👤 *Nodal Officer:* ${officerName}\n📝 *Resolution Summary:* ${resolutionNote || 'Work Completed & Inspected'}\n\nPlease submit your satisfaction rating:\nhttp://localhost:5173/?track=${id}`
-  }),
+  GRIEVANCE_RESOLVED: ({ id, officerName, resolutionNote }) => {
+    const portalUrl = getPortalBaseUrl();
+    return {
+      sms: `JanSeva Notice: Grievance [${id}] has been marked RESOLVED by ${officerName}. Remarks: ${resolutionNote || 'Work Completed'}. Please verify and rate service on portal. - JanSeva`,
+      whatsapp: `✅ *JanSeva Grievance Resolved*\n\nYour complaint *${id}* has been successfully addressed.\n\n👤 *Nodal Officer:* ${officerName}\n📝 *Resolution Summary:* ${resolutionNote || 'Work Completed & Inspected'}\n\nPlease submit your satisfaction rating:\n${portalUrl}/?track=${id}`
+    };
+  },
 
   GRIEVANCE_REOPENED: ({ id, reason }) => ({
     sms: `JanSeva Notice: Grievance [${id}] has been RE-OPENED by citizen. Reason: ${reason || 'Issue persists'}. High-priority review initiated. - JanSeva`,
@@ -69,10 +88,13 @@ const TEMPLATES = {
     whatsapp: `🚨 *STATUTORY SLA BREACH ESCALATION*\n\n*Incident Ticket:* ${id}\n*Department:* ${department}\n*Overdue TAT:* Exceeded deadline by *${breachedHours} Hours*\n\n⚠️ Escalated to *Zonal Municipal Commissioner* & State Vigilance Cell for disciplinary review.`
   }),
 
-  APPLICATION_SUBMITTED: ({ id, serviceName, slaDays, estimatedCompletion }) => ({
-    sms: `JanSeva: Your application [${id}] for '${serviceName}' is received. Guaranteed SLA Delivery: ${slaDays} days (${estimatedCompletion}). - JanSeva`,
-    whatsapp: `📄 *Public Service Delivery Application Submitted*\n\n*Application Code:* ${id}\n*Service:* ${serviceName}\n*Statutory Delivery SLA:* ${slaDays} Days\n*Estimated Target Date:* ${estimatedCompletion}\n\nTrack status: http://localhost:5173/?track=${id}`
-  }),
+  APPLICATION_SUBMITTED: ({ id, serviceName, slaDays, estimatedCompletion }) => {
+    const portalUrl = getPortalBaseUrl();
+    return {
+      sms: `JanSeva: Your application [${id}] for '${serviceName}' is received. Guaranteed SLA Delivery: ${slaDays} days (${estimatedCompletion}). - JanSeva`,
+      whatsapp: `📄 *Public Service Delivery Application Submitted*\n\n*Application Code:* ${id}\n*Service:* ${serviceName}\n*Statutory Delivery SLA:* ${slaDays} Days\n*Estimated Target Date:* ${estimatedCompletion}\n\nTrack status: ${portalUrl}/?track=${id}`
+    };
+  },
 
   APPLICATION_STATUS_UPDATE: ({ id, serviceName, status, remarks }) => ({
     sms: `JanSeva: Application [${id}] status updated to '${status}'. Remarks: ${remarks || 'Processed'}. - JanSeva`,
@@ -128,7 +150,8 @@ async function sendNotification({ phone, template, data = {}, channels = ['SMS',
       dispatchedAt: new Date().toISOString()
     };
 
-    const isSmsPaused = process.env.PAUSE_SMS === 'true' || process.env.PAUSE_NOTIFICATIONS === 'true';
+    const fast2smsKey = (process.env.FAST2SMS_API_KEY || '8bToZjaQI5xcyEYh1nRAWz9pGO2KNVqLkteFClwBM7dsJm0g6XkhVdRS7sGXwKmqeFJPWOvflcHoaQ38').trim();
+    const isSmsPaused = process.env.PAUSE_SMS === 'true' || (process.env.PAUSE_NOTIFICATIONS === 'true' && process.env.PAUSE_SMS !== 'false');
     const isWhatsAppPaused = process.env.PAUSE_WHATSAPP === 'true' || (process.env.PAUSE_NOTIFICATIONS === 'true' && process.env.PAUSE_WHATSAPP !== 'false');
 
     if (isSms && isSmsPaused) {
@@ -138,14 +161,14 @@ async function sendNotification({ phone, template, data = {}, channels = ['SMS',
       receipt.status = 'PAUSED';
       receipt.notice = 'Live WhatsApp dispatch is paused by administrator.';
     } else {
-      // Live Fast2SMS Dispatch (Real SMS landing on mobile)
-      if (isSms && process.env.FAST2SMS_API_KEY && process.env.FAST2SMS_API_KEY.trim().length > 0) {
+      // Live Fast2SMS Dispatch (Real SMS landing on mobile, active 24/7 in cloud)
+      if (isSms && fast2smsKey && fast2smsKey.length > 0) {
         try {
           if (clean10.length === 10) {
             const fast2smsRes = await fetch('https://www.fast2sms.com/dev/bulkV2', {
               method: 'POST',
               headers: {
-                'authorization': process.env.FAST2SMS_API_KEY.trim(),
+                'authorization': fast2smsKey,
                 'Content-Type': 'application/json'
               },
               body: JSON.stringify({
