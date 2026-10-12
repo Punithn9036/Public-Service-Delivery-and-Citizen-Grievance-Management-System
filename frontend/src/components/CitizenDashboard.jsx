@@ -210,7 +210,7 @@ export default function CitizenDashboard({
 }) {
   const { user } = useAuth();
   const { lang, setLang, t } = useLanguage();
-  const [viewScope, setViewScope] = useState('all'); // 'all' | 'my'
+  const [viewScope, setViewScope] = useState('my'); // Default to 'my' so new users see only their complaints
   const [statusFilter, setStatusFilter] = useState('All');
   const [departmentFilter, setDepartmentFilter] = useState('All');
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
@@ -219,20 +219,34 @@ export default function CitizenDashboard({
   // Compute Statistics safely
   const grievanceList = Array.isArray(grievances) ? grievances : [];
   const serviceList = Array.isArray(services) ? services : [];
-  const totalGrievances = grievanceList.length;
-  const resolvedCount = grievanceList.filter(g => g && g.status === 'Resolved').length;
-  const inProgressCount = grievanceList.filter(g => g && (g.status === 'In Progress' || g.status === 'Assigned')).length;
-  const urgentCount = grievanceList.filter(g => g && g.priority === 'Urgent' && g.status !== 'Resolved').length;
+
+  // Strictly identify complaints belonging to the currently logged-in citizen
+  const cleanUserPhone = (user?.phone || '').replace(/\D/g, '').slice(-10);
+  const cleanUserEmail = (user?.email || '').toLowerCase().trim();
+  const cleanUserName = (user?.fullName || '').toLowerCase().trim();
+
+  const isUserGrievance = (item) => {
+    if (!user || !item) return false;
+    const cleanItemPhone = (item.citizenPhone || '').replace(/\D/g, '').slice(-10);
+    const matchPhone = cleanUserPhone && cleanItemPhone && cleanUserPhone === cleanItemPhone;
+    const matchEmail = item.citizenEmail && cleanUserEmail && item.citizenEmail.toLowerCase().trim() === cleanUserEmail;
+    const matchName = item.citizenName && cleanUserName && item.citizenName.toLowerCase().trim() === cleanUserName;
+    const matchUserId = item.userId && user.id && String(item.userId) === String(user.id);
+    return Boolean(matchPhone || matchEmail || matchName || matchUserId);
+  };
+
+  const myGrievanceList = grievanceList.filter(isUserGrievance);
+  const currentList = viewScope === 'my' ? myGrievanceList : grievanceList;
+
+  const totalGrievances = currentList.length;
+  const resolvedCount = currentList.filter(g => g && g.status === 'Resolved').length;
+  const inProgressCount = currentList.filter(g => g && (g.status === 'In Progress' || g.status === 'Assigned')).length;
+  const urgentCount = currentList.filter(g => g && g.priority === 'Urgent' && g.status !== 'Resolved').length;
   const resolutionRate = totalGrievances > 0 ? Math.round((resolvedCount / totalGrievances) * 100) : 0;
 
   // Filtered grievances list safely
-  const filteredGrievances = grievanceList.filter(item => {
+  const filteredGrievances = currentList.filter(item => {
     if (!item) return false;
-    if (viewScope === 'my' && user) {
-      const matchName = item.citizenName && user.fullName && item.citizenName.toLowerCase().includes(user.fullName.toLowerCase());
-      const matchPhone = item.citizenPhone && user.phone && item.citizenPhone === user.phone;
-      if (!matchName && !matchPhone) return false;
-    }
     const matchesStatus = statusFilter === 'All' || item.status === statusFilter;
     const matchesDepartment = departmentFilter === 'All' || item.department === departmentFilter;
     const effectiveSearch = (searchQuery || localSearch || '').toLowerCase().trim();
@@ -630,19 +644,19 @@ export default function CitizenDashboard({
               <div style={{ display: 'flex', background: 'var(--bg-tertiary)', padding: '3px', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
                 <button
                   type="button"
-                  className={`btn-sm ${viewScope === 'all' ? 'btn btn-primary' : 'btn'}`}
-                  style={{ borderRadius: '6px', fontSize: '0.75rem', padding: '4px 10px', border: 'none' }}
-                  onClick={() => setViewScope('all')}
-                >
-                  {t('allWards')} ({grievances.length})
-                </button>
-                <button
-                  type="button"
                   className={`btn-sm ${viewScope === 'my' ? 'btn btn-primary' : 'btn'}`}
                   style={{ borderRadius: '6px', fontSize: '0.75rem', padding: '4px 10px', border: 'none' }}
                   onClick={() => setViewScope('my')}
                 >
-                  {t('mySubmissions')}
+                  {t('mySubmissions')} ({myGrievanceList.length})
+                </button>
+                <button
+                  type="button"
+                  className={`btn-sm ${viewScope === 'all' ? 'btn btn-primary' : 'btn'}`}
+                  style={{ borderRadius: '6px', fontSize: '0.75rem', padding: '4px 10px', border: 'none' }}
+                  onClick={() => setViewScope('all')}
+                >
+                  {t('allWards')} (Public Registry: {grievanceList.length})
                 </button>
               </div>
 
@@ -671,19 +685,33 @@ export default function CitizenDashboard({
           {filteredGrievances.length === 0 ? (
             <div className="empty-state glass-card" style={{ padding: '36px', textAlign: 'center' }}>
               <FileText size={48} className="empty-icon" style={{ margin: '0 auto 12px', opacity: 0.5 }} />
-              <h3>No matching grievances found</h3>
-              <p className="text-muted small-text">Try adjusting your search query or status filters above.</p>
-              <button 
-                className="btn btn-secondary btn-sm" 
-                style={{ marginTop: '12px' }}
-                onClick={() => {
-                  setLocalSearch('');
-                  if (setSearchQuery) setSearchQuery('');
-                  setStatusFilter('All');
-                }}
-              >
-                Clear Filters
-              </button>
+              <h3>{viewScope === 'my' ? 'No grievances registered yet' : 'No matching grievances found'}</h3>
+              <p className="text-muted small-text">
+                {viewScope === 'my'
+                  ? 'You have not submitted any complaints yet. Use the button below to report an issue in your locality.'
+                  : 'Try adjusting your search query or status filters above.'}
+              </p>
+              {viewScope === 'my' ? (
+                <button 
+                  className="btn btn-primary btn-sm" 
+                  style={{ marginTop: '14px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                  onClick={openGrievanceModal}
+                >
+                  <FilePlus size={15} /> Lodge Your First Grievance
+                </button>
+              ) : (
+                <button 
+                  className="btn btn-secondary btn-sm" 
+                  style={{ marginTop: '12px' }}
+                  onClick={() => {
+                    setLocalSearch('');
+                    if (setSearchQuery) setSearchQuery('');
+                    setStatusFilter('All');
+                  }}
+                >
+                  Clear Filters
+                </button>
+              )}
             </div>
           ) : (
             <div className="grievance-cards-list">
