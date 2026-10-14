@@ -72,6 +72,78 @@ export const INITIAL_SERVICES = [
     category: 'Infrastructure',
     documentsNeeded: ['Locality Request Letter / Ward Member Endorsement'],
     popular: false
+  },
+  {
+    id: 'srv-7',
+    name: 'New Domestic LPG Gas Connection (PMUY / City Gas)',
+    department: 'Food, Civil Supplies & Consumer Affairs',
+    description: 'Application for new subsidized or general domestic LPG cylinder connection with gas stove, regulator and safety inspection.',
+    slaDays: 7,
+    fee: '₹1,600',
+    icon: 'Flame',
+    category: 'Utilities',
+    documentsNeeded: ['Aadhaar Card of Applicant', 'Ration Card / BPL Family Certificate', 'Bank Passbook Copy (for Direct Subsidy DBTL)', 'Proof of Residence (Electricity / Water Bill)'],
+    popular: true
+  },
+  {
+    id: 'srv-8',
+    name: 'New Domestic Electricity Connection & Smart Meter',
+    department: 'Energy & Power Distribution (DISCOM)',
+    description: 'Statutory application for new domestic low-tension electricity service connection and digital smart meter installation.',
+    slaDays: 5,
+    fee: '₹750',
+    icon: 'Zap',
+    category: 'Utilities',
+    documentsNeeded: ['Proof of Property Ownership / Registered Rent Agreement', 'Latest Municipal Property Tax Receipt', 'Wiring Safety Certificate', 'Applicant Aadhaar Card'],
+    popular: true
+  },
+  {
+    id: 'srv-9',
+    name: "Learner's License & Driving License (LL/DL)",
+    department: 'Transport & Road Safety',
+    description: 'Online application for computerized Learner’s License test slot and permanent biometric driving license issuance.',
+    slaDays: 7,
+    fee: '₹350',
+    icon: 'Car',
+    category: 'Transport',
+    documentsNeeded: ['Age Proof (10th Certificate / Birth Certificate)', 'Residential Address Proof', 'Medical Fitness Certificate (Form 1A)', 'Passport Size Photographs'],
+    popular: true
+  },
+  {
+    id: 'srv-10',
+    name: 'Death & Legal Heir Succession Certificate',
+    department: 'Revenue & Vital Statistics',
+    description: 'Official legal registration of death and issuance of statutory family member survivor and succession certificate.',
+    slaDays: 7,
+    fee: '₹50',
+    icon: 'FileCheck2',
+    category: 'Certificates',
+    documentsNeeded: ['Hospital Death Summary Slip', 'Aadhaar ID of Deceased and Informant', 'Crematorium / Burial Ground Receipt'],
+    popular: false
+  },
+  {
+    id: 'srv-11',
+    name: 'Digitized E-Khata & Property Title Mutation',
+    department: 'Revenue & Municipal Land Records',
+    description: 'Digital transfer of municipal property title, mutation entry in revenue register, and digitized E-Khata certificate issuance.',
+    slaDays: 15,
+    fee: '₹500',
+    icon: 'Building',
+    category: 'Revenue',
+    documentsNeeded: ['Registered Title Deed Copy', 'Latest Encumbrance Certificate (EC)', 'Up-to-date Property Tax Receipt'],
+    popular: false
+  },
+  {
+    id: 'srv-12',
+    name: 'Senior Citizen Identity Card & Pension Enrollment',
+    department: 'Social Welfare & Empowerment',
+    description: 'Issuance of National Senior Citizen ID card for travel concessions, medical subsidies, and Old Age Pension enrollment.',
+    slaDays: 10,
+    fee: 'Free',
+    icon: 'Award',
+    category: 'Social Welfare',
+    documentsNeeded: ['Age Proof (Aadhaar / Voter ID showing 60+ years)', 'Residential Address Proof', 'Bank Account Passbook Copy', 'Passport Size Photos'],
+    popular: false
   }
 ];
 

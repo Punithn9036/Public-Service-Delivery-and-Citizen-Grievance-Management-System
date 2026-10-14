@@ -203,6 +203,60 @@ const SEED_DATA = {
       slaDays: 3,
       fee: 'Free',
       documentsRequired: ['Locality Request Letter / Ward Member Endorsement']
+    },
+    {
+      id: 'srv-7',
+      serviceName: 'New Domestic LPG Gas Connection (PMUY / City Gas)',
+      department: 'Food, Civil Supplies & Consumer Affairs',
+      description: 'Application for new subsidized or general domestic LPG cylinder connection with gas regulator, hose, and safety inspection.',
+      slaDays: 7,
+      fee: '₹1,600',
+      documentsRequired: ['Aadhaar Card of Applicant', 'Ration Card / BPL Family Certificate', 'Bank Passbook Copy (for Direct Subsidy DBTL)', 'Proof of Residence (Electricity / Water Bill)']
+    },
+    {
+      id: 'srv-8',
+      serviceName: 'New Domestic Electricity Connection & Smart Meter',
+      department: 'Energy & Power Distribution (DISCOM)',
+      description: 'Statutory application for new domestic low-tension electricity service connection and digital smart meter installation.',
+      slaDays: 5,
+      fee: '₹750',
+      documentsRequired: ['Proof of Property Ownership / Registered Rent Agreement', 'Latest Municipal Property Tax Receipt', 'Wiring Safety Certificate', 'Applicant Aadhaar Card']
+    },
+    {
+      id: 'srv-9',
+      serviceName: "Learner's License & Driving License (LL/DL)",
+      department: 'Transport & Road Safety',
+      description: 'Online application for computerized Learner’s License test slot and permanent biometric driving license issuance.',
+      slaDays: 7,
+      fee: '₹350',
+      documentsRequired: ['Age Proof (10th Certificate / Birth Certificate)', 'Residential Address Proof', 'Medical Fitness Certificate (Form 1A)', 'Passport Size Photographs']
+    },
+    {
+      id: 'srv-10',
+      serviceName: 'Death & Legal Heir Succession Certificate',
+      department: 'Revenue & Vital Statistics',
+      description: 'Official legal registration of death and issuance of statutory family member survivor and succession certificate.',
+      slaDays: 7,
+      fee: '₹50',
+      documentsRequired: ['Hospital Death Summary Slip', 'Aadhaar ID of Deceased and Informant', 'Crematorium / Burial Ground Receipt']
+    },
+    {
+      id: 'srv-11',
+      serviceName: 'Digitized E-Khata & Property Title Mutation',
+      department: 'Revenue & Municipal Land Records',
+      description: 'Digital transfer of municipal property title, mutation entry in revenue register, and digitized E-Khata certificate issuance.',
+      slaDays: 15,
+      fee: '₹500',
+      documentsRequired: ['Registered Title Deed Copy', 'Latest Encumbrance Certificate (EC)', 'Up-to-date Property Tax Receipt']
+    },
+    {
+      id: 'srv-12',
+      serviceName: 'Senior Citizen Identity Card & Pension Enrollment',
+      department: 'Social Welfare & Empowerment',
+      description: 'Issuance of National Senior Citizen ID card for travel concessions, medical subsidies, and Old Age Pension enrollment.',
+      slaDays: 10,
+      fee: 'Free',
+      documentsRequired: ['Age Proof (Aadhaar / Voter ID showing 60+ years)', 'Residential Address Proof', 'Bank Account Passbook Copy', 'Passport Size Photos']
     }
   ],
   grievances: [

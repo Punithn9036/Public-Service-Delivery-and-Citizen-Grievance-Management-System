@@ -18,6 +18,8 @@ import {
   MessageSquareCheck,
   Database,
   Flame,
+  Car,
+  FileCheck2,
   UserCheck,
   Calendar,
   Globe,
@@ -49,9 +51,13 @@ const ICON_MAP = {
   FileText: FileText,
   Droplets: Droplets,
   Building2: Building2,
+  Building: Building,
   Award: Award,
   Home: Home,
-  Zap: Zap
+  Zap: Zap,
+  Flame: Flame,
+  Car: Car,
+  FileCheck2: FileCheck2
 };
 
 // High-Fidelity Vector Representation of State Emblem of India (Ashoka Lion Capital & Satyameva Jayate)
@@ -667,8 +673,12 @@ export default function CitizenDashboard({
         <div className="section-block" id="citizen-services-section" style={{ marginTop: '32px' }}>
           <div className="section-header">
             <div>
-              <h2>{t('popularServices')}</h2>
-              <p>Direct online statutory applications with guaranteed Service Level Agreements (SLAs) &amp; instant digital delivery</p>
+              <h2>{activeTab === 'services' ? 'All Statutory Public Services Catalog' : t('popularServices')}</h2>
+              <p>
+                {activeTab === 'services' 
+                  ? 'Complete catalog of statutory citizen services, utility connections, certificates, and welfare programs.' 
+                  : 'Direct online statutory applications with guaranteed Service Level Agreements (SLAs) & instant digital delivery'}
+              </p>
             </div>
             {activeTab !== 'services' && (
               <button className="btn btn-outline btn-sm" onClick={() => setActiveTab && setActiveTab('services')}>
@@ -1272,15 +1282,16 @@ export default function CitizenDashboard({
 
           </div>
 
-          {/* ADDITIONAL MUNICIPAL SERVICES GRID (For Any Other Dynamic Services) */}
-          {serviceList.filter(s => s && !['srv-1', 'srv-2', 'srv-3', 'srv-4', 'srv-5', 'srv-6'].includes(s.id)).length > 0 && (
-            <div style={{ marginTop: '36px' }}>
-              <div style={{ marginBottom: '16px' }}>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-main)', margin: '0 0 4px' }}>
-                  Additional Municipal Public Services Catalog
+          {/* ADDITIONAL STATUTORY & UTILITY SERVICES GRID (ONLY SHOWN ON VIEW ALL SERVICES PAGE) */}
+          {activeTab === 'services' && serviceList.filter(s => s && !['srv-1', 'srv-2', 'srv-3', 'srv-4', 'srv-5', 'srv-6'].includes(s.id)).length > 0 && (
+            <div id="additional-services-catalog" style={{ marginTop: '40px', marginBottom: '32px' }}>
+              <div style={{ marginBottom: '18px' }}>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Flame size={20} color="#ea580c" />
+                  Additional Statutory Public Services &amp; Citizen Amenities
                 </h3>
-                <p style={{ margin: 0, fontSize: '0.84rem', color: 'var(--text-muted)' }}>
-                  Explore other statutory municipal licensing, property assessment, and infrastructure civic services
+                <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-muted)' }}>
+                  Newly integrated statutory public services including domestic LPG gas connections, power meters, transport licensing, vital records, and social welfare pensions.
                 </p>
               </div>
 
@@ -1314,149 +1325,153 @@ export default function CitizenDashboard({
         </div>
 
         {/* ========================================================================= */}
-        {/* 3. MY SUBMISSIONS SUMMARY CARD (CITIZEN PORTAL) */}
+        {/* 3. MY SUBMISSIONS SUMMARY CARD (CITIZEN PORTAL - HIDDEN ON SERVICES VIEW) */}
         {/* ========================================================================= */}
-        <div className="section-block" id="citizen-grievances-section" style={{ marginTop: '36px' }}>
-          <div 
-            className="my-submissions-banner-card glass-card"
-            onClick={() => setShowSubmissionsModal(true)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowSubmissionsModal(true); }}
-            title="Click to view all your submissions"
-          >
-            <div className="submissions-card-header">
-              <div className="submissions-card-title-group">
-                <div className="submissions-icon-badge">
-                  <FileText size={24} />
-                </div>
-                <div>
-                  <div className="submissions-tag-pill">
-                    <span className="pulse-dot-green" /> Authenticated Submissions Registry
+        {activeTab !== 'services' && (
+          <>
+            <div className="section-block" id="citizen-grievances-section" style={{ marginTop: '36px' }}>
+              <div 
+                className="my-submissions-banner-card glass-card"
+                onClick={() => setShowSubmissionsModal(true)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowSubmissionsModal(true); }}
+                title="Click to view all your submissions"
+              >
+                <div className="submissions-card-header">
+                  <div className="submissions-card-title-group">
+                    <div className="submissions-icon-badge">
+                      <FileText size={24} />
+                    </div>
+                    <div>
+                      <div className="submissions-tag-pill">
+                        <span className="pulse-dot-green" /> Authenticated Submissions Registry
+                      </div>
+                      <h2 className="submissions-card-title">
+                        {isOfficer ? 'My Assigned Grievance Queue & Field Redressal' : 'My Registered Grievances & Service Submissions'}
+                      </h2>
+                      <p className="submissions-card-subtitle">
+                        {isOfficer 
+                          ? 'Inspect complaints allocated to your department queue, update site inspection notes, and clear SLA deadlines.'
+                          : 'Access your submitted complaints, track real-time statutory SLA countdowns, and inspect verified officer redressal reports.'}
+                      </p>
+                    </div>
                   </div>
-                  <h2 className="submissions-card-title">
-                    {isOfficer ? 'My Assigned Grievance Queue & Field Redressal' : 'My Registered Grievances & Service Submissions'}
-                  </h2>
-                  <p className="submissions-card-subtitle">
-                    {isOfficer 
-                      ? 'Inspect complaints allocated to your department queue, update site inspection notes, and clear SLA deadlines.'
-                      : 'Access your submitted complaints, track real-time statutory SLA countdowns, and inspect verified officer redressal reports.'}
-                  </p>
-                </div>
-              </div>
 
-              <div className="submissions-card-actions">
-                <button 
-                  type="button" 
-                  className="btn btn-primary"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowSubmissionsModal(true);
-                  }}
-                  title="View My Submissions"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
-                >
-                  <Eye size={16} />
-                  <span>View My Submissions ({currentList.length + myApplications.length})</span>
-                  <ArrowRight size={15} />
-                </button>
-                {isCitizen && (
-                  <button 
-                    type="button" 
-                    className="btn btn-outline"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openGrievanceModal();
-                    }}
-                    title="Lodge New Grievance"
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                  >
-                    <FilePlus size={15} />
-                    <span>+ Lodge Grievance</span>
-                  </button>
+                  <div className="submissions-card-actions">
+                    <button 
+                      type="button" 
+                      className="btn btn-primary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowSubmissionsModal(true);
+                      }}
+                      title="View My Submissions"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                    >
+                      <Eye size={16} />
+                      <span>View My Submissions ({currentList.length + myApplications.length})</span>
+                      <ArrowRight size={15} />
+                    </button>
+                    {isCitizen && (
+                      <button 
+                        type="button" 
+                        className="btn btn-outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openGrievanceModal();
+                        }}
+                        title="Lodge New Grievance"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                      >
+                        <FilePlus size={15} />
+                        <span>+ Lodge Grievance</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Metrics Grid */}
+                <div className="submissions-metrics-grid">
+                  <div className="sub-metric-item">
+                    <span className="sub-metric-label">Total Submissions</span>
+                    <span className="sub-metric-val">{currentList.length + myApplications.length}</span>
+                  </div>
+                  <div className="sub-metric-item">
+                    <span className="sub-metric-label">In Progress / Review</span>
+                    <span className="sub-metric-val val-progress">{inProgressCount}</span>
+                  </div>
+                  <div className="sub-metric-item">
+                    <span className="sub-metric-label">Resolved / Delivered</span>
+                    <span className="sub-metric-val val-resolved">{resolvedCount}</span>
+                  </div>
+                  <div className="sub-metric-item">
+                    <span className="sub-metric-label">Statutory SLA Compliance</span>
+                    <span className="sub-metric-val val-sla">{resolutionRate}%</span>
+                  </div>
+                </div>
+
+                {/* Quick Preview or Prompt */}
+                {currentList.length > 0 || myApplications.length > 0 ? (
+                  <div className="submissions-preview-bar">
+                    <div className="preview-label">
+                      <Clock size={14} /> <strong>Latest Activity:</strong>
+                    </div>
+                    <div className="preview-content">
+                      {currentList[0] ? (
+                        <span>
+                          <strong className="preview-id">#{currentList[0].id}</strong> - {currentList[0].title}
+                          <span className={`badge badge-sm badge-${(currentList[0].status || '').toLowerCase().replace(/\s+/g, '-')}`} style={{ marginLeft: '8px' }}>
+                            {currentList[0].status}
+                          </span>
+                        </span>
+                      ) : (
+                        <span>
+                          <strong className="preview-id">#{myApplications[0].id}</strong> - {myApplications[0].serviceName}
+                          <span className="badge badge-sm badge-info" style={{ marginLeft: '8px' }}>
+                            {myApplications[0].status}
+                          </span>
+                        </span>
+                      )}
+                    </div>
+                    <div className="preview-action-hint">
+                      <span>Click card to inspect full list &amp; timeline</span>
+                      <ChevronRight size={14} />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="submissions-empty-preview">
+                    <CheckCircle size={16} color="#16a34a" />
+                    <span>You currently have zero pending complaints. Click here or use '+ Lodge Grievance' to report an issue.</span>
+                  </div>
                 )}
               </div>
             </div>
 
-            {/* Metrics Grid */}
-            <div className="submissions-metrics-grid">
-              <div className="sub-metric-item">
-                <span className="sub-metric-label">Total Submissions</span>
-                <span className="sub-metric-val">{currentList.length + myApplications.length}</span>
-              </div>
-              <div className="sub-metric-item">
-                <span className="sub-metric-label">In Progress / Review</span>
-                <span className="sub-metric-val val-progress">{inProgressCount}</span>
-              </div>
-              <div className="sub-metric-item">
-                <span className="sub-metric-label">Resolved / Delivered</span>
-                <span className="sub-metric-val val-resolved">{resolvedCount}</span>
-              </div>
-              <div className="sub-metric-item">
-                <span className="sub-metric-label">Statutory SLA Compliance</span>
-                <span className="sub-metric-val val-sla">{resolutionRate}%</span>
-              </div>
-            </div>
-
-            {/* Quick Preview or Prompt */}
-            {currentList.length > 0 || myApplications.length > 0 ? (
-              <div className="submissions-preview-bar">
-                <div className="preview-label">
-                  <Clock size={14} /> <strong>Latest Activity:</strong>
-                </div>
-                <div className="preview-content">
-                  {currentList[0] ? (
-                    <span>
-                      <strong className="preview-id">#{currentList[0].id}</strong> - {currentList[0].title}
-                      <span className={`badge badge-sm badge-${(currentList[0].status || '').toLowerCase().replace(/\s+/g, '-')}`} style={{ marginLeft: '8px' }}>
-                        {currentList[0].status}
-                      </span>
-                    </span>
-                  ) : (
-                    <span>
-                      <strong className="preview-id">#{myApplications[0].id}</strong> - {myApplications[0].serviceName}
-                      <span className="badge badge-sm badge-info" style={{ marginLeft: '8px' }}>
-                        {myApplications[0].status}
-                      </span>
-                    </span>
-                  )}
-                </div>
-                <div className="preview-action-hint">
-                  <span>Click card to inspect full list &amp; timeline</span>
-                  <ChevronRight size={14} />
+            {/* Quick Statutory SLA Compliance Alert Card (Shifted to Bottom) */}
+            <div className="gov-sla-bar-strip" style={{ marginTop: '36px', marginBottom: '16px' }}>
+              <div className="gov-sla-strip-left">
+                <ShieldCheck size={20} className="text-brand-green" />
+                <div>
+                  <strong>Time-Bound Public Service Delivery Act (GIGW 3.0 Standard)</strong>
+                  <p className="text-muted small-text" style={{ margin: 0 }}>
+                    Every grievance is assigned a statutory SLA deadline. Breached cases auto-escalate directly to Senior Zonal Commissioners.
+                  </p>
                 </div>
               </div>
-            ) : (
-              <div className="submissions-empty-preview">
-                <CheckCircle size={16} color="#16a34a" />
-                <span>You currently have zero pending complaints. Click here or use '+ Lodge Grievance' to report an issue.</span>
+              <div className="gov-sla-strip-right">
+                <div className="sla-rate-pill">
+                  <span className="small-text">SLA Redressal Rate:</span>
+                  <strong style={{ fontSize: '1.05rem', color: 'var(--brand-700)' }}>{resolutionRate}%</strong>
+                </div>
+                <button className="btn btn-primary btn-sm" onClick={openGrievanceModal}>
+                  <FilePlus size={15} />
+                  <span>{t('lodgeGrievance')}</span>
+                </button>
               </div>
-            )}
-          </div>
-        </div>
-
-        {/* Quick Statutory SLA Compliance Alert Card (Shifted to Bottom) */}
-        <div className="gov-sla-bar-strip" style={{ marginTop: '36px', marginBottom: '16px' }}>
-          <div className="gov-sla-strip-left">
-            <ShieldCheck size={20} className="text-brand-green" />
-            <div>
-              <strong>Time-Bound Public Service Delivery Act (GIGW 3.0 Standard)</strong>
-              <p className="text-muted small-text" style={{ margin: 0 }}>
-                Every grievance is assigned a statutory SLA deadline. Breached cases auto-escalate directly to Senior Zonal Commissioners.
-              </p>
             </div>
-          </div>
-          <div className="gov-sla-strip-right">
-            <div className="sla-rate-pill">
-              <span className="small-text">SLA Redressal Rate:</span>
-              <strong style={{ fontSize: '1.05rem', color: 'var(--brand-700)' }}>{resolutionRate}%</strong>
-            </div>
-            <button className="btn btn-primary btn-sm" onClick={openGrievanceModal}>
-              <FilePlus size={15} />
-              <span>{t('lodgeGrievance')}</span>
-            </button>
-          </div>
-        </div>
+          </>
+        )}
 
       </div>
 
