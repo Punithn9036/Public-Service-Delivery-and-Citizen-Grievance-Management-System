@@ -1,28 +1,53 @@
 import React from 'react';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Trash2, CheckCircle2 } from 'lucide-react';
+import { autoPruneStorage } from '../utils/safeStorage';
 
 export default class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false, error: null, errorInfo: null };
+    this.state = { hasError: false, error: null, errorInfo: null, isQuotaError: false };
   }
 
   static getDerivedStateFromError(error) {
-    return { hasError: true, error };
+    const isQuota = error && (
+      error.name === 'QuotaExceededError' ||
+      error.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
+      String(error).toLowerCase().includes('quota') ||
+      error.code === 22 ||
+      error.code === 1014
+    );
+    return { hasError: true, error, isQuotaError: isQuota };
   }
 
   componentDidCatch(error, errorInfo) {
     console.error("JanSeva Application Error Caught by Boundary:", error, errorInfo);
     this.setState({ errorInfo });
+    // If it's a quota error, automatically prune bloated storage
+    if (this.state.isQuotaError) {
+      try {
+        autoPruneStorage();
+      } catch (e) {}
+    }
   }
 
   handleReload = () => {
     window.location.reload();
   };
 
+  handleCleanQuotaAndReload = () => {
+    try {
+      localStorage.removeItem('janseva_grievances');
+      localStorage.removeItem('janseva_applications');
+      autoPruneStorage();
+    } catch (e) {}
+    window.location.reload();
+  };
+
   handleResetStorage = () => {
-    localStorage.clear();
-    sessionStorage.clear();
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch (e) {}
     window.location.reload();
   };
 
@@ -63,10 +88,12 @@ export default class ErrorBoundary extends React.Component {
               <AlertTriangle size={32} />
             </div>
             <h2 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '0.75rem' }}>
-              Something went wrong in the portal
+              {this.state.isQuotaError ? 'Browser Storage Quota Exceeded' : 'Something went wrong in the portal'}
             </h2>
             <p style={{ color: 'var(--text-secondary, #94a3b8)', fontSize: '0.9rem', marginBottom: '1rem', lineHeight: '1.5' }}>
-              {this.state.error ? this.state.error.toString() : 'The portal encountered an unexpected runtime state.'}
+              {this.state.isQuotaError 
+                ? 'High-resolution photo evidence exceeded your browser’s 5MB localStorage limit. You can safely clean bloated attachments below without losing your account.' 
+                : (this.state.error ? this.state.error.toString() : 'The portal encountered an unexpected runtime state.')}
             </p>
 
             {this.state.errorInfo && (
@@ -81,6 +108,28 @@ export default class ErrorBoundary extends React.Component {
             )}
 
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+              {this.state.isQuotaError && (
+                <button
+                  onClick={this.handleCleanQuotaAndReload}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    background: '#16a34a',
+                    color: '#ffffff',
+                    border: 'none',
+                    padding: '10px 18px',
+                    borderRadius: '8px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    fontSize: '0.9rem'
+                  }}
+                >
+                  <CheckCircle2 size={16} />
+                  Clean Storage Quota & Recover
+                </button>
+              )}
+
               <button
                 onClick={this.handleReload}
                 style={{
@@ -117,6 +166,7 @@ export default class ErrorBoundary extends React.Component {
                   fontSize: '0.9rem'
                 }}
               >
+                <Trash2 size={16} />
                 Reset Session & Storage
               </button>
             </div>

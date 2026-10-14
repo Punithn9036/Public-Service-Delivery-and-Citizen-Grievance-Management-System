@@ -652,9 +652,12 @@ export default function GrievanceFormModal({
     const assignedOfficerInfo = allocateNextOfficer(formData.department, targetSector, newTicketId);
     setAllocatedOfficerDetails(assignedOfficerInfo);
 
+    // Strip raw base64 file payload to keep grievance lightweight and prevent localStorage QuotaExceededError
+    const { fileContent, rawFile: _rf, ...cleanFormData } = formData;
+
     const newGrievance = {
       id: newTicketId,
-      ...formData,
+      ...cleanFormData,
       sector: targetSector,
       ipfsDocumentCid: generatedCid,
       status: 'Assigned',

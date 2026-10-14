@@ -68,10 +68,11 @@ let grievancesStore = [
 
 // Valid State Machine Transitions Map
 const VALID_TRANSITIONS = {
-  'Submitted': ['Under Review'],
-  'Under Review': ['Assigned', 'Rejected'],
-  'Assigned': ['In Progress', 'Under Review'],
-  'In Progress': ['Resolved', 'Under Review'],
+  'Submitted': ['Under Review', 'Escalated'],
+  'Under Review': ['Assigned', 'Rejected', 'Escalated'],
+  'Assigned': ['In Progress', 'Under Review', 'Escalated'],
+  'In Progress': ['Resolved', 'Under Review', 'Escalated'],
+  'Escalated': ['In Progress', 'Resolved', 'Under Review'],
   'Resolved': ['Under Review'], // Citizen Re-open action
   'Rejected': [] // Terminal state
 };

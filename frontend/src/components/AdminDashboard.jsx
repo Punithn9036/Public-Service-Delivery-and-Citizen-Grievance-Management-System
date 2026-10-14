@@ -30,12 +30,19 @@ import {
   Lock,
   Check,
   QrCode,
-  Users
+  Users,
+  Gavel
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { applicationAPI, notificationAPI, blockchainAPI } from '../api/apiClient';
-import { getStoredRoster } from '../utils/officerDispatch';
+import { getStoredRoster, saveStoredRoster } from '../utils/officerDispatch';
+import { 
+  evaluateDisciplinaryStatus, 
+  submitOfficerExplanation, 
+  reviewOfficerExplanation, 
+  getSupervisoryAuthority 
+} from '../utils/slaEscalationEngine';
 import govHeroBg from '../assets/gov-hero-bg.png';
 import nationalEmblemImg from '../assets/national-emblem.webp';
 
@@ -90,6 +97,12 @@ export default function AdminDashboard({
   const [officerRoster, setOfficerRoster] = useState(() => getStoredRoster());
   const [selectedRosterSector, setSelectedRosterSector] = useState('All');
   const [selectedRosterDept, setSelectedRosterDept] = useState('All');
+
+  // SLA Tribunal & Disciplinary States
+  const [explanationModal, setExplanationModal] = useState(null); // { officer, ticketId, mode: 'SUBMIT' | 'REVIEW', explanation: expObj }
+  const [explanationInput, setExplanationInput] = useState('');
+  const [adminReviewRemarks, setAdminReviewRemarks] = useState('');
+  const [disciplinaryFilter, setDisciplinaryFilter] = useState('All'); // 'All' | 'EXPLANATION_REQUIRED' | 'SUSPENDED' | 'TERMINATION_PROCEEDINGS'
 
   const refreshRoster = () => {
     setOfficerRoster(getStoredRoster());
@@ -242,6 +255,10 @@ export default function AdminDashboard({
   const inProgressCount = grievances.filter(g => g.status === 'In Progress' || g.status === 'Assigned').length;
   const resolvedCount = grievances.filter(g => g.status === 'Resolved').length;
   const urgentCount = grievances.filter(g => g.priority === 'Urgent').length;
+  const escalatedCount = grievances.filter(g => g.status === 'Escalated').length;
+  const strike1Officers = officerRoster.filter(o => o.disciplinaryStatus === 'EXPLANATION_REQUIRED');
+  const strike2Officers = officerRoster.filter(o => o.disciplinaryStatus === 'SUSPENDED');
+  const strike3Officers = officerRoster.filter(o => o.disciplinaryStatus === 'TERMINATION_PROCEEDINGS');
 
   const filteredList = grievances.filter(g => {
     const matchDept = selectedDept === 'All' || g.department === selectedDept;
@@ -523,6 +540,16 @@ export default function AdminDashboard({
 
                   <button 
                     type="button" 
+                    className={`trending-chip ${activeSection === 'sla-tribunal' ? 'active-chip' : ''}`}
+                    onClick={() => setActiveSection('sla-tribunal')}
+                    style={{ borderColor: '#ef4444', color: '#dc2626' }}
+                  >
+                    <AlertTriangle size={12} color="#dc2626" />
+                    <span>🚨 Escalated Breaches ({escalatedCount})</span>
+                  </button>
+
+                  <button 
+                    type="button" 
                     className={`trending-chip ${selectedStatus === 'Resolved' ? 'active-chip' : ''}`}
                     onClick={() => handleFilterChip('status', 'Resolved')}
                   >
@@ -611,6 +638,16 @@ export default function AdminDashboard({
                   >
                     <Users size={12} />
                     <span>Officer Roster & Queue</span>
+                  </button>
+
+                  <button 
+                    type="button" 
+                    className={`trending-chip ${activeSection === 'sla-tribunal' ? 'active-chip' : ''}`}
+                    onClick={() => handleFilterChip('section', 'sla-tribunal')}
+                    style={{ borderColor: '#ef4444', color: '#dc2626' }}
+                  >
+                    <Gavel size={12} color="#dc2626" />
+                    <span>SLA Tribunal ({escalatedCount})</span>
                   </button>
 
                   <button 
@@ -778,6 +815,23 @@ export default function AdminDashboard({
           style={{ padding: '8px 18px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
         >
           <Users size={16} /> Sector Officer Queue & Duty Roster ({officerRoster.length} Officers)
+        </button>
+        <button
+          onClick={() => { setActiveSection('sla-tribunal'); refreshRoster(); }}
+          className={`btn btn-sm ${activeSection === 'sla-tribunal' ? 'btn-primary' : 'btn-secondary'}`}
+          style={{ 
+            padding: '8px 18px', 
+            fontWeight: 700, 
+            display: 'inline-flex', 
+            alignItems: 'center', 
+            gap: '6px',
+            background: activeSection === 'sla-tribunal' ? '#dc2626' : undefined,
+            color: activeSection === 'sla-tribunal' ? '#ffffff' : '#dc2626',
+            border: '1.5px solid #ef4444'
+          }}
+        >
+          <Gavel size={16} color={activeSection === 'sla-tribunal' ? '#ffffff' : '#dc2626'} /> 
+          SLA Tribunal &amp; Officer Discipline ({escalatedCount})
         </button>
       </div>
 
@@ -2058,6 +2112,455 @@ export default function AdminDashboard({
                   </div>
                 );
               })}
+          </div>
+        </div>
+      )}
+
+      {/* SLA TRIBUNAL & OFFICER DISCIPLINARY SECTION */}
+      {activeSection === 'sla-tribunal' && (
+        <div className="animate-fade-in" style={{ marginTop: '20px' }}>
+          
+          {/* Executive Header Banner */}
+          <div className="glass-card" style={{ padding: '24px', borderRadius: '16px', marginBottom: '20px', borderLeft: '5px solid #dc2626' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
+              <div>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(220, 38, 38, 0.1)', color: '#dc2626', padding: '4px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 700, marginBottom: '8px' }}>
+                  <Gavel size={14} /> Statutory SLA Enforcement &amp; Officer Accountability Tribunal
+                </div>
+                <h2 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '4px 0 6px', color: 'var(--text-main)' }}>
+                  SLA Escalation Engine &amp; 3-Strike Disciplinary Framework
+                </h2>
+                <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-muted)', maxWidth: '820px', lineHeight: '1.5' }}>
+                  Under Civil Services Conduct Rules, any complaint exceeding statutory SLA is automatically escalated from field staff to the 
+                  <strong> Supervising Executive Engineer</strong> and <strong>Nodal Municipal Commissioner</strong>. Defaulting officers face mandatory Show Cause notices, 
+                  <strong> 1-Month Administrative Suspension</strong> on 2nd breach, and <strong>Termination Inquiry</strong> on 3rd breach.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={refreshRoster}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+              >
+                <RefreshCw size={14} /> Refresh Tribunal Ledger
+              </button>
+            </div>
+
+            {/* 4 KPI Summary Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginTop: '20px' }}>
+              <div style={{ background: 'var(--bg-secondary)', padding: '14px', borderRadius: '10px', border: '1px solid var(--border-subtle)' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#dc2626', display: 'block' }}>ESCALATED COMPLAINTS</span>
+                <strong style={{ fontSize: '1.6rem', color: '#dc2626' }}>{escalatedCount}</strong>
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>Overdue &amp; re-allocated to EE</span>
+              </div>
+
+              <div style={{ background: 'var(--bg-secondary)', padding: '14px', borderRadius: '10px', border: '1px solid var(--border-subtle)' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#d97706', display: 'block' }}>STRIKE 1: SHOW CAUSE</span>
+                <strong style={{ fontSize: '1.6rem', color: '#d97706' }}>{strike1Officers.length}</strong>
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>48h explanation window active</span>
+              </div>
+
+              <div style={{ background: 'var(--bg-secondary)', padding: '14px', borderRadius: '10px', border: '1px solid var(--border-subtle)' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#b91c1c', display: 'block' }}>STRIKE 2: SUSPENDED</span>
+                <strong style={{ fontSize: '1.6rem', color: '#b91c1c' }}>{strike2Officers.length}</strong>
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>1-Month Administrative Order</span>
+              </div>
+
+              <div style={{ background: 'var(--bg-secondary)', padding: '14px', borderRadius: '10px', border: '1px solid var(--border-subtle)' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#7f1d1d', display: 'block' }}>STRIKE 3: TERMINATION</span>
+                <strong style={{ fontSize: '1.6rem', color: '#7f1d1d' }}>{strike3Officers.length}</strong>
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>Referred to Vigilance Tribunal</span>
+              </div>
+            </div>
+          </div>
+
+          {/* TABLE 1: ACTIVE ESCALATED COMPLAINTS */}
+          <div className="glass-card" style={{ padding: '24px', borderRadius: '16px', marginBottom: '24px' }}>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 700, margin: '0 0 14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <AlertTriangle size={18} color="#dc2626" />
+              Active Escalated Grievance Queue ({escalatedCount} Cases Under Executive Directive)
+            </h3>
+
+            {grievances.filter(g => g.status === 'Escalated').length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '36px', color: 'var(--text-muted)', background: 'var(--bg-secondary)', borderRadius: '10px' }}>
+                <CheckCircle2 size={36} color="#16a34a" style={{ margin: '0 auto 8px' }} />
+                <p style={{ fontWeight: 600, margin: 0 }}>All Grievances Are Operating Within Prescribed SLA Target Deadlines.</p>
+                <span style={{ fontSize: '0.8rem' }}>No automatic escalations currently active.</span>
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table className="admin-table" style={{ width: '100%', fontSize: '0.84rem' }}>
+                  <thead>
+                    <tr>
+                      <th>Ticket ID</th>
+                      <th>Category &amp; Title</th>
+                      <th>Department &amp; Sector</th>
+                      <th>Overdue Hours</th>
+                      <th>Directive Supervising Authority</th>
+                      <th>Defaulting Field Staff</th>
+                      <th>Tribunal Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {grievances.filter(g => g.status === 'Escalated').map(g => (
+                      <tr key={g.id} style={{ background: 'rgba(239, 68, 68, 0.04)' }}>
+                        <td><strong style={{ color: '#dc2626' }}>{g.id}</strong></td>
+                        <td>
+                          <strong>{g.title}</strong>
+                          <span style={{ display: 'block', fontSize: '0.74rem', color: 'var(--text-muted)' }}>Citizen: {g.citizenName}</span>
+                        </td>
+                        <td>
+                          <span>{g.department}</span>
+                          <span style={{ display: 'block', fontSize: '0.74rem', color: '#2563eb' }}>{g.sector || 'Central'}</span>
+                        </td>
+                        <td>
+                          <span style={{ background: '#dc2626', color: '#fff', padding: '2px 8px', borderRadius: '4px', fontWeight: 700, fontSize: '0.74rem' }}>
+                            +{g.escalatedOverdueHours || 12}h Overdue
+                          </span>
+                        </td>
+                        <td>
+                          <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{g.assignedOfficer}</span>
+                        </td>
+                        <td>
+                          <span style={{ color: 'var(--text-muted)' }}>{g.originalAssignedOfficer || 'Field Team'}</span>
+                          <span style={{ display: 'block', fontSize: '0.72rem', color: '#d97706', fontWeight: 600 }}>Show Cause Issued</span>
+                        </td>
+                        <td>
+                          <button
+                            type="button"
+                            className="btn btn-primary btn-sm"
+                            onClick={() => {
+                              setEditingItem(g);
+                              setNewStatus('Resolved');
+                              setOfficerName(g.assignedOfficer || 'Executive Engineer');
+                              setResolutionNote('Emergency Executive Resolution completed under SLA Escalation Directive.');
+                            }}
+                            style={{ fontSize: '0.74rem', padding: '4px 10px' }}
+                          >
+                            Fast-Track Close
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* TABLE 2: OFFICER 3-STRIKE DISCIPLINARY & PENAL REGISTRY */}
+          <div className="glass-card" style={{ padding: '24px', borderRadius: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+              <div>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Gavel size={18} color="#b91c1c" />
+                  Officer 3-Strike Disciplinary Board &amp; Penalty Matrix
+                </h3>
+                <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  Strike 1: Explanation within 48h • Strike 2: 1-Month Suspension • Strike 3: Termination Inquiry
+                </p>
+              </div>
+
+              {/* Filter Tabs */}
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${disciplinaryFilter === 'All' ? 'btn-primary' : 'btn-secondary'}`}
+                  onClick={() => setDisciplinaryFilter('All')}
+                  style={{ fontSize: '0.75rem', padding: '4px 10px' }}
+                >
+                  All ({officerRoster.length})
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${disciplinaryFilter === 'STRIKE_1' ? 'btn-primary' : 'btn-secondary'}`}
+                  onClick={() => setDisciplinaryFilter('STRIKE_1')}
+                  style={{ fontSize: '0.75rem', padding: '4px 10px' }}
+                >
+                  Strike 1 ({strike1Officers.length})
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${disciplinaryFilter === 'STRIKE_2' ? 'btn-primary' : 'btn-secondary'}`}
+                  onClick={() => setDisciplinaryFilter('STRIKE_2')}
+                  style={{ fontSize: '0.75rem', padding: '4px 10px' }}
+                >
+                  Suspended ({strike2Officers.length})
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${disciplinaryFilter === 'STRIKE_3' ? 'btn-primary' : 'btn-secondary'}`}
+                  onClick={() => setDisciplinaryFilter('STRIKE_3')}
+                  style={{ fontSize: '0.75rem', padding: '4px 10px' }}
+                >
+                  Termination ({strike3Officers.length})
+                </button>
+              </div>
+            </div>
+
+            <div style={{ overflowX: 'auto' }}>
+              <table className="admin-table" style={{ width: '100%', fontSize: '0.84rem' }}>
+                <thead>
+                  <tr>
+                    <th>Officer Name &amp; ID</th>
+                    <th>Cadre Designation</th>
+                    <th>Department &amp; Sector</th>
+                    <th>SLA Breaches</th>
+                    <th>Disciplinary Status</th>
+                    <th>Explanation &amp; Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {officerRoster
+                    .filter(o => {
+                      if (disciplinaryFilter === 'STRIKE_1') return o.disciplinaryStatus === 'EXPLANATION_REQUIRED';
+                      if (disciplinaryFilter === 'STRIKE_2') return o.disciplinaryStatus === 'SUSPENDED';
+                      if (disciplinaryFilter === 'STRIKE_3') return o.disciplinaryStatus === 'TERMINATION_PROCEEDINGS';
+                      return true;
+                    })
+                    .map(o => {
+                      const evalStatus = evaluateDisciplinaryStatus(o.slaBreachesCount || 0);
+                      const latestExp = o.explanations && o.explanations.length > 0 ? o.explanations[o.explanations.length - 1] : null;
+
+                      return (
+                        <tr key={o.id} style={{ background: (o.slaBreachesCount || 0) >= 2 ? 'rgba(220, 38, 38, 0.05)' : undefined }}>
+                          <td>
+                            <strong>{o.name}</strong>
+                            <code style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)' }}>{o.id}</code>
+                          </td>
+                          <td>{o.designation}</td>
+                          <td>
+                            <span>{o.department}</span>
+                            <span style={{ display: 'block', fontSize: '0.72rem', color: '#2563eb' }}>{o.sector}</span>
+                          </td>
+                          <td>
+                            <strong style={{ fontSize: '1rem', color: (o.slaBreachesCount || 0) > 0 ? '#dc2626' : '#16a34a' }}>
+                              {o.slaBreachesCount || 0}
+                            </strong>
+                          </td>
+                          <td>
+                            <span style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              padding: '3px 8px',
+                              borderRadius: '4px',
+                              fontSize: '0.74rem',
+                              fontWeight: 700,
+                              background: evalStatus.bg,
+                              color: evalStatus.color,
+                              border: `1px solid ${evalStatus.color}40`
+                            }}>
+                              {evalStatus.badge}
+                            </span>
+                            {o.disciplinaryStatus === 'SUSPENDED' && (
+                              <span style={{ display: 'block', fontSize: '0.7rem', color: '#dc2626', marginTop: '2px' }}>
+                                Relieved from field duty (30-day suspension)
+                              </span>
+                            )}
+                          </td>
+                          <td>
+                            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                              {/* Submit Explanation button */}
+                              {o.disciplinaryStatus === 'EXPLANATION_REQUIRED' && (
+                                <button
+                                  type="button"
+                                  className="btn btn-secondary btn-sm"
+                                  onClick={() => {
+                                    setExplanationModal({
+                                      officer: o,
+                                      ticketId: o.slaBreaches?.[0]?.ticketId || 'GRV-SLA-BREACH',
+                                      mode: 'SUBMIT'
+                                    });
+                                    setExplanationInput('');
+                                  }}
+                                  style={{ fontSize: '0.72rem', padding: '3px 8px' }}
+                                >
+                                  Submit Explanation
+                                </button>
+                              )}
+
+                              {/* Review Explanation button if explanation submitted */}
+                              {latestExp && (
+                                <button
+                                  type="button"
+                                  className="btn btn-primary btn-sm"
+                                  onClick={() => {
+                                    setExplanationModal({
+                                      officer: o,
+                                      ticketId: latestExp.ticketId,
+                                      mode: 'REVIEW',
+                                      explanation: latestExp
+                                    });
+                                    setAdminReviewRemarks('');
+                                  }}
+                                  style={{ fontSize: '0.72rem', padding: '3px 8px', background: '#2563eb' }}
+                                >
+                                  Review ({latestExp.status})
+                                </button>
+                              )}
+
+                              {/* Manual Strike Simulator for Demo */}
+                              <button
+                                type="button"
+                                className="btn btn-sm"
+                                onClick={() => {
+                                  const roster = getStoredRoster();
+                                  const target = roster.find(x => x.id === o.id);
+                                  if (target) {
+                                    target.slaBreachesCount = (target.slaBreachesCount || 0) + 1;
+                                    const res = evaluateDisciplinaryStatus(target.slaBreachesCount);
+                                    target.disciplinaryStatus = res.status;
+                                    target.disciplinaryBadge = res.badge;
+                                    if (res.status === 'SUSPENDED') {
+                                      target.status = 'SUSPENDED';
+                                      target.suspensionStart = new Date().toISOString();
+                                      target.suspensionEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+                                    }
+                                    saveStoredRoster(roster);
+                                    refreshRoster();
+                                  }
+                                }}
+                                style={{ fontSize: '0.7rem', padding: '3px 6px', background: 'transparent', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
+                                title="Simulate SLA breach strike for testing"
+                              >
+                                +Add Strike
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      )}
+
+      {/* Explanation Submission & Review Modal */}
+      {explanationModal && (
+        <div className="modal-overlay">
+          <div className="modal-content animate-slide-up" style={{ maxWidth: '580px' }}>
+            <div className="modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Gavel size={20} color="#dc2626" />
+                <h3 style={{ margin: 0 }}>
+                  {explanationModal.mode === 'SUBMIT' ? 'Submit Official Show Cause Explanation' : 'Tribunal Review of Officer Explanation'}
+                </h3>
+              </div>
+              <button className="close-btn" onClick={() => setExplanationModal(null)}>&times;</button>
+            </div>
+
+            <div className="modal-body" style={{ padding: '20px' }}>
+              <div style={{ background: 'var(--bg-secondary)', padding: '12px 16px', borderRadius: '8px', marginBottom: '16px', fontSize: '0.84rem' }}>
+                <div><strong>Officer:</strong> {explanationModal.officer.name} ({explanationModal.officer.designation})</div>
+                <div><strong>Department:</strong> {explanationModal.officer.department} • <strong>Sector:</strong> {explanationModal.officer.sector}</div>
+                <div><strong>Associated Ticket:</strong> <code>{explanationModal.ticketId}</code></div>
+                <div style={{ color: '#dc2626', marginTop: '4px', fontWeight: 600 }}>
+                  Charge: Failure to complete grievance within statutory SLA resolution window.
+                </div>
+              </div>
+
+              {explanationModal.mode === 'SUBMIT' ? (
+                <div>
+                  <label className="small-text font-bold" style={{ display: 'block', marginBottom: '6px' }}>
+                    Officer Justification / Field Delay Reasons <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <textarea
+                    rows={5}
+                    className="form-input"
+                    value={explanationInput}
+                    onChange={(e) => setExplanationInput(e.target.value)}
+                    placeholder="Provide detailed statutory reasons (e.g. specialized machinery procurement delay, severe weather/inundation, inaccessible terrain, or third-party utility clearance)..."
+                    style={{ width: '100%', marginBottom: '16px' }}
+                  />
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                    <button type="button" className="btn btn-secondary" onClick={() => setExplanationModal(null)}>
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      disabled={!explanationInput.trim()}
+                      onClick={() => {
+                        submitOfficerExplanation(explanationModal.officer.id, explanationModal.ticketId, explanationInput.trim());
+                        refreshRoster();
+                        setExplanationModal(null);
+                        alert("Show cause explanation successfully logged into Civil Service Registry for Commissioner Review.");
+                      }}
+                    >
+                      Submit Official Explanation
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ marginBottom: '14px' }}>
+                    <span className="small-text font-bold" style={{ display: 'block', marginBottom: '4px' }}>Submitted Officer Explanation:</span>
+                    <div style={{ background: 'var(--bg-primary)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-subtle)', fontStyle: 'italic', fontSize: '0.86rem' }}>
+                      "{explanationModal.explanation?.explanationText}"
+                    </div>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>
+                      Logged at: {new Date(explanationModal.explanation?.submittedAt || Date.now()).toLocaleString()}
+                    </span>
+                  </div>
+
+                  <div style={{ marginBottom: '16px' }}>
+                    <label className="small-text font-bold" style={{ display: 'block', marginBottom: '4px' }}>
+                      Commissioner Decision Remarks:
+                    </label>
+                    <textarea
+                      rows={3}
+                      className="form-input"
+                      value={adminReviewRemarks}
+                      onChange={(e) => setAdminReviewRemarks(e.target.value)}
+                      placeholder="Enter official remarks on decision..."
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => setExplanationModal(null)}
+                    >
+                      Close
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-sm"
+                      style={{ background: '#dc2626', color: '#fff' }}
+                      onClick={() => {
+                        reviewOfficerExplanation(explanationModal.officer.id, explanationModal.explanation.id, 'REJECT', adminReviewRemarks);
+                        refreshRoster();
+                        setExplanationModal(null);
+                        alert("Explanation Rejected. Strike 1 maintained under Section 14.");
+                      }}
+                    >
+                      Reject Explanation (Maintain Strike)
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-primary"
+                      style={{ background: '#16a34a', borderColor: '#16a34a' }}
+                      onClick={() => {
+                        reviewOfficerExplanation(explanationModal.officer.id, explanationModal.explanation.id, 'ACCEPT', adminReviewRemarks);
+                        refreshRoster();
+                        setExplanationModal(null);
+                        alert("Explanation Accepted by Nodal Commissioner. Strike 1 forgiven and officer cleared.");
+                      }}
+                    >
+                      Accept Explanation (Forgive Strike)
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
