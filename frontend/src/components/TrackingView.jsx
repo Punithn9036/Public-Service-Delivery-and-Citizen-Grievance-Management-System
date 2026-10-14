@@ -26,7 +26,10 @@ import {
   Eye,
   Globe,
   MessageSquare,
-  Smartphone
+  Smartphone,
+  Info,
+  PhoneCall,
+  AlertTriangle
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
@@ -191,8 +194,13 @@ export default function TrackingView({
   };
 
   // Determine stage index
-  const stages = ['Submitted', 'Under Review', 'Assigned', 'In Progress', 'Resolved'];
-  const currentStageIndex = activeSearchResult ? stages.indexOf(activeSearchResult.status) : 0;
+  const isEscalated = activeSearchResult?.status === 'Escalated';
+  const stages = isEscalated 
+    ? ['Submitted', 'Under Review', 'Assigned', 'Escalated (SLA Breached)', 'Resolved'] 
+    : ['Submitted', 'Under Review', 'Assigned', 'In Progress', 'Resolved'];
+  const currentStageIndex = activeSearchResult 
+    ? (isEscalated ? 3 : Math.max(0, stages.indexOf(activeSearchResult.status))) 
+    : 0;
 
   // SLA Calculation Helper
   const getSlaStatus = () => {
@@ -204,8 +212,14 @@ export default function TrackingView({
     const now = Date.now();
     const diffHours = Math.round((deadline - now) / (1000 * 60 * 60));
 
-    if (diffHours < 0) {
-      return { status: 'breached', text: `SLA Breached by ${Math.abs(diffHours)} hrs (Escalated)`, color: '#dc2626', bg: 'rgba(239, 68, 68, 0.12)' };
+    if (activeSearchResult.status === 'Escalated' || diffHours < 0) {
+      const overdue = activeSearchResult.escalatedOverdueHours || Math.abs(diffHours);
+      return { 
+        status: 'breached', 
+        text: `SLA Breached by ${overdue}h (Auto-Escalated to Executive Engineer)`, 
+        color: '#dc2626', 
+        bg: 'rgba(239, 68, 68, 0.14)' 
+      };
     } else if (diffHours <= 24) {
       return { status: 'critical', text: `SLA Critical (${diffHours}h remaining)`, color: '#ea580c', bg: 'rgba(234, 88, 12, 0.12)' };
     } else {
@@ -383,6 +397,51 @@ export default function TrackingView({
                 )}
               </div>
             </div>
+
+            {/* Statutory SLA Breach & Officer Reallocation Notice */}
+            {activeSearchResult.status === 'Escalated' && (
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(185, 28, 28, 0.06) 100%)',
+                border: '1.5px solid #ef4444',
+                borderRadius: '12px',
+                padding: '16px 20px',
+                marginBottom: '20px',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '14px'
+              }}>
+                <div style={{
+                  width: '42px',
+                  height: '42px',
+                  borderRadius: '50%',
+                  background: 'rgba(239, 68, 68, 0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#dc2626',
+                  flexShrink: 0
+                }}>
+                  <AlertTriangle size={24} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                    <strong style={{ color: '#b91c1c', fontSize: '0.98rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      🚨 Statutory SLA Elapsed • Case Auto-Escalated to Executive Authority
+                    </strong>
+                    <span style={{ fontSize: '0.72rem', background: '#dc2626', color: '#fff', padding: '3px 8px', borderRadius: '4px', fontWeight: 700 }}>
+                      Tier-2 Directive Active
+                    </span>
+                  </div>
+                  <p style={{ margin: '6px 0 0', fontSize: '0.85rem', color: 'var(--text-main)', lineHeight: '1.5' }}>
+                    This complaint exceeded the statutory SLA resolution deadline. Case directive authority has been transferred to <strong>{activeSearchResult.assignedOfficer || 'Supervising Executive Engineer'}</strong>.
+                  </p>
+                  <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px dashed rgba(239, 68, 68, 0.3)', display: 'flex', gap: '16px', flexWrap: 'wrap', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                    <span><strong>Original Field Officer:</strong> {activeSearchResult.originalAssignedOfficer || 'Field Staff'}</span>
+                    <span style={{ color: '#dc2626', fontWeight: 700 }}>• Statutory Show Cause Notice Issued (48h Explanation Clock Active)</span>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Stepper Timeline */}
             <div className="stepper-section">
@@ -707,7 +766,10 @@ export default function TrackingView({
           {/* Right Column: Meta Info Card */}
           <div className="track-side-col">
             <div className="side-meta-card glass-card">
-              <h3>Ticket Information</h3>
+              <h3>
+                <Info size={18} style={{ color: 'var(--brand-700)', flexShrink: 0 }} />
+                <span>Ticket Information</span>
+              </h3>
 
               <div className="meta-list-group">
                 <div className="meta-list-item">
@@ -769,8 +831,11 @@ export default function TrackingView({
               </button>
             </div>
 
-            <div className="side-help-card glass-card" style={{ marginTop: '16px' }}>
-              <h4>Need Immediate Escalation?</h4>
+            <div className="side-help-card glass-card">
+              <h4>
+                <PhoneCall size={16} style={{ flexShrink: 0, color: '#d97706' }} />
+                <span>Need Immediate Escalation?</span>
+              </h4>
               <p>If your grievance has passed SLA target date without resolution, call the 24x7 Municipal Helpline: <strong>1800-425-GOV (468)</strong></p>
             </div>
           </div>

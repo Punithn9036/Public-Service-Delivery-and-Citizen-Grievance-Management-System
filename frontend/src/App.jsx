@@ -19,6 +19,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { grievanceAPI, applicationAPI, serviceAPI } from './api/apiClient';
 import { releaseOfficerFromTicket } from './utils/officerDispatch';
 import { safeSetItem, safeGetItem, sanitizeGrievances } from './utils/safeStorage';
+import { auditAndEscalateGrievances } from './utils/slaEscalationEngine';
 
 import { 
   INITIAL_SERVICES, 
@@ -286,6 +287,34 @@ function MainAppContent() {
     }
     fetchLiveData();
   }, []);
+
+  // Automated Periodic SLA Breach & Multi-Tier Escalation Audit Engine
+  useEffect(() => {
+    if (!grievances || grievances.length === 0) return;
+
+    const runSlaAudit = () => {
+      const result = auditAndEscalateGrievances(grievances);
+      if (result.hasChanges) {
+        setGrievances(result.grievances);
+        if (result.escalatedCount > 0) {
+          setNotifications(prev => [
+            {
+              id: `sla-esc-${Date.now()}`,
+              title: `🚨 ${result.escalatedCount} Complaint(s) Auto-Escalated to Executive Engineers`,
+              message: `Statutory SLA elapsed. Re-assigned to Supervising Executive Engineers with Show Cause Notices issued.`,
+              time: 'Just now',
+              type: 'escalated'
+            },
+            ...prev
+          ]);
+        }
+      }
+    };
+
+    runSlaAudit();
+    const interval = setInterval(runSlaAudit, 30000);
+    return () => clearInterval(interval);
+  }, [grievances]);
 
   const toggleTheme = () => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
