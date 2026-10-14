@@ -764,55 +764,65 @@ export default function TrackingView({
           </div>
 
           {/* Right Column: Meta Info Card */}
-          <div className="track-side-col">
-            <div className="side-meta-card glass-card">
-              <h3>
+          <div className="track-side-col" style={{ minWidth: '380px', width: '100%' }}>
+            <div className="side-meta-card glass-card" style={{ padding: '24px 22px', borderRadius: '12px', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', boxShadow: '0 4px 20px rgba(0,0,0,0.04)' }}>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 700, margin: '0 0 16px', paddingBottom: '12px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Info size={18} style={{ color: 'var(--brand-700)', flexShrink: 0 }} />
                 <span>Ticket Information</span>
               </h3>
 
-              <div className="meta-list-group">
-                <div className="meta-list-item">
-                  <Building size={16} className="meta-icon" />
-                  <div>
-                    <span className="meta-lbl">Department</span>
-                    <strong>{activeSearchResult.department}</strong>
+              <div className="meta-list-group" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div className="meta-list-item" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '12px', padding: '10px 14px', background: 'var(--bg-tertiary)', borderRadius: '10px', border: '1px solid var(--border-subtle)' }}>
+                  <div style={{ flexShrink: 0, width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(37, 99, 235, 0.1)', color: 'var(--brand-700)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Building size={16} />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'baseline', gap: '6px', flexWrap: 'wrap', flex: 1, minWidth: 0 }}>
+                    <span className="meta-lbl" style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)' }}>Department:</span>
+                    <strong style={{ fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-main)', wordBreak: 'break-word' }}>{activeSearchResult.department}</strong>
                   </div>
                 </div>
 
                 {activeSearchResult.location && (
-                  <div className="meta-list-item">
-                    <MapPin size={16} className="meta-icon" />
-                    <div>
-                      <span className="meta-lbl">Location / Ward</span>
-                      <strong>{activeSearchResult.location}</strong>
+                  <div className="meta-list-item" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '12px', padding: '10px 14px', background: 'var(--bg-tertiary)', borderRadius: '10px', border: '1px solid var(--border-subtle)' }}>
+                    <div style={{ flexShrink: 0, width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(37, 99, 235, 0.1)', color: 'var(--brand-700)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <MapPin size={16} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'baseline', gap: '6px', flexWrap: 'wrap', flex: 1, minWidth: 0 }}>
+                      <span className="meta-lbl" style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)' }}>Location / Ward:</span>
+                      <strong style={{ fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-main)', wordBreak: 'break-word' }}>{activeSearchResult.location}</strong>
                     </div>
                   </div>
                 )}
 
-                <div className="meta-list-item">
-                  <User size={16} className="meta-icon" />
-                  <div>
-                    <span className="meta-lbl">Assigned Nodal Officer</span>
-                    <strong>{activeSearchResult.assignedOfficer || 'Control Room Officer'}</strong>
+                <div className="meta-list-item" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '12px', padding: '10px 14px', background: 'var(--bg-tertiary)', borderRadius: '10px', border: '1px solid var(--border-subtle)' }}>
+                  <div style={{ flexShrink: 0, width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(37, 99, 235, 0.1)', color: 'var(--brand-700)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <User size={16} />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'baseline', gap: '6px', flexWrap: 'wrap', flex: 1, minWidth: 0 }}>
+                    <span className="meta-lbl" style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)' }}>Assigned Officer:</span>
+                    <strong style={{ fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-main)', wordBreak: 'break-word' }}>{activeSearchResult.assignedOfficer || 'Control Room Officer'}</strong>
                   </div>
                 </div>
 
                 {activeSearchResult.assignedOfficerContact && activeSearchResult.assignedOfficerContact !== 'N/A' && (
-                  <div className="meta-list-item">
-                    <Phone size={16} className="meta-icon" />
-                    <div>
-                      <span className="meta-lbl">Officer Helpline</span>
-                      <strong className="text-blue">{activeSearchResult.assignedOfficerContact}</strong>
+                  <div className="meta-list-item" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '12px', padding: '10px 14px', background: 'var(--bg-tertiary)', borderRadius: '10px', border: '1px solid var(--border-subtle)' }}>
+                    <div style={{ flexShrink: 0, width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(37, 99, 235, 0.1)', color: 'var(--brand-700)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Phone size={16} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'baseline', gap: '6px', flexWrap: 'wrap', flex: 1, minWidth: 0 }}>
+                      <span className="meta-lbl" style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)' }}>Officer Helpline:</span>
+                      <strong className="text-blue" style={{ fontSize: '0.92rem', fontWeight: 600, wordBreak: 'break-word' }}>{activeSearchResult.assignedOfficerContact}</strong>
                     </div>
                   </div>
                 )}
 
-                <div className="meta-list-item">
-                  <Calendar size={16} className="meta-icon" />
-                  <div>
-                    <span className="meta-lbl">SLA Resolution Target</span>
-                    <strong className="text-amber">
+                <div className="meta-list-item" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '12px', padding: '10px 14px', background: 'var(--bg-tertiary)', borderRadius: '10px', border: '1px solid var(--border-subtle)' }}>
+                  <div style={{ flexShrink: 0, width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(37, 99, 235, 0.1)', color: 'var(--brand-700)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Calendar size={16} />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'baseline', gap: '6px', flexWrap: 'wrap', flex: 1, minWidth: 0 }}>
+                    <span className="meta-lbl" style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)' }}>SLA Target:</span>
+                    <strong className="text-amber" style={{ fontSize: '0.92rem', fontWeight: 600, wordBreak: 'break-word' }}>
                       {activeSearchResult.slaDeadline ? new Date(activeSearchResult.slaDeadline).toLocaleDateString() : `${activeSearchResult.slaDays} Days`}
                     </strong>
                   </div>
@@ -831,7 +841,7 @@ export default function TrackingView({
               </button>
             </div>
 
-            <div className="side-help-card glass-card">
+            <div className="side-help-card glass-card" style={{ padding: '20px 22px', borderRadius: '12px', marginTop: '16px' }}>
               <h4>
                 <PhoneCall size={16} style={{ flexShrink: 0, color: '#d97706' }} />
                 <span>Need Immediate Escalation?</span>
