@@ -1,6 +1,29 @@
 // Centralized REST API Client for JanSeva / DIGIT CMS
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (typeof window !== 'undefined' && window.location.port === '5173' ? 'http://localhost:5000/api' : '/api');
+const API_BASE_URL = (() => {
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL.replace(/\/+$/, '');
+  }
+
+  if (typeof window !== 'undefined') {
+    const { hostname, origin } = window.location;
+    // Local development - any port (5173, 5174, 3000, 4173, etc.)
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0') {
+      return 'http://localhost:5000/api';
+    }
+
+    // Served from same host on Render backend
+    if (hostname.includes('onrender.com')) {
+      return `${origin}/api`;
+    }
+
+    // Hosted on external frontend (Vercel, Netlify, GitHub Pages, etc.)
+    // Route to live Render backend gateway
+    return 'https://public-service-delivery-and-citizen.onrender.com/api';
+  }
+
+  return 'http://localhost:5000/api';
+})();
 
 /**
  * Helper to execute HTTP fetch requests with JWT Authorization header
@@ -9,20 +32,44 @@ async function request(endpoint, options = {}) {
   const token = localStorage.getItem('janseva_token');
   const headers = {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
     ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     ...options.headers
   };
 
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const url = `${API_BASE_URL}${endpoint}`;
+    const response = await fetch(url, {
       ...options,
       headers
     });
 
-    const data = await response.json();
+    const contentType = response.headers.get('content-type') || '';
+    let data;
+
+    if (contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      const text = await response.text();
+      if (!response.ok) {
+        if (response.status === 502 || response.status === 503 || response.status === 504) {
+          throw new Error('JanSeva backend server is warming up from standby. Please wait 15 seconds and try again.');
+        }
+        if (response.status === 404) {
+          throw new Error(`API endpoint not found (HTTP 404: ${endpoint}).`);
+        }
+        const cleanSnippet = text.replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim().slice(0, 140);
+        throw new Error(cleanSnippet || `Server returned HTTP ${response.status}`);
+      }
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        data = { message: text };
+      }
+    }
 
     if (!response.ok) {
-      throw new Error(data.message || 'API Request failed');
+      throw new Error(data.message || data.error || 'API Request failed');
     }
 
     return data;
@@ -70,20 +117,33 @@ export const serviceAPI = {
 };
 
 export const ipfsAPI = {
-  uploadFile: (fileOrPayload, filename = 'document') => {
+  uploadFile: async (fileOrPayload, filename = 'document') => {
+    const handleResponse = async (res) => {
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Upload failed');
+        return data;
+      }
+      const text = await res.text();
+      throw new Error(text.replace(/<[^>]*>?/gm, ' ').trim().slice(0, 100) || `Upload failed with status ${res.status}`);
+    };
+
     if (typeof File !== 'undefined' && fileOrPayload instanceof File) {
       const fd = new FormData();
       fd.append('file', fileOrPayload);
-      return fetch(`${API_BASE_URL}/ipfs/upload`, {
+      const res = await fetch(`${API_BASE_URL}/ipfs/upload`, {
         method: 'POST',
         body: fd
-      }).then(res => res.json());
+      });
+      return handleResponse(res);
     }
     if (typeof FormData !== 'undefined' && fileOrPayload instanceof FormData) {
-      return fetch(`${API_BASE_URL}/ipfs/upload`, {
+      const res = await fetch(`${API_BASE_URL}/ipfs/upload`, {
         method: 'POST',
         body: fileOrPayload
-      }).then(res => res.json());
+      });
+      return handleResponse(res);
     }
     const bodyObj = typeof fileOrPayload === 'string'
       ? { fileContent: fileOrPayload, filename }

@@ -41,6 +41,14 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/blockchain', blockchainRoutes);
 app.use('/api/webhook/whatsapp', notificationController.handleWhatsAppWebhook);
 
+// Fallback 404 handler for API routes (always return JSON, never HTML)
+app.all('/api/*', (req, res) => {
+  res.status(404).json({
+    error: 'NOT_FOUND',
+    message: `API endpoint '${req.originalUrl}' not found.`
+  });
+});
+
 // Serve built React SPA in production if available
 const path = require('path');
 const fs = require('fs');
@@ -54,6 +62,21 @@ if (fs.existsSync(frontendDist)) {
     res.sendFile(path.join(frontendDist, 'index.html'));
   });
 }
+
+// Global error handler for API
+app.use((err, req, res, next) => {
+  console.error('[JanSeva API Error]:', err);
+  if (res.headersSent) {
+    return next(err);
+  }
+  if (req.path.startsWith('/api')) {
+    return res.status(err.status || 500).json({
+      error: err.code || 'INTERNAL_SERVER_ERROR',
+      message: err.message || 'An unexpected error occurred.'
+    });
+  }
+  next(err);
+});
 
 const whatsappService = require('./src/services/whatsappService');
 
