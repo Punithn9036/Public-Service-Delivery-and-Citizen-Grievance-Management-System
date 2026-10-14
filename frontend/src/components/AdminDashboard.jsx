@@ -67,6 +67,7 @@ export default function AdminDashboard({
   const [newStatus, setNewStatus] = useState('');
   const [officerName, setOfficerName] = useState('');
   const [resolutionNote, setResolutionNote] = useState('');
+  const [officerQueueScope, setOfficerQueueScope] = useState('assigned'); // 'assigned' | 'dept-unassigned'
 
   // Local state for applications if updated
   const [serviceApps, setServiceApps] = useState(applications);
@@ -93,6 +94,8 @@ export default function AdminDashboard({
   const [historyQueryInput, setHistoryQueryInput] = useState('GRV-2026-8942');
   const [historyQueryResult, setHistoryQueryResult] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [fabricRefreshing, setFabricRefreshing] = useState(false);
+  const [copiedTxId, setCopiedTxId] = useState(null);
   // Sector-based Round-Robin Duty Roster State
   const [officerRoster, setOfficerRoster] = useState(() => getStoredRoster());
   const [selectedRosterSector, setSelectedRosterSector] = useState('All');
@@ -249,18 +252,74 @@ export default function AdminDashboard({
     }
   };
 
-  // Metrics
-  const total = grievances.length;
-  const pendingCount = grievances.filter(g => g.status === 'Submitted' || g.status === 'Under Review').length;
-  const inProgressCount = grievances.filter(g => g.status === 'In Progress' || g.status === 'Assigned').length;
-  const resolvedCount = grievances.filter(g => g.status === 'Resolved').length;
-  const urgentCount = grievances.filter(g => g.priority === 'Urgent').length;
-  const escalatedCount = grievances.filter(g => g.status === 'Escalated').length;
-  const strike1Officers = officerRoster.filter(o => o.disciplinaryStatus === 'EXPLANATION_REQUIRED');
-  const strike2Officers = officerRoster.filter(o => o.disciplinaryStatus === 'SUSPENDED');
-  const strike3Officers = officerRoster.filter(o => o.disciplinaryStatus === 'TERMINATION_PROCEEDINGS');
+  const currentOfficerName = (user?.fullName || '').toLowerCase().trim();
+  const officerEmpId = (user?.employeeId || user?.userId || '').toLowerCase().trim();
+  const officerPhone = (user?.phone || '').replace(/\D/g, '').slice(-10);
 
-  const filteredList = grievances.filter(g => {
+  // Check if a grievance is assigned to THIS officer
+  const isAssignedToCurrentOfficer = (g) => {
+    if (!g) return false;
+    const assigned = (g.assignedOfficer || '').toLowerCase();
+    const assignedContact = (g.assignedOfficerContact || '').replace(/\D/g, '').slice(-10);
+    const matchName = currentOfficerName && assigned.includes(currentOfficerName);
+    const matchEmpId = officerEmpId && assigned.includes(officerEmpId);
+    const matchPhone = officerPhone && assignedContact && officerPhone === assignedContact;
+    return Boolean(matchName || matchEmpId || matchPhone);
+  };
+
+  // Base list of grievances partitioned strictly by role:
+  // - OFFICER: sees ONLY their assigned tickets (and can toggle to see unassigned tickets in their own department)
+  // - ADMIN: sees all grievances
+  const officerAssignedGrievances = grievances.filter(isAssignedToCurrentOfficer);
+  const deptUnassignedGrievances = isOfficer && user?.department
+    ? grievances.filter(g => g.department === user.department && (!g.assignedOfficer || g.status === 'Submitted'))
+    : [];
+
+  const baseGrievances = isOfficer
+    ? (officerQueueScope === 'dept-unassigned' ? deptUnassignedGrievances : officerAssignedGrievances)
+    : grievances;
+
+  // Metrics: Computed strictly on this officer's assigned workload when in Officer mode!
+  const total = isOfficer ? officerAssignedGrievances.length : grievances.length;
+  const pendingCount = (isOfficer ? officerAssignedGrievances : grievances).filter(g => g.status === 'Submitted' || g.status === 'Under Review').length;
+  const inProgressCount = (isOfficer ? officerAssignedGrievances : grievances).filter(g => g.status === 'In Progress' || g.status === 'Assigned').length;
+  const resolvedCount = (isOfficer ? officerAssignedGrievances : grievances).filter(g => g.status === 'Resolved').length;
+  const urgentCount = (isOfficer ? officerAssignedGrievances : grievances).filter(g => g.priority === 'Urgent').length;
+  const escalatedCount = (isOfficer ? officerAssignedGrievances : grievances).filter(g => g.status === 'Escalated').length;
+
+  // Officer Roster Scope:
+  // - Officer: sees ONLY their own officer profile (hiding other officers' personal details and queues)
+  // - Admin: sees full multi-officer roster
+  const officerRosterScope = isOfficer
+    ? officerRoster.filter(o => 
+        (currentOfficerName && o.name.toLowerCase().includes(currentOfficerName)) ||
+        (officerEmpId && o.id.toLowerCase() === officerEmpId) ||
+        (user?.email && o.email && o.email.toLowerCase() === user.email.toLowerCase())
+      )
+    : officerRoster;
+
+  // If officer not in static mock roster (e.g. newly registered officer), synthesize their entry so their duty tab is never blank:
+  const effectiveOfficerRoster = isOfficer && officerRosterScope.length === 0
+    ? [{
+        id: user?.employeeId || user?.userId || 'OFF-CUSTOM',
+        name: user?.fullName || 'Field Officer',
+        department: user?.department || 'Municipal Governance',
+        designation: 'Designated Field Officer',
+        sector: 'Assigned Municipal Sector',
+        phone: user?.phone || '+91 94433 11223',
+        status: 'AVAILABLE',
+        activeTickets: officerAssignedGrievances.map(g => g.id),
+        slaBreachesCount: 0,
+        disciplinaryStatus: 'NORMAL',
+        explanations: []
+      }]
+    : (isOfficer ? officerRosterScope : officerRoster);
+
+  const strike1Officers = effectiveOfficerRoster.filter(o => o.disciplinaryStatus === 'EXPLANATION_REQUIRED');
+  const strike2Officers = effectiveOfficerRoster.filter(o => o.disciplinaryStatus === 'SUSPENDED');
+  const strike3Officers = effectiveOfficerRoster.filter(o => o.disciplinaryStatus === 'TERMINATION_PROCEEDINGS');
+
+  const filteredList = baseGrievances.filter(g => {
     const matchDept = selectedDept === 'All' || g.department === selectedDept;
     const matchStatus = selectedStatus === 'All' || g.status === selectedStatus;
     const matchPriority = selectedPriority === 'All' || g.priority === selectedPriority;
@@ -814,7 +873,7 @@ export default function AdminDashboard({
           className={`btn btn-sm ${activeSection === 'roster' ? 'btn-primary' : 'btn-secondary'}`}
           style={{ padding: '8px 18px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
         >
-          <Users size={16} /> Sector Officer Queue & Duty Roster ({officerRoster.length} Officers)
+          <Users size={16} /> {isOfficer ? 'My Duty Profile' : `Sector Officer Queue & Duty Roster (${officerRoster.length} Officers)`}
         </button>
         <button
           onClick={() => { setActiveSection('sla-tribunal'); refreshRoster(); }}
@@ -831,7 +890,7 @@ export default function AdminDashboard({
           }}
         >
           <Gavel size={16} color={activeSection === 'sla-tribunal' ? '#ffffff' : '#dc2626'} /> 
-          SLA Tribunal &amp; Officer Discipline ({escalatedCount})
+          {isOfficer ? 'My SLA Compliance & Notices' : `SLA Tribunal & Officer Discipline (${escalatedCount})`}
         </button>
       </div>
 
@@ -839,11 +898,11 @@ export default function AdminDashboard({
         <>
           {/* Department Breakdown Bar Graph Visualizer */}
           <div className="admin-analytics-card glass-card">
-            <h3><BarChart2 size={20} /> {t('departmentWorkload')}</h3>
+            <h3><BarChart2 size={20} /> {isOfficer ? 'Department Workload Overview' : t('departmentWorkload')}</h3>
             <div className="dept-bars-list">
               {departments.slice(0, 5).map(dept => {
                 const count = grievances.filter(g => g.department === dept).length;
-                const pct = Math.min(100, Math.round((count / (total || 1)) * 100) || 5);
+                const pct = Math.min(100, Math.round((count / (grievances.length || 1)) * 100) || 5);
                 return (
                   <div key={dept} className="dept-bar-item">
                     <div className="bar-info">
@@ -863,8 +922,30 @@ export default function AdminDashboard({
           <div className="admin-table-card glass-card">
             <div className="table-header-controls">
               <div>
-                <h2>{isOfficer ? 'Field Tickets & Grievance Registry' : t('manageTickets')}</h2>
-                <p>{isOfficer ? 'Inspect evidence, dispatch field units, update state machine, and log official notes' : t('manageTicketsSub')}</p>
+                <h2>{isOfficer ? 'My Field Tickets & Assigned Queue' : t('manageTickets')}</h2>
+                <p>{isOfficer ? 'Inspect evidence, update state machine, resolve on-site citizen grievances, and log official notes' : t('manageTicketsSub')}</p>
+                {isOfficer && (
+                  <div style={{ display: 'inline-flex', background: 'var(--bg-tertiary)', padding: '3px', borderRadius: '8px', border: '1px solid var(--border-subtle)', marginTop: '8px' }}>
+                    <button
+                      type="button"
+                      className={`btn-sm ${officerQueueScope === 'assigned' ? 'btn btn-primary' : 'btn'}`}
+                      style={{ borderRadius: '6px', fontSize: '0.74rem', padding: '4px 10px', border: 'none' }}
+                      onClick={() => setOfficerQueueScope('assigned')}
+                    >
+                      My Assigned Workload ({officerAssignedGrievances.length})
+                    </button>
+                    {user?.department && (
+                      <button
+                        type="button"
+                        className={`btn-sm ${officerQueueScope === 'dept-unassigned' ? 'btn btn-primary' : 'btn'}`}
+                        style={{ borderRadius: '6px', fontSize: '0.74rem', padding: '4px 10px', border: 'none' }}
+                        onClick={() => setOfficerQueueScope('dept-unassigned')}
+                      >
+                        Unassigned in {user.department} ({deptUnassignedGrievances.length})
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="filter-row" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -1956,15 +2037,15 @@ export default function AdminDashboard({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
               <div>
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(37, 99, 235, 0.1)', color: '#2563eb', padding: '4px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 700, marginBottom: '8px' }}>
-                  <Users size={14} /> Multi-Sector Round-Robin Dispatch Engine
+                  <Users size={14} /> {isOfficer ? 'Authorized Officer Roster Card' : 'Multi-Sector Round-Robin Dispatch Engine'}
                 </div>
                 <h2 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '4px 0 6px', color: 'var(--text-main)' }}>
-                  Sector Officer Queue & Dynamic Workload Roster
+                  {isOfficer ? 'My Field Duty Profile & Queue Status' : 'Sector Officer Queue & Dynamic Workload Roster'}
                 </h2>
                 <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-muted)', maxWidth: '780px' }}>
-                  Officers in each municipal sector and department are organized in a sequential duty queue. 
-                  Incoming grievances are automatically assigned to the first free officer (1st person, then 2nd person, etc.). 
-                  When an officer resolves a ticket, they are automatically returned to the end of the available pool.
+                  {isOfficer 
+                    ? 'Inspect your designated municipal sector, current duty availability, active field assignments, and queue standing. Viewing other sector officers is restricted to Central Administration.'
+                    : 'Officers in each municipal sector and department are organized in a sequential duty queue. Incoming grievances are automatically assigned to the first free officer (1st person, then 2nd person, etc.). When an officer resolves a ticket, they are automatically returned to the end of the available pool.'}
                 </p>
               </div>
 
@@ -1979,59 +2060,67 @@ export default function AdminDashboard({
               </div>
             </div>
 
-            {/* Filter Bar */}
-            <div style={{ display: 'flex', gap: '12px', marginTop: '20px', flexWrap: 'wrap', alignItems: 'center', background: 'var(--bg-secondary)', padding: '12px 16px', borderRadius: '10px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Filter size={15} className="text-muted" />
-                <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)' }}>Filter by Sector:</span>
+            {/* Filter Bar (Only for Admin; Officers see privacy shield) */}
+            {isOfficer ? (
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '16px', background: 'rgba(37,99,235,0.08)', padding: '10px 16px', borderRadius: '10px', color: 'var(--brand-700)', fontSize: '0.84rem', border: '1px solid rgba(37,99,235,0.2)' }}>
+                <ShieldCheck size={18} />
+                <span><strong>Privacy Shield Active:</strong> Displaying exclusively your authenticated officer profile and duty status. Other municipal officers' queues and performance records are restricted.</span>
               </div>
-              <select 
-                value={selectedRosterSector} 
-                onChange={(e) => setSelectedRosterSector(e.target.value)}
-                className="form-input" 
-                style={{ width: 'auto', padding: '6px 12px', fontSize: '0.85rem' }}
-              >
-                <option value="All">All Municipal Sectors (5 Zones)</option>
-                <option value="Sector 1">Sector 1 (North Zone)</option>
-                <option value="Sector 2">Sector 2 (South Zone)</option>
-                <option value="Sector 3">Sector 3 (East Zone)</option>
-                <option value="Sector 4">Sector 4 (West Zone)</option>
-                <option value="Sector 5">Sector 5 (Central Zone)</option>
-              </select>
+            ) : (
+              <div style={{ display: 'flex', gap: '12px', marginTop: '20px', flexWrap: 'wrap', alignItems: 'center', background: 'var(--bg-secondary)', padding: '12px 16px', borderRadius: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Filter size={15} className="text-muted" />
+                  <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)' }}>Filter by Sector:</span>
+                </div>
+                <select 
+                  value={selectedRosterSector} 
+                  onChange={(e) => setSelectedRosterSector(e.target.value)}
+                  className="form-input" 
+                  style={{ width: 'auto', padding: '6px 12px', fontSize: '0.85rem' }}
+                >
+                  <option value="All">All Municipal Sectors (5 Zones)</option>
+                  <option value="Sector 1">Sector 1 (North Zone)</option>
+                  <option value="Sector 2">Sector 2 (South Zone)</option>
+                  <option value="Sector 3">Sector 3 (East Zone)</option>
+                  <option value="Sector 4">Sector 4 (West Zone)</option>
+                  <option value="Sector 5">Sector 5 (Central Zone)</option>
+                </select>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '12px' }}>
-                <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)' }}>Department:</span>
-              </div>
-              <select 
-                value={selectedRosterDept} 
-                onChange={(e) => setSelectedRosterDept(e.target.value)}
-                className="form-input" 
-                style={{ width: 'auto', padding: '6px 12px', fontSize: '0.85rem' }}
-              >
-                <option value="All">All Departments</option>
-                {departments.map(d => (
-                  <option key={d} value={d}>{d}</option>
-                ))}
-              </select>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '12px' }}>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)' }}>Department:</span>
+                </div>
+                <select 
+                  value={selectedRosterDept} 
+                  onChange={(e) => setSelectedRosterDept(e.target.value)}
+                  className="form-input" 
+                  style={{ width: 'auto', padding: '6px 12px', fontSize: '0.85rem' }}
+                >
+                  <option value="All">All Departments</option>
+                  {departments.map(d => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
 
-              <div style={{ marginLeft: 'auto', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                Showing <strong>
-                  {officerRoster.filter(o => 
-                    (selectedRosterSector === 'All' || o.sector.toLowerCase().includes(selectedRosterSector.toLowerCase())) &&
-                    (selectedRosterDept === 'All' || o.department === selectedRosterDept)
-                  ).length}
-                </strong> officers
+                <div style={{ marginLeft: 'auto', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                  Showing <strong>
+                    {officerRoster.filter(o => 
+                      (selectedRosterSector === 'All' || o.sector.toLowerCase().includes(selectedRosterSector.toLowerCase())) &&
+                      (selectedRosterDept === 'All' || o.department === selectedRosterDept)
+                    ).length}
+                  </strong> officers
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Roster Cards Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
-            {officerRoster
-              .filter(o => 
-                (selectedRosterSector === 'All' || o.sector.toLowerCase().includes(selectedRosterSector.toLowerCase())) &&
-                (selectedRosterDept === 'All' || o.department === selectedRosterDept)
-              )
+            {effectiveOfficerRoster
+              .filter(o => {
+                if (isOfficer) return true;
+                return (selectedRosterSector === 'All' || o.sector.toLowerCase().includes(selectedRosterSector.toLowerCase())) &&
+                  (selectedRosterDept === 'All' || o.department === selectedRosterDept);
+              })
               .sort((a, b) => (a.queuePriority || 0) - (b.queuePriority || 0))
               .map((officer, index) => {
                 const isFree = officer.status === 'AVAILABLE' && (!officer.activeTickets || officer.activeTickets.length === 0);
@@ -2179,13 +2268,26 @@ export default function AdminDashboard({
           <div className="glass-card" style={{ padding: '24px', borderRadius: '16px', marginBottom: '24px' }}>
             <h3 style={{ fontSize: '1.15rem', fontWeight: 700, margin: '0 0 14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <AlertTriangle size={18} color="#dc2626" />
-              Active Escalated Grievance Queue ({escalatedCount} Cases Under Executive Directive)
+              {isOfficer 
+                ? 'My Escalated Tasks & Directives' 
+                : `Active Escalated Grievance Queue (${escalatedCount} Cases Under Executive Directive)`}
             </h3>
 
-            {grievances.filter(g => g.status === 'Escalated').length === 0 ? (
+            {grievances.filter(g => {
+              if (g.status !== 'Escalated') return false;
+              if (isOfficer) {
+                return isAssignedToCurrentOfficer(g) || 
+                  (g.originalAssignedOfficer && currentOfficerName && g.originalAssignedOfficer.toLowerCase().includes(currentOfficerName));
+              }
+              return true;
+            }).length === 0 ? (
               <div style={{ textAlign: 'center', padding: '36px', color: 'var(--text-muted)', background: 'var(--bg-secondary)', borderRadius: '10px' }}>
                 <CheckCircle2 size={36} color="#16a34a" style={{ margin: '0 auto 8px' }} />
-                <p style={{ fontWeight: 600, margin: 0 }}>All Grievances Are Operating Within Prescribed SLA Target Deadlines.</p>
+                <p style={{ fontWeight: 600, margin: 0 }}>
+                  {isOfficer 
+                    ? 'All your assigned grievances are operating within statutory target deadlines.' 
+                    : 'All Grievances Are Operating Within Prescribed SLA Target Deadlines.'}
+                </p>
                 <span style={{ fontSize: '0.8rem' }}>No automatic escalations currently active.</span>
               </div>
             ) : (
@@ -2203,7 +2305,14 @@ export default function AdminDashboard({
                     </tr>
                   </thead>
                   <tbody>
-                    {grievances.filter(g => g.status === 'Escalated').map(g => (
+                    {grievances.filter(g => {
+                      if (g.status !== 'Escalated') return false;
+                      if (isOfficer) {
+                        return isAssignedToCurrentOfficer(g) || 
+                          (g.originalAssignedOfficer && currentOfficerName && g.originalAssignedOfficer.toLowerCase().includes(currentOfficerName));
+                      }
+                      return true;
+                    }).map(g => (
                       <tr key={g.id} style={{ background: 'rgba(239, 68, 68, 0.04)' }}>
                         <td><strong style={{ color: '#dc2626' }}>{g.id}</strong></td>
                         <td>
@@ -2255,48 +2364,52 @@ export default function AdminDashboard({
               <div>
                 <h3 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Gavel size={18} color="#b91c1c" />
-                  Officer 3-Strike Disciplinary Board &amp; Penalty Matrix
+                  {isOfficer ? 'My Official SLA Compliance Record & Disciplinary Standing' : 'Officer 3-Strike Disciplinary Board & Penalty Matrix'}
                 </h3>
                 <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                  Strike 1: Explanation within 48h • Strike 2: 1-Month Suspension • Strike 3: Termination Inquiry
+                  {isOfficer 
+                    ? 'Statutory time-bound compliance audit. Strike 1: 48h Explanation • Strike 2: Suspension • Strike 3: Inquiry'
+                    : 'Strike 1: Explanation within 48h • Strike 2: 1-Month Suspension • Strike 3: Termination Inquiry'}
                 </p>
               </div>
 
-              {/* Filter Tabs */}
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                <button
-                  type="button"
-                  className={`btn btn-sm ${disciplinaryFilter === 'All' ? 'btn-primary' : 'btn-secondary'}`}
-                  onClick={() => setDisciplinaryFilter('All')}
-                  style={{ fontSize: '0.75rem', padding: '4px 10px' }}
-                >
-                  All ({officerRoster.length})
-                </button>
-                <button
-                  type="button"
-                  className={`btn btn-sm ${disciplinaryFilter === 'STRIKE_1' ? 'btn-primary' : 'btn-secondary'}`}
-                  onClick={() => setDisciplinaryFilter('STRIKE_1')}
-                  style={{ fontSize: '0.75rem', padding: '4px 10px' }}
-                >
-                  Strike 1 ({strike1Officers.length})
-                </button>
-                <button
-                  type="button"
-                  className={`btn btn-sm ${disciplinaryFilter === 'STRIKE_2' ? 'btn-primary' : 'btn-secondary'}`}
-                  onClick={() => setDisciplinaryFilter('STRIKE_2')}
-                  style={{ fontSize: '0.75rem', padding: '4px 10px' }}
-                >
-                  Suspended ({strike2Officers.length})
-                </button>
-                <button
-                  type="button"
-                  className={`btn btn-sm ${disciplinaryFilter === 'STRIKE_3' ? 'btn-primary' : 'btn-secondary'}`}
-                  onClick={() => setDisciplinaryFilter('STRIKE_3')}
-                  style={{ fontSize: '0.75rem', padding: '4px 10px' }}
-                >
-                  Termination ({strike3Officers.length})
-                </button>
-              </div>
+              {/* Filter Tabs (Only for Central Admin) */}
+              {!isOfficer && (
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className={`btn btn-sm ${disciplinaryFilter === 'All' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => setDisciplinaryFilter('All')}
+                    style={{ fontSize: '0.75rem', padding: '4px 10px' }}
+                  >
+                    All ({officerRoster.length})
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn btn-sm ${disciplinaryFilter === 'STRIKE_1' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => setDisciplinaryFilter('STRIKE_1')}
+                    style={{ fontSize: '0.75rem', padding: '4px 10px' }}
+                  >
+                    Strike 1 ({strike1Officers.length})
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn btn-sm ${disciplinaryFilter === 'STRIKE_2' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => setDisciplinaryFilter('STRIKE_2')}
+                    style={{ fontSize: '0.75rem', padding: '4px 10px' }}
+                  >
+                    Suspended ({strike2Officers.length})
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn btn-sm ${disciplinaryFilter === 'STRIKE_3' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => setDisciplinaryFilter('STRIKE_3')}
+                    style={{ fontSize: '0.75rem', padding: '4px 10px' }}
+                  >
+                    Termination ({strike3Officers.length})
+                  </button>
+                </div>
+              )}
             </div>
 
             <div style={{ overflowX: 'auto' }}>
@@ -2312,8 +2425,9 @@ export default function AdminDashboard({
                   </tr>
                 </thead>
                 <tbody>
-                  {officerRoster
+                  {effectiveOfficerRoster
                     .filter(o => {
+                      if (isOfficer) return true;
                       if (disciplinaryFilter === 'STRIKE_1') return o.disciplinaryStatus === 'EXPLANATION_REQUIRED';
                       if (disciplinaryFilter === 'STRIKE_2') return o.disciplinaryStatus === 'SUSPENDED';
                       if (disciplinaryFilter === 'STRIKE_3') return o.disciplinaryStatus === 'TERMINATION_PROCEEDINGS';

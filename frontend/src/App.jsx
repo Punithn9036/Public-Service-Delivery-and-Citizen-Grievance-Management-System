@@ -472,6 +472,49 @@ function MainAppContent() {
   }
 
   const isCitizen = user.role === 'CITIZEN';
+  const isOfficer = user.role === 'OFFICER';
+  const isAdmin = user.role === 'ADMIN';
+
+  const cleanUserPhone = (user?.phone || '').replace(/\D/g, '').slice(-10);
+  const cleanUserEmail = (user?.email || '').toLowerCase().trim();
+  const cleanUserName = (user?.fullName || '').toLowerCase().trim();
+  const cleanUserEmpId = (user?.employeeId || user?.userId || '').toLowerCase().trim();
+
+  // Scope notifications strictly to the current user
+  const userNotifications = notifications.filter(n => {
+    if (isAdmin) return true;
+    const match = n.title.match(/#(GRV-[\w-]+|APP-[\w-]+)/i);
+    if (!match || !match[1]) return true;
+    const ticketId = match[1];
+
+    if (isCitizen) {
+      const g = grievances.find(item => item && item.id === ticketId);
+      if (g) {
+        const itemPhone = (g.citizenPhone || '').replace(/\D/g, '').slice(-10);
+        return (cleanUserPhone && itemPhone === cleanUserPhone) || 
+               (g.citizenEmail && g.citizenEmail.toLowerCase() === cleanUserEmail) ||
+               (g.citizenName && g.citizenName.toLowerCase() === cleanUserName);
+      }
+      const app = applications.find(item => item && item.id === ticketId);
+      if (app) {
+        return (cleanUserPhone && app.applicantPhone && app.applicantPhone.includes(cleanUserPhone)) ||
+               (app.applicantEmail && app.applicantEmail.toLowerCase() === cleanUserEmail);
+      }
+      return false;
+    }
+
+    if (isOfficer) {
+      const g = grievances.find(item => item && item.id === ticketId);
+      if (g) {
+        const assigned = (g.assignedOfficer || '').toLowerCase();
+        return (cleanUserName && assigned.includes(cleanUserName)) || 
+               (cleanUserEmpId && assigned.includes(cleanUserEmpId));
+      }
+      return false;
+    }
+
+    return true;
+  });
 
   return (
     <div className="app-root">
@@ -507,7 +550,7 @@ function MainAppContent() {
               canGoBack={canGoBack}
               onGoBack={handleGoBack}
               previousPageTitle={getPreviousPageTitle()}
-              unreadNotifications={notifications.length}
+              unreadNotifications={userNotifications.length}
               setShowNotifications={setShowNotifications}
               openGrievanceModal={() => {
                 navigateTo(activeTab, { closeModals: false });
@@ -527,7 +570,7 @@ function MainAppContent() {
           {/* Real-time Notifications Popover */}
           {showNotifications && (
             <NotificationsDrawer 
-              notifications={notifications}
+              notifications={userNotifications}
               onClose={() => setShowNotifications(false)}
               onClearAll={() => setNotifications([])}
               onSelectNotification={(n) => {
@@ -578,7 +621,7 @@ function MainAppContent() {
                 onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
                 onGoBack={handleGoBack}
                 canGoBack={canGoBack}
-                unreadNotifications={notifications.length}
+                unreadNotifications={userNotifications.length}
                 setShowNotifications={setShowNotifications}
               />
             )}
@@ -605,7 +648,7 @@ function MainAppContent() {
                 onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
                 onGoBack={handleGoBack}
                 canGoBack={canGoBack}
-                unreadNotifications={notifications.length}
+                unreadNotifications={userNotifications.length}
                 setShowNotifications={setShowNotifications}
               />
             )}
@@ -620,7 +663,7 @@ function MainAppContent() {
                 onGoBack={handleGoBack}
                 canGoBack={canGoBack}
                 previousPageTitle={getPreviousPageTitle()}
-                unreadNotifications={notifications.length}
+                unreadNotifications={userNotifications.length}
                 setShowNotifications={setShowNotifications}
                 isSidebarOpen={isSidebarOpen}
                 onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
@@ -634,7 +677,7 @@ function MainAppContent() {
                 onGoBack={handleGoBack}
                 canGoBack={canGoBack}
                 previousPageTitle={getPreviousPageTitle()}
-                unreadNotifications={notifications.length}
+                unreadNotifications={userNotifications.length}
                 setShowNotifications={setShowNotifications}
                 isSidebarOpen={isSidebarOpen}
                 onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
