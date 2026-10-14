@@ -132,6 +132,21 @@ function MainAppContent() {
       }
     }
 
+    // Strict Role-Based Portal Guard: Officers and Admins belong exclusively in the Official Governance Center
+    if (!isCitizen) {
+      setActivePortal('admin');
+      setActiveTab('admin-dashboard');
+      setNavHistory([]);
+      if (options.closeModals !== false) {
+        setShowGrievanceModal(false);
+        setSelectedServiceModal(null);
+        setShowSettingsModal(false);
+        setShowPrivacyModal(false);
+        setShowTermsModal(false);
+      }
+      return;
+    }
+
     if (options.portal) setActivePortal(options.portal);
     if (newTab) {
       setActiveTab(newTab);
@@ -161,14 +176,22 @@ function MainAppContent() {
       return;
     }
 
-    // 2. If history has previous views, pop the last one
+    // 2. Officers and Admins belong strictly to their official dashboard and must NEVER be kicked to citizen pages
+    if (!isCitizen) {
+      setActivePortal('admin');
+      setActiveTab('admin-dashboard');
+      setNavHistory([]);
+      return;
+    }
+
+    // 3. If history has previous views, pop the last one (Citizens only)
     if (navHistory.length > 0) {
       const historyCopy = [...navHistory];
       const previousState = historyCopy.pop();
       setNavHistory(historyCopy);
 
       if (previousState) {
-        setActivePortal(previousState.activePortal || 'citizen');
+        setActivePortal('citizen');
         setActiveTab(previousState.activeTab || 'overview');
         setSelectedTrackId(previousState.selectedTrackId || '');
         setShowGrievanceModal(Boolean(previousState.showGrievanceModal));
@@ -191,12 +214,10 @@ function MainAppContent() {
       return;
     }
 
-    // 3. Fallback: If no history but on a sub-view, return to overview dashboard and reset
-    if (activeTab !== 'overview') {
-      setActiveTab('overview');
-      setActivePortal('citizen');
-      setNavHistory([]);
-    }
+    // 4. Fallback for citizens: return to citizen overview dashboard
+    setActiveTab('overview');
+    setActivePortal('citizen');
+    setNavHistory([]);
   };
 
   // Synchronize with Browser's Native Back / Forward Buttons
@@ -219,7 +240,8 @@ function MainAppContent() {
   }, [navHistory, showGrievanceModal, selectedServiceModal, showSettingsModal, showPrivacyModal, showTermsModal]);
 
   const isAnyModalOpen = showGrievanceModal || Boolean(selectedServiceModal) || showSettingsModal || showPrivacyModal || showTermsModal;
-  const canGoBack = activeTab !== 'overview' || isAnyModalOpen;
+  // Officers and Admins are permanently stationed on their official portal with zero back button to citizen pages
+  const canGoBack = isCitizen && (activeTab !== 'overview' || isAnyModalOpen);
 
   const getPreviousPageTitle = () => {
     if (isAnyModalOpen) {
