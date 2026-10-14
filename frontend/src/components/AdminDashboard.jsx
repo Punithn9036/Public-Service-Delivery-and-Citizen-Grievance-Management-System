@@ -535,24 +535,27 @@ export default function AdminDashboard({
                 onChange={(e) => setSearchFilter(e.target.value)}
                 className="hero-search-input"
               />
+              {searchFilter && (
+                <button
+                  type="button"
+                  onClick={() => setSearchFilter('')}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#94A3B8',
+                    cursor: 'pointer',
+                    fontSize: '1.25rem',
+                    padding: '0 8px',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}
+                  title="Clear search"
+                  aria-label="Clear search"
+                >
+                  &times;
+                </button>
+              )}
             </div>
-
-            <div className="hero-search-cat-dropdown">
-              <select 
-                value={selectedDept} 
-                onChange={(e) => setSelectedDept(e.target.value)}
-                className="hero-category-select"
-              >
-                <option value="All">All Departments</option>
-                {departments.map(d => (
-                  <option key={d} value={d}>{d}</option>
-                ))}
-              </select>
-            </div>
-
-            <button type="submit" className="hero-search-submit-btn">
-              <span>Filter</span>
-            </button>
           </form>
 
           {/* Fast-Track Operations Chips */}
@@ -748,41 +751,6 @@ export default function AdminDashboard({
       {/* 2. ADMIN & OFFICER MANAGEMENT CONSOLE */}
       <div className="admin-container" id="admin-management-section">
         
-        {/* Officer / Admin Header */}
-        <div className="admin-header glass-card">
-          <div className="admin-header-title">
-            <div className="badge-official">
-              <ShieldCheck size={18} />
-              <span>
-                {isOfficer 
-                  ? (user?.department ? `${user.department} — Field Control Desk` : t('nodalOfficerControl'))
-                  : t('nodalOfficerControl')}
-              </span>
-            </div>
-            <h1>
-              {isOfficer 
-                ? 'Field Officer Operations & Ticket Redressal' 
-                : t('publicGovernanceCenter')}
-            </h1>
-            <p>
-              {isOfficer 
-                ? 'Rapid on-site verification, officer dispatch management, statutory SLA enforcement, and resolution closure.' 
-                : t('governanceSubtitle')}
-            </p>
-          </div>
-
-          <div className="admin-actions" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <button className="btn btn-primary" onClick={exportCSV}>
-              <FileSpreadsheet size={18} />
-              {t('exportCSV')}
-            </button>
-            <button className="btn btn-secondary" onClick={printAuditReport}>
-              <Printer size={18} />
-              {t('exportAudit')}
-            </button>
-          </div>
-        </div>
-
       {/* KPI Cards Row */}
       <div className="admin-kpi-grid">
         <div className="kpi-card glass-card">
@@ -2553,6 +2521,41 @@ export default function AdminDashboard({
 
         </div>
       )}
+
+      {/* Officer / Admin Operations & Governance Summary Card (Shifted to Bottom) */}
+      <div className="admin-header glass-card" style={{ marginTop: '28px' }}>
+        <div className="admin-header-title">
+          <div className="badge-official">
+            <ShieldCheck size={18} />
+            <span>
+              {isOfficer 
+                ? (user?.department ? `${user.department} — Field Control Desk` : t('nodalOfficerControl'))
+                : t('nodalOfficerControl')}
+            </span>
+          </div>
+          <h1>
+            {isOfficer 
+              ? 'Field Officer Operations & Ticket Redressal' 
+              : t('publicGovernanceCenter')}
+          </h1>
+          <p>
+            {isOfficer 
+              ? 'Rapid on-site verification, officer dispatch management, statutory SLA enforcement, and resolution closure.' 
+              : t('governanceSubtitle')}
+          </p>
+        </div>
+
+        <div className="admin-actions" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <button className="btn btn-primary" onClick={exportCSV}>
+            <FileSpreadsheet size={18} />
+            {t('exportCSV')}
+          </button>
+          <button className="btn btn-secondary" onClick={printAuditReport}>
+            <Printer size={18} />
+            {t('exportAudit')}
+          </button>
+        </div>
+      </div>
 
       {/* Explanation Submission & Review Modal */}
       {explanationModal && (
