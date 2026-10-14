@@ -52,19 +52,30 @@ export default function TrackingView({
   const { lang, setLang, t } = useLanguage();
   const { user } = useAuth();
   const gList = Array.isArray(grievances) ? grievances : [];
-  const aList = Array.isArray(applications) ? applications : [];
+  const isCitizen = !user || user.role === 'CITIZEN';
+  const isOfficer = user?.role === 'OFFICER';
+  const isAdmin = user?.role === 'ADMIN';
 
   const cleanUserPhone = (user?.phone || '').replace(/\D/g, '').slice(-10);
   const cleanUserEmail = (user?.email || '').toLowerCase().trim();
   const cleanUserName = (user?.fullName || '').toLowerCase().trim();
+  const cleanUserEmpId = (user?.employeeId || user?.userId || '').toLowerCase().trim();
 
   const myUserGrievances = user ? gList.filter(g => {
     if (!g) return false;
+    if (isOfficer) {
+      const assigned = (g.assignedOfficer || '').toLowerCase();
+      const assignedContact = (g.assignedOfficerContact || '').replace(/\D/g, '').slice(-10);
+      return (cleanUserName && assigned.includes(cleanUserName)) || 
+             (cleanUserEmpId && assigned.includes(cleanUserEmpId)) || 
+             (cleanUserPhone && assignedContact && cleanUserPhone === assignedContact);
+    }
     const cleanGPhone = (g.citizenPhone || '').replace(/\D/g, '').slice(-10);
     const matchPhone = cleanUserPhone && cleanGPhone && cleanGPhone === cleanUserPhone;
     const matchEmail = g.citizenEmail && cleanUserEmail && g.citizenEmail.toLowerCase().trim() === cleanUserEmail;
     const matchName = g.citizenName && cleanUserName && g.citizenName.toLowerCase().trim() === cleanUserName;
-    return Boolean(matchPhone || matchEmail || matchName);
+    const matchUserId = g.userId && user.id && String(g.userId) === String(user.id);
+    return Boolean(matchPhone || matchEmail || matchName || matchUserId);
   }) : [];
 
   const [trackInput, setTrackInput] = useState(selectedTrackId || '');
@@ -333,7 +344,7 @@ export default function TrackingView({
         <div className="quick-suggestions">
           {myUserGrievances.length > 0 ? (
             <>
-              <span>Your Registered Complaints: </span>
+              <span>{isOfficer ? 'Your Assigned Field Tasks: ' : 'Your Registered Complaints: '}</span>
               {myUserGrievances.slice(0, 4).map(g => (
                 <button 
                   key={g.id} 

@@ -210,11 +210,14 @@ export default function CitizenDashboard({
 }) {
   const { user } = useAuth();
   const { lang, setLang, t } = useLanguage();
-  const [viewScope, setViewScope] = useState('my'); // Default to 'my' so new users see only their complaints
   const [statusFilter, setStatusFilter] = useState('All');
   const [departmentFilter, setDepartmentFilter] = useState('All');
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [localSearch, setLocalSearch] = useState(searchQuery || '');
+
+  const isCitizen = !user || user.role === 'CITIZEN';
+  const isOfficer = user?.role === 'OFFICER';
+  const isAdmin = user?.role === 'ADMIN';
 
   // Compute Statistics safely
   const grievanceList = Array.isArray(grievances) ? grievances : [];
@@ -224,7 +227,9 @@ export default function CitizenDashboard({
   const cleanUserPhone = (user?.phone || '').replace(/\D/g, '').slice(-10);
   const cleanUserEmail = (user?.email || '').toLowerCase().trim();
   const cleanUserName = (user?.fullName || '').toLowerCase().trim();
+  const cleanUserEmpId = (user?.employeeId || user?.userId || '').toLowerCase().trim();
 
+  // Citizen submissions match
   const isUserGrievance = (item) => {
     if (!user || !item) return false;
     const cleanItemPhone = (item.citizenPhone || '').replace(/\D/g, '').slice(-10);
@@ -235,8 +240,26 @@ export default function CitizenDashboard({
     return Boolean(matchPhone || matchEmail || matchName || matchUserId);
   };
 
-  const myGrievanceList = grievanceList.filter(isUserGrievance);
-  const currentList = viewScope === 'my' ? myGrievanceList : grievanceList;
+  // Officer assignments match (only tickets assigned to THIS officer)
+  const isOfficerGrievance = (item) => {
+    if (!user || !item) return false;
+    const assigned = (item.assignedOfficer || '').toLowerCase();
+    const assignedContact = (item.assignedOfficerContact || '').replace(/\D/g, '').slice(-10);
+    const matchName = cleanUserName && assigned.includes(cleanUserName);
+    const matchEmpId = cleanUserEmpId && assigned.includes(cleanUserEmpId);
+    const matchPhone = cleanUserPhone && assignedContact && cleanUserPhone === assignedContact;
+    return Boolean(matchName || matchEmpId || matchPhone);
+  };
+
+  // Strictly partition list based on role:
+  // - Citizen sees ONLY their submitted grievances (no leakage of other citizens or other officers)
+  // - Officer sees ONLY their assigned workload
+  // - Admin sees municipal oversight
+  const currentList = isOfficer 
+    ? grievanceList.filter(isOfficerGrievance)
+    : isCitizen 
+      ? grievanceList.filter(isUserGrievance)
+      : grievanceList;
 
   const totalGrievances = currentList.length;
   const resolvedCount = currentList.filter(g => g && g.status === 'Resolved').length;
@@ -635,30 +658,30 @@ export default function CitizenDashboard({
         <div className="section-block" id="citizen-grievances-section" style={{ marginTop: '36px' }}>
           <div className="section-header">
             <div>
-              <h2>{t('recentSubmissions')}</h2>
-              <p>Track grievances submitted across municipal wards and inspect officer resolution updates</p>
+              <h2>{isOfficer ? 'My Assigned Grievances & Field Redressal Queue' : (isCitizen ? 'My Registered Grievances & Live Status' : t('recentSubmissions'))}</h2>
+              <p>
+                {isOfficer 
+                  ? 'Showing only complaints and field tasks allocated to you for on-site inspection and redressal'
+                  : (isCitizen 
+                      ? 'Track your submitted complaints, statutory SLA countdowns, and official redressal updates' 
+                      : 'Track municipal grievances and inspect official resolution updates')}
+              </p>
             </div>
 
-            {/* Scope Toggle: All Wards vs My Grievances */}
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', background: 'var(--bg-tertiary)', padding: '3px', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
-                <button
-                  type="button"
-                  className={`btn-sm ${viewScope === 'my' ? 'btn btn-primary' : 'btn'}`}
-                  style={{ borderRadius: '6px', fontSize: '0.75rem', padding: '4px 10px', border: 'none' }}
-                  onClick={() => setViewScope('my')}
-                >
-                  {t('mySubmissions')} ({myGrievanceList.length})
-                </button>
-                <button
-                  type="button"
-                  className={`btn-sm ${viewScope === 'all' ? 'btn btn-primary' : 'btn'}`}
-                  style={{ borderRadius: '6px', fontSize: '0.75rem', padding: '4px 10px', border: 'none' }}
-                  onClick={() => setViewScope('all')}
-                >
-                  {t('allWards')} (Public Registry: {grievanceList.length})
-                </button>
-              </div>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <span style={{ 
+                fontSize: '0.8rem', 
+                background: 'rgba(37,99,235,0.08)', 
+                color: 'var(--brand-700)', 
+                padding: '4px 12px', 
+                borderRadius: '20px', 
+                fontWeight: 600,
+                border: '1px solid rgba(37,99,235,0.2)'
+              }}>
+                {isOfficer 
+                  ? `Assigned to You (${currentList.length} tickets)` 
+                  : (isCitizen ? `Registered by You (${currentList.length} tickets)` : `Total Tickets (${currentList.length})`)}
+              </span>
 
               {/* Status Filter */}
               <div className="filter-controls">
@@ -685,13 +708,15 @@ export default function CitizenDashboard({
           {filteredGrievances.length === 0 ? (
             <div className="empty-state glass-card" style={{ padding: '36px', textAlign: 'center' }}>
               <FileText size={48} className="empty-icon" style={{ margin: '0 auto 12px', opacity: 0.5 }} />
-              <h3>{viewScope === 'my' ? 'No grievances registered yet' : 'No matching grievances found'}</h3>
+              <h3>{isOfficer ? 'No tickets currently assigned to your queue' : (isCitizen ? 'No grievances registered yet' : 'No matching grievances found')}</h3>
               <p className="text-muted small-text">
-                {viewScope === 'my'
-                  ? 'You have not submitted any complaints yet. Use the button below to report an issue in your locality.'
-                  : 'Try adjusting your search query or status filters above.'}
+                {isOfficer
+                  ? 'You currently have zero pending field assignments in your duty queue. New tickets will appear here once allocated.'
+                  : (isCitizen 
+                      ? 'You have not submitted any complaints yet under this account. Use the button below to report an issue in your locality.' 
+                      : 'Try adjusting your search query or status filters above.')}
               </p>
-              {viewScope === 'my' ? (
+              {isCitizen ? (
                 <button 
                   className="btn btn-primary btn-sm" 
                   style={{ marginTop: '14px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
