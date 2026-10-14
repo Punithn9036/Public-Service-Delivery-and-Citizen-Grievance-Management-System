@@ -18,6 +18,7 @@ import { LanguageProvider } from './context/LanguageContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import { grievanceAPI, applicationAPI, serviceAPI } from './api/apiClient';
 import { releaseOfficerFromTicket } from './utils/officerDispatch';
+import { safeSetItem, safeGetItem, sanitizeGrievances } from './utils/safeStorage';
 
 import { 
   INITIAL_SERVICES, 
@@ -52,11 +53,13 @@ function MainAppContent() {
   // Navigation History Stack for Complete Step-by-Step Back Navigation
   const [navHistory, setNavHistory] = useState([]);
 
-  // Data State with API + LocalStorage Fallback
+  // Data State with API + LocalStorage Fallback (Quota Protected)
   const [grievances, setGrievances] = useState(() => {
     try {
-      const saved = localStorage.getItem('janseva_grievances');
-      return saved ? JSON.parse(saved) : INITIAL_GRIEVANCES;
+      const saved = safeGetItem('janseva_grievances', null);
+      return saved && Array.isArray(saved) && saved.length > 0 
+        ? sanitizeGrievances(saved) 
+        : INITIAL_GRIEVANCES;
     } catch (e) {
       console.warn("Failed to parse grievances from storage:", e);
       return INITIAL_GRIEVANCES;
@@ -65,8 +68,10 @@ function MainAppContent() {
 
   const [applications, setApplications] = useState(() => {
     try {
-      const saved = localStorage.getItem('janseva_applications');
-      return saved ? JSON.parse(saved) : INITIAL_APPLICATIONS;
+      const saved = safeGetItem('janseva_applications', null);
+      return saved && Array.isArray(saved) && saved.length > 0 
+        ? saved 
+        : INITIAL_APPLICATIONS;
     } catch (e) {
       console.warn("Failed to parse applications from storage:", e);
       return INITIAL_APPLICATIONS;
@@ -252,13 +257,14 @@ function MainAppContent() {
     localStorage.setItem('janseva_theme', theme);
   }, [theme]);
 
-  // Sync Data to localStorage & attempt API sync
+  // Sync Data to localStorage with Quota Protection & Payload Sanitization
   useEffect(() => {
-    localStorage.setItem('janseva_grievances', JSON.stringify(grievances));
+    const cleaned = sanitizeGrievances(grievances);
+    safeSetItem('janseva_grievances', cleaned);
   }, [grievances]);
 
   useEffect(() => {
-    localStorage.setItem('janseva_applications', JSON.stringify(applications));
+    safeSetItem('janseva_applications', applications);
   }, [applications]);
 
   // Fetch live grievances, applications, and services from backend API on mount
