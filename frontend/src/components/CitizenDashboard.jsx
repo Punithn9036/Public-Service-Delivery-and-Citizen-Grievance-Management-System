@@ -673,8 +673,12 @@ export default function CitizenDashboard({
         <div className="section-block" id="citizen-services-section" style={{ marginTop: '32px' }}>
           <div className="section-header">
             <div>
-              <h2>{t('popularServices')}</h2>
-              <p>Direct online statutory applications with guaranteed Service Level Agreements (SLAs) &amp; instant digital delivery</p>
+              <h2>{activeTab === 'services' ? 'All Statutory Public Services Catalog' : t('popularServices')}</h2>
+              <p>
+                {activeTab === 'services' 
+                  ? 'Complete catalog of statutory citizen services, utility connections, certificates, and welfare programs.' 
+                  : 'Direct online statutory applications with guaranteed Service Level Agreements (SLAs) & instant digital delivery'}
+              </p>
             </div>
             {activeTab !== 'services' && (
               <button className="btn btn-outline btn-sm" onClick={() => setActiveTab && setActiveTab('services')}>
@@ -1278,15 +1282,16 @@ export default function CitizenDashboard({
 
           </div>
 
-          {/* ADDITIONAL MUNICIPAL SERVICES GRID (For Any Other Dynamic Services) */}
-          {serviceList.filter(s => s && !['srv-1', 'srv-2', 'srv-3', 'srv-4', 'srv-5', 'srv-6'].includes(s.id)).length > 0 && (
-            <div style={{ marginTop: '36px' }}>
-              <div style={{ marginBottom: '16px' }}>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-main)', margin: '0 0 4px' }}>
-                  Additional Municipal Public Services Catalog
+          {/* ADDITIONAL STATUTORY & UTILITY SERVICES GRID (ONLY SHOWN ON VIEW ALL SERVICES PAGE) */}
+          {activeTab === 'services' && serviceList.filter(s => s && !['srv-1', 'srv-2', 'srv-3', 'srv-4', 'srv-5', 'srv-6'].includes(s.id)).length > 0 && (
+            <div id="additional-services-catalog" style={{ marginTop: '40px', marginBottom: '32px' }}>
+              <div style={{ marginBottom: '18px' }}>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Flame size={20} color="#ea580c" />
+                  Additional Statutory Public Services &amp; Citizen Amenities
                 </h3>
-                <p style={{ margin: 0, fontSize: '0.84rem', color: 'var(--text-muted)' }}>
-                  Explore other statutory municipal licensing, property assessment, and infrastructure civic services
+                <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-muted)' }}>
+                  Newly integrated statutory public services including domestic LPG gas connections, power meters, transport licensing, vital records, and social welfare pensions.
                 </p>
               </div>
 
