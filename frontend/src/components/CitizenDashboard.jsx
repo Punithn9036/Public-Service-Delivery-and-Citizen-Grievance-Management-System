@@ -10,6 +10,7 @@ import {
   Zap, 
   FileText, 
   Droplets, 
+  Building,
   Building2, 
   Award, 
   Home, 
@@ -36,6 +37,9 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import govHeroBg from '../assets/gov-hero-bg.png';
 import nationalEmblemImg from '../assets/national-emblem.webp';
+import birthCertImg from '../assets/service-birth-cert.jpg';
+import waterConnectionImg from '../assets/service-water-connection.jpg';
+import casteIncomeImg from '../assets/service-caste-income.jpg';
 
 const ICON_MAP = {
   FileText: FileText,
@@ -588,68 +592,363 @@ export default function CitizenDashboard({
           </div>
         )}
 
-        {/* Quick Statutory SLA Compliance Alert Card */}
-        <div className="gov-sla-bar-strip">
-          <div className="gov-sla-strip-left">
-            <ShieldCheck size={20} className="text-brand-green" />
-            <div>
-              <strong>Time-Bound Public Service Delivery Act (GIGW 3.0 Standard)</strong>
-              <p className="text-muted small-text" style={{ margin: 0 }}>
-                Every grievance is assigned a statutory SLA deadline. Breached cases auto-escalate directly to Senior Zonal Commissioners.
-              </p>
-            </div>
-          </div>
-          <div className="gov-sla-strip-right">
-            <div className="sla-rate-pill">
-              <span className="small-text">SLA Redressal Rate:</span>
-              <strong style={{ fontSize: '1.05rem', color: 'var(--brand-700)' }}>{resolutionRate}%</strong>
-            </div>
-            <button className="btn btn-primary btn-sm" onClick={openGrievanceModal}>
-              <FilePlus size={15} />
-              <span>{t('lodgeGrievance')}</span>
-            </button>
-          </div>
-        </div>
-
         {/* ========================================================================= */}
         {/* 2. POPULAR PUBLIC SERVICES CATALOG */}
         {/* ========================================================================= */}
-        <div className="section-block" id="citizen-services-section" style={{ marginTop: '28px' }}>
+        {/* ========================================================================= */}
+        {/* 2. POPULAR PUBLIC SERVICES CATALOG - FULL-WIDTH BLENDED IMAGE BANNERS */}
+        {/* ========================================================================= */}
+        <div className="section-block" id="citizen-services-section" style={{ marginTop: '32px' }}>
           <div className="section-header">
             <div>
               <h2>{t('popularServices')}</h2>
-              <p>Direct online applications with guaranteed Service Level Agreements (SLAs)</p>
+              <p>Direct online statutory applications with guaranteed Service Level Agreements (SLAs) &amp; instant digital delivery</p>
             </div>
-            <button className="btn btn-outline btn-sm" onClick={() => setActiveTab && setActiveTab('services')}>
-              View All Services ({serviceList.length})
-              <ChevronRight size={14} />
-            </button>
+            {activeTab !== 'services' && (
+              <button className="btn btn-outline btn-sm" onClick={() => setActiveTab && setActiveTab('services')}>
+                View All Services ({serviceList.length})
+                <ChevronRight size={14} />
+              </button>
+            )}
           </div>
 
-          <div className="services-grid">
-            {serviceList.filter(s => s && s.popular).map(service => {
-              const IconComponent = (service && service.icon && ICON_MAP[service.icon]) || FileText;
+          <div className="featured-services-container">
+            
+            {/* SERVICE 1: ISSUE OF BIRTH CERTIFICATE (IMAGE LEFT, BLENDS TO RIGHT) */}
+            {(() => {
+              const srv = serviceList.find(s => s && s.id === 'srv-1') || {
+                id: 'srv-1',
+                name: 'Issue of Birth Certificate',
+                department: 'Revenue & Vital Statistics',
+                slaDays: 7,
+                fee: '₹50'
+              };
               return (
-                <div key={service.id || Math.random()} className="service-card glass-card">
-                  <div className="service-header">
-                    <div className="service-icon-box">
-                      <IconComponent size={22} />
-                    </div>
-                    <span className="sla-pill">{service.slaDays || 3} Days SLA</span>
+                <div className="featured-service-card image-left">
+                  <div className="service-image-backdrop">
+                    <img 
+                      src={birthCertImg} 
+                      alt="New Birth Certificate Registration" 
+                      className="service-banner-img" 
+                    />
+                    <div className="service-blend-gradient-overlay" />
                   </div>
-                  <h3>{service.name}</h3>
-                  <p className="service-dept">{service.department}</p>
-                  <p className="service-desc">{service.description}</p>
-                  <div className="service-footer">
-                    <span className="service-fee">Fee: <strong>{service.fee}</strong></span>
-                    <button className="btn btn-primary btn-sm" onClick={() => openServiceModal(service)}>
-                      {t('applyNow')}
-                    </button>
+
+                  <div className="service-info-panel">
+                    <div className="service-badges-row">
+                      <span className="service-badge-pill service-badge-dept">Vital Statistics &amp; Public Health</span>
+                      <span className="service-badge-pill service-badge-sla">
+                        <Clock size={12} /> {srv.slaDays || 7} Days Statutory SLA
+                      </span>
+                      <span className="service-badge-pill service-badge-fee">Statutory Fee: {srv.fee || '₹50'}</span>
+                    </div>
+
+                    <h3 className="service-banner-title">Issue of Official Birth Certificate</h3>
+                    <p className="service-banner-desc">
+                      Official legal birth registration and instant QR-verifiable certificate issuance under the Registration of Births and Deaths Act.
+                    </p>
+
+                    <div className="service-structured-data-grid">
+                      <div className="service-data-section">
+                        <div className="service-section-icon-box">
+                          <Building size={17} />
+                        </div>
+                        <div className="service-section-content">
+                          <div className="service-section-heading">Service Highlights &amp; Scope</div>
+                          <ul className="service-bullets-list">
+                            <li>Direct Hospital &amp; Municipal Vital Statistics Synchronisation</li>
+                            <li>Legally Authenticated Biometric Hologram &amp; Digital Seal</li>
+                            <li>Lifelong Civic Proof for School Admissions &amp; Passports</li>
+                          </ul>
+                        </div>
+                      </div>
+
+                      <div className="service-data-section">
+                        <div className="service-section-icon-box">
+                          <TrendingUp size={17} />
+                        </div>
+                        <div className="service-section-content">
+                          <div className="service-section-heading">Statutory SLA &amp; Key Data</div>
+                          <ul className="service-bullets-list">
+                            <li>7 Days Guaranteed SLA Delivery (GIGW 3.0 Standard)</li>
+                            <li>₹50 Nominal Municipal Treasury Application Fee</li>
+                            <li>Instant DigiLocker Push Upon Approval by Chief Registrar</li>
+                          </ul>
+                        </div>
+                      </div>
+
+                      <div className="service-data-section">
+                        <div className="service-section-icon-box">
+                          <ShieldCheck size={17} />
+                        </div>
+                        <div className="service-section-content">
+                          <div className="service-section-heading">Mandatory Enclosures &amp; Verification</div>
+                          <ul className="service-bullets-list">
+                            <li>Hospital Birth Discharge Slip / Form-1 Report</li>
+                            <li>Parents' Aadhaar ID &amp; Marriage Registration Proof</li>
+                            <li>Residential Address Document / Ration Card</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="service-action-row">
+                      <button 
+                        type="button" 
+                        className="service-apply-btn" 
+                        onClick={() => openServiceModal(srv)}
+                        title="Apply Online for Birth Certificate"
+                      >
+                        <FilePlus size={16} />
+                        <span>Apply for Birth Certificate</span>
+                        <ArrowRight size={15} />
+                      </button>
+                      <span className="service-footer-note">
+                        <CheckCircle size={14} color="#16a34a" /> 100% Paperless • UIDAI &amp; DigiLocker Integrated
+                      </span>
+                    </div>
                   </div>
                 </div>
               );
-            })}
+            })()}
+
+            {/* SERVICE 2: NEW WATER & SEWERAGE CONNECTION (IMAGE RIGHT, BLENDS TO LEFT) */}
+            {(() => {
+              const srv = serviceList.find(s => s && s.id === 'srv-2') || {
+                id: 'srv-2',
+                name: 'New Water & Sewerage Connection',
+                department: 'Water Supply & Sanitation',
+                slaDays: 14,
+                fee: '₹1,200'
+              };
+              return (
+                <div className="featured-service-card image-right">
+                  <div className="service-image-backdrop">
+                    <img 
+                      src={waterConnectionImg} 
+                      alt="New Water and Sewerage Connection" 
+                      className="service-banner-img" 
+                    />
+                    <div className="service-blend-gradient-overlay" />
+                  </div>
+
+                  <div className="service-info-panel">
+                    <div className="service-badges-row">
+                      <span className="service-badge-pill service-badge-dept">Water Supply &amp; Sanitation Board</span>
+                      <span className="service-badge-pill service-badge-sla">
+                        <Clock size={12} /> {srv.slaDays || 14} Days Statutory SLA
+                      </span>
+                      <span className="service-badge-pill service-badge-fee">Connection Charge: {srv.fee || '₹1,200'}</span>
+                    </div>
+
+                    <h3 className="service-banner-title">New Water &amp; Sewerage Connection</h3>
+                    <p className="service-banner-desc">
+                      Sanction of piped potable drinking water tap connection and underground domestic drainage lines for residential &amp; commercial properties.
+                    </p>
+
+                    <div className="service-structured-data-grid">
+                      <div className="service-data-section">
+                        <div className="service-section-icon-box">
+                          <Droplets size={17} />
+                        </div>
+                        <div className="service-section-content">
+                          <div className="service-section-heading">Network Highlights &amp; Infrastructure</div>
+                          <ul className="service-bullets-list">
+                            <li>High-Pressure Potable Municipal Drinking Water Supply</li>
+                            <li>Scientific Underground Sewerage &amp; Stormwater Grid Link</li>
+                            <li>AMR Smart Electronic Water Metering Allotment</li>
+                          </ul>
+                        </div>
+                      </div>
+
+                      <div className="service-data-section">
+                        <div className="service-section-icon-box">
+                          <TrendingUp size={17} />
+                        </div>
+                        <div className="service-section-content">
+                          <div className="service-section-heading">Technical SLA &amp; Inspection Data</div>
+                          <ul className="service-bullets-list">
+                            <li>14 Days Statutory SLA with On-Site Verification within 48h</li>
+                            <li>₹1,200 Standard Residential Tap Connection &amp; Testing Fee</li>
+                            <li>Direct Real-Time GPS Feasibility Mapping &amp; Engineer Dispatch</li>
+                          </ul>
+                        </div>
+                      </div>
+
+                      <div className="service-data-section">
+                        <div className="service-section-icon-box">
+                          <ShieldCheck size={17} />
+                        </div>
+                        <div className="service-section-content">
+                          <div className="service-section-heading">Required Property Documents</div>
+                          <ul className="service-bullets-list">
+                            <li>Property Ownership Sale Deed or Building Allotment Letter</li>
+                            <li>Latest Municipal Property Tax Paid Receipt / Khata Extract</li>
+                            <li>Site Plan Blueprint Showing Nearest Municipal Main Line</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="service-action-row">
+                      <button 
+                        type="button" 
+                        className="service-apply-btn" 
+                        onClick={() => openServiceModal(srv)}
+                        title="Apply Online for Water Connection"
+                      >
+                        <FilePlus size={16} />
+                        <span>Apply for Water Connection</span>
+                        <ArrowRight size={15} />
+                      </button>
+                      <span className="service-footer-note">
+                        <CheckCircle size={14} color="#16a34a" /> Statutory Guarantee • Smart Metering Included
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* SERVICE 3: CASTE & INCOME CERTIFICATE (IMAGE LEFT, BLENDS TO RIGHT) */}
+            {(() => {
+              const srv = serviceList.find(s => s && s.id === 'srv-4') || {
+                id: 'srv-4',
+                name: 'Income & Caste Certificate',
+                department: 'Revenue & Land Records',
+                slaDays: 10,
+                fee: '₹30'
+              };
+              return (
+                <div className="featured-service-card image-left">
+                  <div className="service-image-backdrop">
+                    <img 
+                      src={casteIncomeImg} 
+                      alt="Caste and Income Certificate Form" 
+                      className="service-banner-img" 
+                    />
+                    <div className="service-blend-gradient-overlay" />
+                  </div>
+
+                  <div className="service-info-panel">
+                    <div className="service-badges-row">
+                      <span className="service-badge-pill service-badge-dept">Revenue &amp; Land Administration</span>
+                      <span className="service-badge-pill service-badge-sla">
+                        <Clock size={12} /> {srv.slaDays || 10} Days Statutory SLA
+                      </span>
+                      <span className="service-badge-pill service-badge-fee">Treasury Fee: {srv.fee || '₹30'}</span>
+                    </div>
+
+                    <h3 className="service-banner-title">Caste &amp; Annual Income Certificate</h3>
+                    <p className="service-banner-desc">
+                      Issuance of authenticated caste (SC/ST/OBC/EWS) and family income certificate for educational scholarships, welfare schemes, and quotas.
+                    </p>
+
+                    <div className="service-structured-data-grid">
+                      <div className="service-data-section">
+                        <div className="service-section-icon-box">
+                          <Award size={17} />
+                        </div>
+                        <div className="service-section-content">
+                          <div className="service-section-heading">Statutory Purpose &amp; Citizen Benefits</div>
+                          <ul className="service-bullets-list">
+                            <li>Formal Category Verification (SC / ST / OBC / General-EWS)</li>
+                            <li>Certified Family Annual Income for State &amp; Central Schemes</li>
+                            <li>Tuition Fee Waivers, Competitive Exam Quotas &amp; Grants</li>
+                          </ul>
+                        </div>
+                      </div>
+
+                      <div className="service-data-section">
+                        <div className="service-section-icon-box">
+                          <TrendingUp size={17} />
+                        </div>
+                        <div className="service-section-content">
+                          <div className="service-section-heading">Statutory SLA &amp; Revenue Data</div>
+                          <ul className="service-bullets-list">
+                            <li>10 Days Statutory Delivery SLA with Revenue Field Scrutiny</li>
+                            <li>₹30 Subsidized Treasury Processing Charge (GIGW Compliant)</li>
+                            <li>Tamper-Proof 2D QR Code &amp; Nadakacheri Portal Verification</li>
+                          </ul>
+                        </div>
+                      </div>
+
+                      <div className="service-data-section">
+                        <div className="service-section-icon-box">
+                          <ShieldCheck size={17} />
+                        </div>
+                        <div className="service-section-content">
+                          <div className="service-section-heading">Required Enclosures &amp; Affidavit</div>
+                          <ul className="service-bullets-list">
+                            <li>Family BPL Ration Card / Antyodaya Anna Yojana Card Copy</li>
+                            <li>Salary Slip or Agricultural RTC Land Record / Income Affidavit</li>
+                            <li>School Leaving Certificate / Ancestral Caste Record</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="service-action-row">
+                      <button 
+                        type="button" 
+                        className="service-apply-btn" 
+                        onClick={() => openServiceModal(srv)}
+                        title="Apply Online for Caste & Income Certificate"
+                      >
+                        <FilePlus size={16} />
+                        <span>Apply for Caste &amp; Income Certificate</span>
+                        <ArrowRight size={15} />
+                      </button>
+                      <span className="service-footer-note">
+                        <CheckCircle size={14} color="#16a34a" /> Revenue Tahsildar Verified • Valid for 5 Years
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
           </div>
+
+          {/* ADDITIONAL MUNICIPAL SERVICES GRID (For Trade License, Property Tax, Streetlights, etc.) */}
+          {serviceList.filter(s => s && s.id !== 'srv-1' && s.id !== 'srv-2' && s.id !== 'srv-4').length > 0 && (
+            <div style={{ marginTop: '36px' }}>
+              <div style={{ marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-main)', margin: '0 0 4px' }}>
+                  Additional Municipal Public Services Catalog
+                </h3>
+                <p style={{ margin: 0, fontSize: '0.84rem', color: 'var(--text-muted)' }}>
+                  Explore other statutory municipal licensing, property assessment, and infrastructure civic services
+                </p>
+              </div>
+
+              <div className="services-grid">
+                {serviceList.filter(s => s && s.id !== 'srv-1' && s.id !== 'srv-2' && s.id !== 'srv-4').map(service => {
+                  const IconComponent = (service && service.icon && ICON_MAP[service.icon]) || FileText;
+                  return (
+                    <div key={service.id || Math.random()} className="service-card glass-card">
+                      <div className="service-header">
+                        <div className="service-icon-box">
+                          <IconComponent size={22} />
+                        </div>
+                        <span className="sla-pill">{service.slaDays || 3} Days SLA</span>
+                      </div>
+                      <h3>{service.name}</h3>
+                      <p className="service-dept">{service.department}</p>
+                      <p className="service-desc">{service.description}</p>
+                      <div className="service-footer">
+                        <span className="service-fee">Fee: <strong>{service.fee}</strong></span>
+                        <button className="btn btn-primary btn-sm" onClick={() => openServiceModal(service)}>
+                          {t('applyNow')}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
         </div>
 
         {/* ========================================================================= */}
@@ -814,6 +1113,29 @@ export default function CitizenDashboard({
               ))}
             </div>
           )}
+        </div>
+
+        {/* Quick Statutory SLA Compliance Alert Card (Shifted to Bottom) */}
+        <div className="gov-sla-bar-strip" style={{ marginTop: '36px', marginBottom: '16px' }}>
+          <div className="gov-sla-strip-left">
+            <ShieldCheck size={20} className="text-brand-green" />
+            <div>
+              <strong>Time-Bound Public Service Delivery Act (GIGW 3.0 Standard)</strong>
+              <p className="text-muted small-text" style={{ margin: 0 }}>
+                Every grievance is assigned a statutory SLA deadline. Breached cases auto-escalate directly to Senior Zonal Commissioners.
+              </p>
+            </div>
+          </div>
+          <div className="gov-sla-strip-right">
+            <div className="sla-rate-pill">
+              <span className="small-text">SLA Redressal Rate:</span>
+              <strong style={{ fontSize: '1.05rem', color: 'var(--brand-700)' }}>{resolutionRate}%</strong>
+            </div>
+            <button className="btn btn-primary btn-sm" onClick={openGrievanceModal}>
+              <FilePlus size={15} />
+              <span>{t('lodgeGrievance')}</span>
+            </button>
+          </div>
         </div>
 
       </div>
