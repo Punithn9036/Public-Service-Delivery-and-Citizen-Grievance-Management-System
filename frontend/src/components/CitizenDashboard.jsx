@@ -312,47 +312,57 @@ export default function CitizenDashboard({
     return matchesStatus && matchesDepartment && (matchId || matchTitle || matchCategory || matchDept || matchLoc || matchDesc);
   });
 
-  const handleHeroSearchSubmit = (e) => {
-    e.preventDefault();
-    if (setSearchQuery) {
-      setSearchQuery(localSearch);
-    }
-    // Scroll down smoothly to search results if searching
-    if (localSearch.trim()) {
-      const resultsElem = document.getElementById('citizen-grievances-section');
-      if (resultsElem) {
-        resultsElem.scrollIntoView({ behavior: 'smooth' });
-      }
+  const scrollToCard = (elementId, offset = 70) => {
+    const el = document.getElementById(elementId);
+    if (el) {
+      const y = el.getBoundingClientRect().top + window.pageYOffset - offset;
+      window.scrollTo({ top: y, behavior: 'smooth' });
+      el.classList.add('card-highlight-pulse');
+      setTimeout(() => {
+        el.classList.remove('card-highlight-pulse');
+      }, 2400);
     }
   };
 
-  const handleTrendingClick = (term, directAction = null) => {
+  const handleHeroSearchSubmit = (e) => {
+    e.preventDefault();
+    const q = localSearch.toLowerCase().trim();
+    if (setSearchQuery) {
+      setSearchQuery(localSearch);
+    }
+    if (!q) return;
+
+    if (q.includes('birth')) {
+      scrollToCard('service-card-birth-cert');
+    } else if (q.includes('water') || q.includes('sewer') || q.includes('drain')) {
+      scrollToCard('service-card-water');
+    } else if (q.includes('caste') || q.includes('income')) {
+      scrollToCard('service-card-caste-income');
+    } else if (q.includes('trade') || q.includes('shop') || q.includes('license') || q.includes('business')) {
+      scrollToCard('service-card-trade-license');
+    } else if (q.includes('tax') || q.includes('property') || q.includes('khata') || q.includes('house')) {
+      scrollToCard('service-card-property-tax');
+    } else if (q.includes('light') || q.includes('street') || q.includes('lamp') || q.includes('dark')) {
+      scrollToCard('service-card-street-light');
+    } else if (q.includes('track') || q.includes('status') || q.includes('my submission') || q.includes('complaint')) {
+      scrollToCard('citizen-grievances-section');
+    } else {
+      scrollToCard('citizen-services-section');
+    }
+  };
+
+  const handleTrendingClick = (targetCardId, directAction = null) => {
     if (directAction === 'modal-grievance') {
       openGrievanceModal && openGrievanceModal();
       return;
     }
     if (directAction === 'tab-track') {
-      setActiveTab && setActiveTab('track');
+      scrollToCard('citizen-grievances-section');
+      setShowSubmissionsModal(true);
       return;
     }
-    if (directAction === 'tab-services') {
-      setActiveTab && setActiveTab('services');
-      return;
-    }
-    if (directAction === 'modal-birth') {
-      const birthService = serviceList.find(s => s && s.id === 'srv-1');
-      if (birthService) {
-        openServiceModal && openServiceModal(birthService);
-        return;
-      }
-    }
-    setLocalSearch(term);
-    if (setSearchQuery) {
-      setSearchQuery(term);
-    }
-    const resultsElem = document.getElementById('citizen-grievances-section');
-    if (resultsElem) {
-      resultsElem.scrollIntoView({ behavior: 'smooth' });
+    if (targetCardId) {
+      scrollToCard(targetCardId);
     }
   };
 
@@ -460,6 +470,7 @@ export default function CitizenDashboard({
                   type="button" 
                   className="trending-chip highlight-chip"
                   onClick={() => handleTrendingClick('', 'modal-grievance')}
+                  title="Lodge an official citizen grievance"
                 >
                   <FilePlus size={12} />
                   <span>+ Lodge Grievance</span>
@@ -468,7 +479,8 @@ export default function CitizenDashboard({
                 <button 
                   type="button" 
                   className="trending-chip"
-                  onClick={() => handleTrendingClick('', 'tab-track')}
+                  onClick={() => handleTrendingClick('citizen-grievances-section', 'tab-track')}
+                  title="Redirect to My Submissions card and track ticket status"
                 >
                   <Clock size={12} />
                   <span>Track Ticket</span>
@@ -477,7 +489,8 @@ export default function CitizenDashboard({
                 <button 
                   type="button" 
                   className="trending-chip"
-                  onClick={() => handleTrendingClick('pothole')}
+                  onClick={() => handleTrendingClick('', 'modal-grievance')}
+                  title="Lodge a complaint for Pothole & Road Repair"
                 >
                   <span>Pothole Repair</span>
                 </button>
@@ -485,7 +498,8 @@ export default function CitizenDashboard({
                 <button 
                   type="button" 
                   className="trending-chip"
-                  onClick={() => handleTrendingClick('water')}
+                  onClick={() => handleTrendingClick('service-card-water')}
+                  title="Redirect to New Water & Sewerage Connection card"
                 >
                   <span>Water Supply</span>
                 </button>
@@ -493,7 +507,8 @@ export default function CitizenDashboard({
                 <button 
                   type="button" 
                   className="trending-chip"
-                  onClick={() => handleTrendingClick('', 'modal-birth')}
+                  onClick={() => handleTrendingClick('service-card-birth-cert')}
+                  title="Redirect to Issue of Birth Certificate card"
                 >
                   <span>Birth Certificate</span>
                 </button>
@@ -501,9 +516,37 @@ export default function CitizenDashboard({
                 <button 
                   type="button" 
                   className="trending-chip"
-                  onClick={() => handleTrendingClick('streetlight')}
+                  onClick={() => handleTrendingClick('service-card-street-light')}
+                  title="Redirect to Street Lighting & Maintenance card"
                 >
                   <span>Streetlight Outage</span>
+                </button>
+
+                <button 
+                  type="button" 
+                  className="trending-chip"
+                  onClick={() => handleTrendingClick('service-card-trade-license')}
+                  title="Redirect to Municipal Trade License card"
+                >
+                  <span>Trade License</span>
+                </button>
+
+                <button 
+                  type="button" 
+                  className="trending-chip"
+                  onClick={() => handleTrendingClick('service-card-property-tax')}
+                  title="Redirect to Property Tax Assessment & Mutation card"
+                >
+                  <span>Property Tax</span>
+                </button>
+
+                <button 
+                  type="button" 
+                  className="trending-chip"
+                  onClick={() => handleTrendingClick('service-card-caste-income')}
+                  title="Redirect to Caste & Income Certificate card"
+                >
+                  <span>Caste Certificate</span>
                 </button>
               </div>
             </div>
@@ -647,7 +690,7 @@ export default function CitizenDashboard({
                 fee: '₹50'
               };
               return (
-                <div className="featured-service-card image-left">
+                <div className="featured-service-card image-left" id="service-card-birth-cert">
                   <div className="service-image-backdrop">
                     <img 
                       src={birthCertImg} 
@@ -745,7 +788,7 @@ export default function CitizenDashboard({
                 fee: '₹1,200'
               };
               return (
-                <div className="featured-service-card image-right">
+                <div className="featured-service-card image-right" id="service-card-water">
                   <div className="service-image-backdrop">
                     <img 
                       src={waterConnectionImg} 
@@ -843,7 +886,7 @@ export default function CitizenDashboard({
                 fee: '₹30'
               };
               return (
-                <div className="featured-service-card image-left">
+                <div className="featured-service-card image-left" id="service-card-caste-income">
                   <div className="service-image-backdrop">
                     <img 
                       src={casteIncomeImg} 
@@ -941,7 +984,7 @@ export default function CitizenDashboard({
                 fee: '₹850'
               };
               return (
-                <div className="featured-service-card image-right">
+                <div className="featured-service-card image-right" id="service-card-trade-license">
                   <div className="service-image-backdrop">
                     <img 
                       src={tradeLicenseImg} 
@@ -1039,7 +1082,7 @@ export default function CitizenDashboard({
                 fee: '₹500'
               };
               return (
-                <div className="featured-service-card image-left">
+                <div className="featured-service-card image-left" id="service-card-property-tax">
                   <div className="service-image-backdrop">
                     <img 
                       src={propertyTaxImg} 
@@ -1137,7 +1180,7 @@ export default function CitizenDashboard({
                 fee: 'Free'
               };
               return (
-                <div className="featured-service-card image-right">
+                <div className="featured-service-card image-right" id="service-card-street-light">
                   <div className="service-image-backdrop">
                     <img 
                       src={streetLightImg} 
