@@ -31,7 +31,8 @@ import {
   TrendingUp,
   Layers,
   ArrowLeft,
-  Bell
+  Bell,
+  X
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -222,6 +223,12 @@ export default function CitizenDashboard({
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [localSearch, setLocalSearch] = useState(searchQuery || '');
 
+  // Dedicated "My Submissions" Viewer Modal States
+  const [showSubmissionsModal, setShowSubmissionsModal] = useState(false);
+  const [submissionsTab, setSubmissionsTab] = useState('grievances'); // 'grievances' | 'applications'
+  const [submissionsSearch, setSubmissionsSearch] = useState('');
+  const [submissionsStatusFilter, setSubmissionsStatusFilter] = useState('All');
+
   const isCitizen = !user || user.role === 'CITIZEN';
   const isOfficer = user?.role === 'OFFICER';
   const isAdmin = user?.role === 'ADMIN';
@@ -229,6 +236,7 @@ export default function CitizenDashboard({
   // Compute Statistics safely
   const grievanceList = Array.isArray(grievances) ? grievances : [];
   const serviceList = Array.isArray(services) ? services : [];
+  const applicationList = Array.isArray(applications) ? applications : [];
 
   // Strictly identify complaints belonging to the currently logged-in citizen
   const cleanUserPhone = (user?.phone || '').replace(/\D/g, '').slice(-10);
@@ -246,6 +254,18 @@ export default function CitizenDashboard({
     const matchUserId = item.userId && user.id && String(item.userId) === String(user.id);
     return Boolean(matchPhone || matchEmail || matchName || matchUserId);
   };
+
+  // Citizen service applications match
+  const isUserApplication = (app) => {
+    if (!user || !app) return false;
+    const cleanAppPhone = (app.applicantPhone || '').replace(/\D/g, '').slice(-10);
+    const matchPhone = cleanUserPhone && cleanAppPhone && cleanUserPhone === cleanAppPhone;
+    const matchEmail = app.applicantEmail && cleanUserEmail && app.applicantEmail.toLowerCase().trim() === cleanUserEmail;
+    const matchName = app.applicantName && cleanUserName && app.applicantName.toLowerCase().trim() === cleanUserName;
+    return Boolean(matchPhone || matchEmail || matchName);
+  };
+
+  const myApplications = applicationList.filter(isUserApplication);
 
   // Officer assignments match (only tickets assigned to THIS officer)
   const isOfficerGrievance = (item) => {
@@ -1251,167 +1271,125 @@ export default function CitizenDashboard({
         </div>
 
         {/* ========================================================================= */}
-        {/* 3. RECENT CITIZEN GRIEVANCES & LIVE RESOLUTION REGISTRY */}
+        {/* 3. MY SUBMISSIONS SUMMARY CARD (CITIZEN PORTAL) */}
         {/* ========================================================================= */}
         <div className="section-block" id="citizen-grievances-section" style={{ marginTop: '36px' }}>
-          <div className="section-header">
-            <div>
-              <h2>{isOfficer ? 'My Assigned Grievances & Field Redressal Queue' : (isCitizen ? 'My Registered Grievances & Live Status' : t('recentSubmissions'))}</h2>
-              <p>
-                {isOfficer 
-                  ? 'Showing only complaints and field tasks allocated to you for on-site inspection and redressal'
-                  : (isCitizen 
-                      ? 'Track your submitted complaints, statutory SLA countdowns, and official redressal updates' 
-                      : 'Track municipal grievances and inspect official resolution updates')}
-              </p>
-            </div>
-
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-              <span style={{ 
-                fontSize: '0.8rem', 
-                background: 'rgba(37,99,235,0.08)', 
-                color: 'var(--brand-700)', 
-                padding: '4px 12px', 
-                borderRadius: '20px', 
-                fontWeight: 600,
-                border: '1px solid rgba(37,99,235,0.2)'
-              }}>
-                {isOfficer 
-                  ? `Assigned to You (${currentList.length} tickets)` 
-                  : (isCitizen ? `Registered by You (${currentList.length} tickets)` : `Total Tickets (${currentList.length})`)}
-              </span>
-
-              {/* Status Filter */}
-              <div className="filter-controls">
-                <div className="select-wrapper">
-                  <Filter size={14} className="select-icon" />
-                  <select 
-                    value={statusFilter} 
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="filter-select"
-                  >
-                    <option value="All">{t('allStatuses')}</option>
-                    <option value="Submitted">Submitted</option>
-                    <option value="Under Review">Under Review</option>
-                    <option value="Assigned">Assigned</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Resolved">Resolved</option>
-                  </select>
+          <div 
+            className="my-submissions-banner-card glass-card"
+            onClick={() => setShowSubmissionsModal(true)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowSubmissionsModal(true); }}
+            title="Click to view all your submissions"
+          >
+            <div className="submissions-card-header">
+              <div className="submissions-card-title-group">
+                <div className="submissions-icon-badge">
+                  <FileText size={24} />
+                </div>
+                <div>
+                  <div className="submissions-tag-pill">
+                    <span className="pulse-dot-green" /> Authenticated Submissions Registry
+                  </div>
+                  <h2 className="submissions-card-title">
+                    {isOfficer ? 'My Assigned Grievance Queue & Field Redressal' : 'My Registered Grievances & Service Submissions'}
+                  </h2>
+                  <p className="submissions-card-subtitle">
+                    {isOfficer 
+                      ? 'Inspect complaints allocated to your department queue, update site inspection notes, and clear SLA deadlines.'
+                      : 'Access your submitted complaints, track real-time statutory SLA countdowns, and inspect verified officer redressal reports.'}
+                  </p>
                 </div>
               </div>
-            </div>
-          </div>
 
-          {/* Grievance Table / Cards */}
-          {filteredGrievances.length === 0 ? (
-            <div className="empty-state glass-card" style={{ padding: '36px', textAlign: 'center' }}>
-              <FileText size={48} className="empty-icon" style={{ margin: '0 auto 12px', opacity: 0.5 }} />
-              <h3>{isOfficer ? 'No tickets currently assigned to your queue' : (isCitizen ? 'No grievances registered yet' : 'No matching grievances found')}</h3>
-              <p className="text-muted small-text">
-                {isOfficer
-                  ? 'You currently have zero pending field assignments in your duty queue. New tickets will appear here once allocated.'
-                  : (isCitizen 
-                      ? 'You have not submitted any complaints yet under this account. Use the button below to report an issue in your locality.' 
-                      : 'Try adjusting your search query or status filters above.')}
-              </p>
-              {isCitizen ? (
+              <div className="submissions-card-actions">
                 <button 
-                  className="btn btn-primary btn-sm" 
-                  style={{ marginTop: '14px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                  onClick={openGrievanceModal}
-                >
-                  <FilePlus size={15} /> Lodge Your First Grievance
-                </button>
-              ) : (
-                <button 
-                  className="btn btn-secondary btn-sm" 
-                  style={{ marginTop: '12px' }}
-                  onClick={() => {
-                    setLocalSearch('');
-                    if (setSearchQuery) setSearchQuery('');
-                    setStatusFilter('All');
+                  type="button" 
+                  className="btn btn-primary"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowSubmissionsModal(true);
                   }}
+                  title="View My Submissions"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
                 >
-                  Clear Filters
+                  <Eye size={16} />
+                  <span>View My Submissions ({currentList.length + myApplications.length})</span>
+                  <ArrowRight size={15} />
                 </button>
-              )}
+                {isCitizen && (
+                  <button 
+                    type="button" 
+                    className="btn btn-outline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openGrievanceModal();
+                    }}
+                    title="Lodge New Grievance"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    <FilePlus size={15} />
+                    <span>+ Lodge Grievance</span>
+                  </button>
+                )}
+              </div>
             </div>
-          ) : (
-            <div className="grievance-cards-list">
-              {filteredGrievances.map(item => (
-                <div key={item.id} className="grievance-card glass-card">
-                  <div className="g-card-header">
-                    <div className="g-id-badge">
-                      <span className="g-id-bold">{item.id}</span>
-                      <span className={`priority-tag priority-${item.priority.toLowerCase()}`}>
-                        {item.priority} Priority
-                      </span>
-                      {getSlaBadge(item)}
-                      {item.reportCount > 1 && (
-                        <span style={{ fontSize: '0.7rem', background: 'rgba(235,125,0,0.12)', color: '#eb7d00', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
-                          +{item.reportCount - 1} Citizens Affected
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      {item.ipfsDocumentCid && (
-                        <span style={{ fontSize: '0.7rem', color: '#2563eb', background: 'rgba(37,99,235,0.08)', padding: '2px 6px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                          <Database size={11} /> IPFS Proof
-                        </span>
-                      )}
-                      <span className={`badge badge-${item.status.toLowerCase().replace(/\s+/g, '-')}`}>
-                        <span className="pulse-dot" />
-                        {item.status}
-                      </span>
-                    </div>
-                  </div>
 
-                  <h3 className="g-title">{item.title}</h3>
-                  <p className="g-desc">{item.description}</p>
+            {/* Metrics Grid */}
+            <div className="submissions-metrics-grid">
+              <div className="sub-metric-item">
+                <span className="sub-metric-label">Total Submissions</span>
+                <span className="sub-metric-val">{currentList.length + myApplications.length}</span>
+              </div>
+              <div className="sub-metric-item">
+                <span className="sub-metric-label">In Progress / Review</span>
+                <span className="sub-metric-val val-progress">{inProgressCount}</span>
+              </div>
+              <div className="sub-metric-item">
+                <span className="sub-metric-label">Resolved / Delivered</span>
+                <span className="sub-metric-val val-resolved">{resolvedCount}</span>
+              </div>
+              <div className="sub-metric-item">
+                <span className="sub-metric-label">Statutory SLA Compliance</span>
+                <span className="sub-metric-val val-sla">{resolutionRate}%</span>
+              </div>
+            </div>
 
-                  <div className="g-meta-grid">
-                    <div>
-                      <span className="meta-label">Department</span>
-                      <span className="meta-value">{item.department}</span>
-                    </div>
-                    <div>
-                      <span className="meta-label">Location / Ward</span>
-                      <span className="meta-value">{item.location}</span>
-                    </div>
-                    <div>
-                      <span className="meta-label">Officer Assigned</span>
-                      <span className="meta-value">{item.assignedOfficer || 'Pending Dispatch'}</span>
-                    </div>
-                    <div>
-                      <span className="meta-label">Submitted On</span>
-                      <span className="meta-value">{new Date(item.createdAt).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-
-                  <div className="g-card-footer">
-                    {item.feedback ? (
-                      <span className="feedback-done-tag">
-                        <MessageSquareCheck size={14} /> Citizen Feedback Submitted ({item.feedback.rating}/5 Stars)
-                      </span>
-                    ) : (
-                      <span className="g-sla-info">SLA Target Date: <strong>{new Date(item.slaDeadline).toLocaleDateString()}</strong></span>
-                    )}
-
-                    <button 
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => {
-                        selectGrievanceToTrack(item.id);
-                        setActiveTab('track');
-                      }}
-                    >
-                      {t('trackProgress')}
-                      <ExternalLink size={14} />
-                    </button>
-                  </div>
+            {/* Quick Preview or Prompt */}
+            {currentList.length > 0 || myApplications.length > 0 ? (
+              <div className="submissions-preview-bar">
+                <div className="preview-label">
+                  <Clock size={14} /> <strong>Latest Activity:</strong>
                 </div>
-              ))}
-            </div>
-          )}
+                <div className="preview-content">
+                  {currentList[0] ? (
+                    <span>
+                      <strong className="preview-id">#{currentList[0].id}</strong> - {currentList[0].title}
+                      <span className={`badge badge-sm badge-${(currentList[0].status || '').toLowerCase().replace(/\s+/g, '-')}`} style={{ marginLeft: '8px' }}>
+                        {currentList[0].status}
+                      </span>
+                    </span>
+                  ) : (
+                    <span>
+                      <strong className="preview-id">#{myApplications[0].id}</strong> - {myApplications[0].serviceName}
+                      <span className="badge badge-sm badge-info" style={{ marginLeft: '8px' }}>
+                        {myApplications[0].status}
+                      </span>
+                    </span>
+                  )}
+                </div>
+                <div className="preview-action-hint">
+                  <span>Click card to inspect full list &amp; timeline</span>
+                  <ChevronRight size={14} />
+                </div>
+              </div>
+            ) : (
+              <div className="submissions-empty-preview">
+                <CheckCircle size={16} color="#16a34a" />
+                <span>You currently have zero pending complaints. Click here or use '+ Lodge Grievance' to report an issue.</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Quick Statutory SLA Compliance Alert Card (Shifted to Bottom) */}
@@ -1438,6 +1416,379 @@ export default function CitizenDashboard({
         </div>
 
       </div>
+
+      {/* ========================================================================= */}
+      {/* DEDICATED "MY SUBMISSIONS" VIEWER MODAL */}
+      {/* ========================================================================= */}
+      {showSubmissionsModal && (
+        <div 
+          className="modal-overlay" 
+          style={{ zIndex: 1200 }} 
+          onClick={() => setShowSubmissionsModal(false)}
+        >
+          <div 
+            className="modal-content animate-slide-up" 
+            style={{ 
+              maxWidth: '960px', 
+              width: '95%', 
+              maxHeight: '90vh', 
+              display: 'flex', 
+              flexDirection: 'column', 
+              padding: 0, 
+              overflow: 'hidden',
+              borderRadius: '16px' 
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="modal-header" style={{ background: 'var(--brand-700, #2c5745)', color: '#ffffff', padding: '18px 24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(255,255,255,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <FileText size={22} color="#ffffff" />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, color: '#ffffff', fontSize: '1.25rem', fontWeight: 800 }}>
+                    {isOfficer ? 'My Assigned Duty Queue & Field Inspections' : 'My Registered Grievances & Service Submissions'}
+                  </h3>
+                  <p style={{ margin: '2px 0 0', color: 'rgba(255,255,255,0.85)', fontSize: '0.8rem' }}>
+                    Citizen: {user?.fullName || 'Verified Citizen'} • National JanSeva Governance Registry
+                  </p>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                className="close-btn" 
+                onClick={() => setShowSubmissionsModal(false)}
+                style={{ color: '#ffffff', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                title="Close Submissions Modal"
+              >
+                <X size={22} />
+              </button>
+            </div>
+
+            {/* Sub-tabs: Grievance Complaints vs Service Applications */}
+            <div className="submissions-modal-tabs">
+              <button
+                type="button"
+                className={`submissions-tab-btn ${submissionsTab === 'grievances' ? 'active' : ''}`}
+                onClick={() => setSubmissionsTab('grievances')}
+              >
+                <FileText size={16} />
+                <span>Grievance Complaints ({currentList.length})</span>
+              </button>
+              <button
+                type="button"
+                className={`submissions-tab-btn ${submissionsTab === 'applications' ? 'active' : ''}`}
+                onClick={() => setSubmissionsTab('applications')}
+              >
+                <Layers size={16} />
+                <span>Service Applications ({myApplications.length})</span>
+              </button>
+            </div>
+
+            {/* Filter and Search Bar */}
+            <div style={{ padding: '14px 24px', background: 'var(--bg-card-subtle, rgba(0,0,0,0.02))', borderBottom: '1px solid var(--border-subtle)', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <div style={{ position: 'relative', flex: 1, minWidth: '220px' }}>
+                <Search size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                <input 
+                  type="text"
+                  placeholder="Search by ID, keyword, department, or location..."
+                  value={submissionsSearch}
+                  onChange={(e) => setSubmissionsSearch(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px 8px 36px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-subtle)',
+                    background: 'var(--bg-card)',
+                    color: 'var(--text-main)',
+                    fontSize: '0.85rem'
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Filter size={14} style={{ color: 'var(--text-muted)' }} />
+                <select
+                  value={submissionsStatusFilter}
+                  onChange={(e) => setSubmissionsStatusFilter(e.target.value)}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-subtle)',
+                    background: 'var(--bg-card)',
+                    color: 'var(--text-main)',
+                    fontSize: '0.85rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="All">All Statuses</option>
+                  <option value="Submitted">Submitted</option>
+                  <option value="Under Review">Under Review</option>
+                  <option value="Assigned">Assigned</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Resolved">Resolved</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Modal Body / Submissions List */}
+            <div style={{ padding: '20px 24px', overflowY: 'auto', flex: 1, maxHeight: '58vh' }}>
+              {submissionsTab === 'grievances' ? (
+                (() => {
+                  const filtered = currentList.filter(item => {
+                    if (!item) return false;
+                    const matchesStatus = submissionsStatusFilter === 'All' || item.status === submissionsStatusFilter;
+                    const q = submissionsSearch.toLowerCase().trim();
+                    if (!q) return matchesStatus;
+                    const matchesText = (item.id || '').toLowerCase().includes(q) ||
+                                        (item.title || '').toLowerCase().includes(q) ||
+                                        (item.description || '').toLowerCase().includes(q) ||
+                                        (item.department || '').toLowerCase().includes(q) ||
+                                        (item.location || '').toLowerCase().includes(q);
+                    return matchesStatus && matchesText;
+                  });
+
+                  if (filtered.length === 0) {
+                    return (
+                      <div className="empty-state glass-card" style={{ padding: '36px', textAlign: 'center' }}>
+                        <FileText size={44} className="empty-icon" style={{ margin: '0 auto 12px', opacity: 0.4 }} />
+                        <h4 style={{ margin: '0 0 6px', fontSize: '1.05rem', color: 'var(--text-main)' }}>
+                          {isOfficer ? 'No assigned tickets found' : 'No matching grievances found'}
+                        </h4>
+                        <p className="text-muted small-text" style={{ margin: 0 }}>
+                          {isCitizen 
+                            ? 'You have not submitted any complaints matching this filter.'
+                            : 'Zero assignments matching this search criteria in your queue.'}
+                        </p>
+                        {isCitizen && (
+                          <button 
+                            type="button" 
+                            className="btn btn-primary btn-sm"
+                            style={{ marginTop: '16px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                            onClick={() => {
+                              setShowSubmissionsModal(false);
+                              openGrievanceModal();
+                            }}
+                          >
+                            <FilePlus size={15} /> Lodge New Grievance
+                          </button>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="grievance-cards-list" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                      {filtered.map(item => (
+                        <div key={item.id} className="grievance-card glass-card" style={{ padding: '16px 20px' }}>
+                          <div className="g-card-header">
+                            <div className="g-id-badge">
+                              <span className="g-id-bold">{item.id}</span>
+                              <span className={`priority-tag priority-${(item.priority || 'Medium').toLowerCase()}`}>
+                                {item.priority || 'Medium'} Priority
+                              </span>
+                              {getSlaBadge(item)}
+                              {item.reportCount > 1 && (
+                                <span style={{ fontSize: '0.7rem', background: 'rgba(235,125,0,0.12)', color: '#eb7d00', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
+                                  +{item.reportCount - 1} Citizens Affected
+                                </span>
+                              )}
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              {item.ipfsDocumentCid && (
+                                <span style={{ fontSize: '0.7rem', color: '#2563eb', background: 'rgba(37,99,235,0.08)', padding: '2px 6px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                  <Database size={11} /> IPFS Proof
+                                </span>
+                              )}
+                              <span className={`badge badge-${(item.status || 'Submitted').toLowerCase().replace(/\s+/g, '-')}`}>
+                                <span className="pulse-dot" />
+                                {item.status}
+                              </span>
+                            </div>
+                          </div>
+
+                          <h3 className="g-title" style={{ fontSize: '1.05rem', margin: '8px 0 4px' }}>{item.title}</h3>
+                          <p className="g-desc" style={{ fontSize: '0.84rem', margin: '0 0 12px' }}>{item.description}</p>
+
+                          <div className="g-meta-grid" style={{ marginBottom: '12px' }}>
+                            <div>
+                              <span className="meta-label">Department</span>
+                              <span className="meta-value">{item.department}</span>
+                            </div>
+                            <div>
+                              <span className="meta-label">Location / Ward</span>
+                              <span className="meta-value">{item.location}</span>
+                            </div>
+                            <div>
+                              <span className="meta-label">Officer Assigned</span>
+                              <span className="meta-value">{item.assignedOfficer || 'Pending Dispatch'}</span>
+                            </div>
+                            <div>
+                              <span className="meta-label">Submitted On</span>
+                              <span className="meta-value">{new Date(item.createdAt).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+
+                          <div className="g-card-footer" style={{ paddingTop: '10px' }}>
+                            {item.feedback ? (
+                              <span className="feedback-done-tag">
+                                <MessageSquareCheck size={14} /> Citizen Feedback Submitted ({item.feedback.rating}/5 Stars)
+                              </span>
+                            ) : (
+                              <span className="g-sla-info">SLA Target Date: <strong>{new Date(item.slaDeadline).toLocaleDateString()}</strong></span>
+                            )}
+
+                            <button 
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => {
+                                setShowSubmissionsModal(false);
+                                selectGrievanceToTrack(item.id);
+                                setActiveTab('track');
+                              }}
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                            >
+                              <span>{t('trackProgress')}</span>
+                              <ExternalLink size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()
+              ) : (
+                (() => {
+                  const filtered = myApplications.filter(app => {
+                    if (!app) return false;
+                    const matchesStatus = submissionsStatusFilter === 'All' || app.status === submissionsStatusFilter;
+                    const q = submissionsSearch.toLowerCase().trim();
+                    if (!q) return matchesStatus;
+                    const matchesText = (app.id || '').toLowerCase().includes(q) ||
+                                        (app.serviceName || '').toLowerCase().includes(q) ||
+                                        (app.department || '').toLowerCase().includes(q);
+                    return matchesStatus && matchesText;
+                  });
+
+                  if (filtered.length === 0) {
+                    return (
+                      <div className="empty-state glass-card" style={{ padding: '36px', textAlign: 'center' }}>
+                        <Layers size={44} className="empty-icon" style={{ margin: '0 auto 12px', opacity: 0.4 }} />
+                        <h4 style={{ margin: '0 0 6px', fontSize: '1.05rem', color: 'var(--text-main)' }}>
+                          No service applications found
+                        </h4>
+                        <p className="text-muted small-text" style={{ margin: 0 }}>
+                          You have not applied for any official public certificates or municipal connections yet.
+                        </p>
+                        <button 
+                          type="button" 
+                          className="btn btn-primary btn-sm"
+                          style={{ marginTop: '16px' }}
+                          onClick={() => {
+                            setShowSubmissionsModal(false);
+                            const target = document.getElementById('citizen-services-section');
+                            if (target) target.scrollIntoView({ behavior: 'smooth' });
+                          }}
+                        >
+                          Explore Public Services Catalog
+                        </button>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="grievance-cards-list" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                      {filtered.map(app => (
+                        <div key={app.id} className="grievance-card glass-card" style={{ padding: '16px 20px' }}>
+                          <div className="g-card-header">
+                            <div className="g-id-badge">
+                              <span className="g-id-bold">#{app.id}</span>
+                              <span className="badge badge-info">{app.serviceName}</span>
+                            </div>
+                            <span className={`badge badge-${(app.status || 'Submitted').toLowerCase().replace(/\s+/g, '-')}`}>
+                              <span className="pulse-dot" />
+                              {app.status || 'Submitted'}
+                            </span>
+                          </div>
+
+                          <div className="g-meta-grid" style={{ margin: '12px 0' }}>
+                            <div>
+                              <span className="meta-label">Department</span>
+                              <span className="meta-value">{app.department}</span>
+                            </div>
+                            <div>
+                              <span className="meta-label">Applicant Name</span>
+                              <span className="meta-value">{app.applicantName}</span>
+                            </div>
+                            <div>
+                              <span className="meta-label">Fee Paid</span>
+                              <span className="meta-value">{app.fee || '₹50'}</span>
+                            </div>
+                            <div>
+                              <span className="meta-label">Applied On</span>
+                              <span className="meta-value">{new Date(app.createdAt || Date.now()).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+
+                          <div className="g-card-footer" style={{ paddingTop: '10px' }}>
+                            <span className="small-text text-muted">
+                              <CheckCircle size={14} color="#16a34a" /> UIDAI Verified &amp; DigiLocker Linked
+                            </span>
+                            <button 
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => {
+                                setShowSubmissionsModal(false);
+                                selectGrievanceToTrack(app.id);
+                                setActiveTab('track');
+                              }}
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                            >
+                              <span>Track Application</span>
+                              <ExternalLink size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{ padding: '14px 24px', background: 'var(--bg-card)', borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+              <span className="small-text text-muted">
+                Showing submissions authenticated under JanSeva National Grievance Redressal Registry
+              </span>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                {isCitizen && (
+                  <button 
+                    type="button" 
+                    className="btn btn-primary btn-sm"
+                    onClick={() => {
+                      setShowSubmissionsModal(false);
+                      openGrievanceModal();
+                    }}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    <FilePlus size={14} /> + Lodge New Grievance
+                  </button>
+                )}
+                <button 
+                  type="button" 
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setShowSubmissionsModal(false)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );
