@@ -33,6 +33,9 @@ import './App.css';
 
 function MainAppContent() {
   const { user } = useAuth();
+  const isCitizen = user?.role === 'CITIZEN';
+  const isOfficer = user?.role === 'OFFICER';
+  const isAdmin = user?.role === 'ADMIN';
 
   // Theme state
   const [theme, setTheme] = useState(() => localStorage.getItem('janseva_theme') || 'light');
@@ -492,10 +495,6 @@ function MainAppContent() {
   if (!user) {
     return <AuthScreen />;
   }
-
-  const isCitizen = user.role === 'CITIZEN';
-  const isOfficer = user.role === 'OFFICER';
-  const isAdmin = user.role === 'ADMIN';
 
   const cleanUserPhone = (user?.phone || '').replace(/\D/g, '').slice(-10);
   const cleanUserEmail = (user?.email || '').toLowerCase().trim();
