@@ -4,7 +4,6 @@ import {
   LayoutDashboard, 
   Layers, 
   Search, 
-  BookOpen, 
   PlusCircle, 
   ShieldCheck, 
   UserCheck, 
@@ -51,9 +50,9 @@ export default function Sidebar({
       role: 'CITIZEN'
     },
     {
-      id: 'faqs',
-      label: t('faqsTab') || 'Knowledge Base & AI Guide',
-      icon: BookOpen,
+      id: 'settings',
+      label: t('generalSettings') || 'General Settings',
+      icon: Settings,
       role: 'CITIZEN'
     }
   ];
@@ -135,15 +134,19 @@ export default function Sidebar({
           {isCitizen ? (
             navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = activeTab === item.id;
+              const isActive = item.id === 'settings' ? false : activeTab === item.id;
               return (
                 <button
                   key={item.id}
                   type="button"
                   className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
                   onClick={() => {
-                    setActivePortal('citizen');
-                    setActiveTab(item.id);
+                    if (item.id === 'settings') {
+                      if (onOpenSettings) onOpenSettings();
+                    } else {
+                      setActivePortal('citizen');
+                      setActiveTab(item.id);
+                    }
                     if (onClose) onClose();
                   }}
                   title={item.label}
@@ -192,22 +195,25 @@ export default function Sidebar({
 
           {/* Bottom Options: Settings & Sign Out */}
           <div className="sidebar-action-buttons">
-            <button 
-              type="button" 
-              className="sidebar-bottom-btn" 
-              onClick={() => {
-                onOpenSettings();
-                if (onClose) onClose();
-              }}
-              title="Settings & Appearance"
-            >
-              <Settings size={16} />
-              <span>Settings</span>
-            </button>
+            {!isCitizen && (
+              <button 
+                type="button" 
+                className="sidebar-bottom-btn" 
+                onClick={() => {
+                  onOpenSettings();
+                  if (onClose) onClose();
+                }}
+                title="Settings & Appearance"
+              >
+                <Settings size={16} />
+                <span>Settings</span>
+              </button>
+            )}
 
             <button 
               type="button" 
               className="sidebar-bottom-btn sidebar-logout-btn" 
+              style={isCitizen ? { width: '100%', justifyContent: 'center' } : {}}
               onClick={() => {
                 logout();
                 if (onClose) onClose();

@@ -40,6 +40,9 @@ import nationalEmblemImg from '../assets/national-emblem.webp';
 import birthCertImg from '../assets/service-birth-cert.jpg';
 import waterConnectionImg from '../assets/service-water-connection.jpg';
 import casteIncomeImg from '../assets/service-caste-income.jpg';
+import tradeLicenseImg from '../assets/service-trade-license.jpg';
+import propertyTaxImg from '../assets/service-property-tax.jpg';
+import streetLightImg from '../assets/service-street-light.jpg';
 
 const ICON_MAP = {
   FileText: FileText,
@@ -908,10 +911,306 @@ export default function CitizenDashboard({
               );
             })()}
 
+            {/* SERVICE 4: TRADE LICENSE REGISTRATION & RENEWAL (IMAGE RIGHT, BLENDS TO LEFT) */}
+            {(() => {
+              const srv = serviceList.find(s => s && s.id === 'srv-3') || {
+                id: 'srv-3',
+                name: 'Trade License Renewal',
+                department: 'Commercial & Trade Licensing',
+                slaDays: 5,
+                fee: '₹850'
+              };
+              return (
+                <div className="featured-service-card image-right">
+                  <div className="service-image-backdrop">
+                    <img 
+                      src={tradeLicenseImg} 
+                      alt="Trade License Registration and Renewal" 
+                      className="service-banner-img" 
+                    />
+                    <div className="service-blend-gradient-overlay" />
+                  </div>
+
+                  <div className="service-info-panel">
+                    <div className="service-badges-row">
+                      <span className="service-badge-pill service-badge-dept">Commercial &amp; Trade Licensing Authority</span>
+                      <span className="service-badge-pill service-badge-sla">
+                        <Clock size={12} /> {srv.slaDays || 5} Days Statutory SLA
+                      </span>
+                      <span className="service-badge-pill service-badge-fee">Statutory Fee: {srv.fee || '₹850'}</span>
+                    </div>
+
+                    <h3 className="service-banner-title">Municipal Trade License &amp; Business Permit</h3>
+                    <p className="service-banner-desc">
+                      Statutory commercial operating license issuance and paperless annual renewals for retail, MSMEs, manufacturing, and food business establishments.
+                    </p>
+
+                    <div className="service-structured-data-grid">
+                      <div className="service-data-section">
+                        <div className="service-section-icon-box">
+                          <Building2 size={17} />
+                        </div>
+                        <div className="service-section-content">
+                          <div className="service-section-heading">Business Scope &amp; Trade Clearances</div>
+                          <ul className="service-bullets-list">
+                            <li>Commercial, Retail, Warehouse &amp; Manufacturing Permissibility</li>
+                            <li>Integrated Municipal Health &amp; Sanitary Fitness Clearances</li>
+                            <li>Single-Window Ease of Doing Business (EoDB) Fast-Track</li>
+                          </ul>
+                        </div>
+                      </div>
+
+                      <div className="service-data-section">
+                        <div className="service-section-icon-box">
+                          <TrendingUp size={17} />
+                        </div>
+                        <div className="service-section-content">
+                          <div className="service-section-heading">Statutory SLA &amp; Tariffs</div>
+                          <ul className="service-bullets-list">
+                            <li>5 Days Statutory Guarantee under State Right to Services</li>
+                            <li>₹850 Transparent Treasury Fee with Instant Digital Receipt</li>
+                            <li>Real-Time DigiLocker Push &amp; QR-Secured Trade Certificate</li>
+                          </ul>
+                        </div>
+                      </div>
+
+                      <div className="service-data-section">
+                        <div className="service-section-icon-box">
+                          <ShieldCheck size={17} />
+                        </div>
+                        <div className="service-section-content">
+                          <div className="service-section-heading">Mandatory Business Enclosures</div>
+                          <ul className="service-bullets-list">
+                            <li>GSTIN Certificate / Udyam MSME Registration Copy</li>
+                            <li>Shop Commercial Lease Agreement / Property Tax Receipt</li>
+                            <li>Fire Safety NOC &amp; Pollution Consent (if applicable)</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="service-action-row">
+                      <button 
+                        type="button" 
+                        className="service-apply-btn" 
+                        onClick={() => openServiceModal(srv)}
+                        title="Apply Online for Trade License"
+                      >
+                        <FilePlus size={16} />
+                        <span>Apply for Trade License</span>
+                        <ArrowRight size={15} />
+                      </button>
+                      <span className="service-footer-note">
+                        <CheckCircle size={14} color="#16a34a" /> Ease of Doing Business • Ministry of Corporate Affairs Aligned
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* SERVICE 5: PROPERTY TAX ASSESSMENT & TRANSFER (IMAGE LEFT, BLENDS TO RIGHT) */}
+            {(() => {
+              const srv = serviceList.find(s => s && s.id === 'srv-5') || {
+                id: 'srv-5',
+                name: 'Property Tax Assessment & Transfer',
+                department: 'Revenue & Taxation',
+                slaDays: 15,
+                fee: '₹500'
+              };
+              return (
+                <div className="featured-service-card image-left">
+                  <div className="service-image-backdrop">
+                    <img 
+                      src={propertyTaxImg} 
+                      alt="Property Tax Assessment and Khata Transfer" 
+                      className="service-banner-img" 
+                    />
+                    <div className="service-blend-gradient-overlay" />
+                  </div>
+
+                  <div className="service-info-panel">
+                    <div className="service-badges-row">
+                      <span className="service-badge-pill service-badge-dept">Municipal Revenue &amp; Taxation Division</span>
+                      <span className="service-badge-pill service-badge-sla">
+                        <Clock size={12} /> {srv.slaDays || 15} Days Statutory SLA
+                      </span>
+                      <span className="service-badge-pill service-badge-fee">Assessment Charge: {srv.fee || '₹500'}</span>
+                    </div>
+
+                    <h3 className="service-banner-title">Property Tax Assessment &amp; Khata Mutation</h3>
+                    <p className="service-banner-desc">
+                      GIS-mapped self-assessment of annual property tax liabilities, municipal Khata transfer, title mutation post-sale deed, and clearance certificate issuance.
+                    </p>
+
+                    <div className="service-structured-data-grid">
+                      <div className="service-data-section">
+                        <div className="service-section-icon-box">
+                          <Home size={17} />
+                        </div>
+                        <div className="service-section-content">
+                          <div className="service-section-heading">Assessment Scope &amp; Mutation</div>
+                          <ul className="service-bullets-list">
+                            <li>A-Khata / B-Khata Digital Name Transfer on Registered Sale Deeds</li>
+                            <li>Unit Area Value (UAV) Scientific Property Tax Self-Calculation</li>
+                            <li>Official Nil-Encumbrance Tax Clearance Certificate (Form-3)</li>
+                          </ul>
+                        </div>
+                      </div>
+
+                      <div className="service-data-section">
+                        <div className="service-section-icon-box">
+                          <TrendingUp size={17} />
+                        </div>
+                        <div className="service-section-content">
+                          <div className="service-section-heading">Statutory SLA &amp; Revenue Verification</div>
+                          <ul className="service-bullets-list">
+                            <li>15 Days Statutory Delivery SLA with Revenue Inspector Field Survey</li>
+                            <li>₹500 Subsidized Title Registry &amp; Khata Mutation Fee</li>
+                            <li>Direct Linkage with Sub-Registrar Electronic Deeds Database</li>
+                          </ul>
+                        </div>
+                      </div>
+
+                      <div className="service-data-section">
+                        <div className="service-section-icon-box">
+                          <ShieldCheck size={17} />
+                        </div>
+                        <div className="service-section-content">
+                          <div className="service-section-heading">Required Property Records</div>
+                          <ul className="service-bullets-list">
+                            <li>Registered Sale Deed / Partition Deed / Gift Deed Document</li>
+                            <li>Latest Municipal Property Tax Paid Challan &amp; Khata Extract</li>
+                            <li>Approved Building Plan Blueprint or Encumbrance Certificate</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="service-action-row">
+                      <button 
+                        type="button" 
+                        className="service-apply-btn" 
+                        onClick={() => openServiceModal(srv)}
+                        title="Apply Online for Property Tax / Mutation"
+                      >
+                        <FilePlus size={16} />
+                        <span>Apply for Property Tax / Mutation</span>
+                        <ArrowRight size={15} />
+                      </button>
+                      <span className="service-footer-note">
+                        <CheckCircle size={14} color="#16a34a" /> Sub-Registrar Linked • Kaveri / Bhoomi Land Registry Synchronised
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* SERVICE 6: STREET LIGHT & INFRASTRUCTURE MAINTENANCE (IMAGE RIGHT, BLENDS TO LEFT) */}
+            {(() => {
+              const srv = serviceList.find(s => s && s.id === 'srv-6') || {
+                id: 'srv-6',
+                name: 'Street Light & Infrastructure Maintenance',
+                department: 'Public Works & Infrastructure',
+                slaDays: 3,
+                fee: 'Free'
+              };
+              return (
+                <div className="featured-service-card image-right">
+                  <div className="service-image-backdrop">
+                    <img 
+                      src={streetLightImg} 
+                      alt="Public Street Lighting and Infrastructure Maintenance" 
+                      className="service-banner-img" 
+                    />
+                    <div className="service-blend-gradient-overlay" />
+                  </div>
+
+                  <div className="service-info-panel">
+                    <div className="service-badges-row">
+                      <span className="service-badge-pill service-badge-dept">Public Works &amp; Electrical Infrastructure</span>
+                      <span className="service-badge-pill service-badge-sla">
+                        <Clock size={12} /> {srv.slaDays || 3} Days Statutory SLA
+                      </span>
+                      <span className="service-badge-pill service-badge-fee" style={{ background: '#ecfdf5', color: '#047857', borderColor: '#a7f3d0' }}>
+                        100% Free Civic Service
+                      </span>
+                    </div>
+
+                    <h3 className="service-banner-title">Public Street Lighting &amp; Civic Electrical Maintenance</h3>
+                    <p className="service-banner-desc">
+                      Fast-track municipal service for smart LED street lamp installations, pole replacements, dark-spot elimination, and rapid electrical grid repair across wards.
+                    </p>
+
+                    <div className="service-structured-data-grid">
+                      <div className="service-data-section">
+                        <div className="service-section-icon-box">
+                          <Zap size={17} />
+                        </div>
+                        <div className="service-section-content">
+                          <div className="service-section-heading">Civic Grid Scope &amp; Public Safety</div>
+                          <ul className="service-bullets-list">
+                            <li>Energy-Efficient Centralized CCMS Smart LED Street Lights</li>
+                            <li>Targeted Dark-Spot Rectification for Pedestrian &amp; Women Safety</li>
+                            <li>Automated Sunrise-to-Sunset Timer &amp; Cable Network Upgrades</li>
+                          </ul>
+                        </div>
+                      </div>
+
+                      <div className="service-data-section">
+                        <div className="service-section-icon-box">
+                          <TrendingUp size={17} />
+                        </div>
+                        <div className="service-section-content">
+                          <div className="service-section-heading">Rapid Field Redressal SLA</div>
+                          <ul className="service-bullets-list">
+                            <li>72 Hours (3 Days) Guaranteed SLA for Civic Repair &amp; Bulb Swap</li>
+                            <li>Zero Statutory Application Fee (100% Public Funded Amenity)</li>
+                            <li>Automated SMS Dispatch to Ward Junior Electrical Engineer</li>
+                          </ul>
+                        </div>
+                      </div>
+
+                      <div className="service-data-section">
+                        <div className="service-section-icon-box">
+                          <ShieldCheck size={17} />
+                        </div>
+                        <div className="service-section-content">
+                          <div className="service-section-heading">Locality Details &amp; Geo-Information</div>
+                          <ul className="service-bullets-list">
+                            <li>Street / Cross-Road Landmark, Ward &amp; House Number</li>
+                            <li>Electrical Pole Serial Number / Transformer Tag (if visible)</li>
+                            <li>Optional Mobile Photo / Geotagged Location Upload</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="service-action-row">
+                      <button 
+                        type="button" 
+                        className="service-apply-btn" 
+                        onClick={() => openServiceModal(srv)}
+                        title="Request Street Light Service / Maintenance"
+                      >
+                        <FilePlus size={16} />
+                        <span>Request Street Light Service</span>
+                        <ArrowRight size={15} />
+                      </button>
+                      <span className="service-footer-note">
+                        <CheckCircle size={14} color="#16a34a" /> 72-Hour Rapid Response • National LED Street Lighting Programme
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
           </div>
 
-          {/* ADDITIONAL MUNICIPAL SERVICES GRID (For Trade License, Property Tax, Streetlights, etc.) */}
-          {serviceList.filter(s => s && s.id !== 'srv-1' && s.id !== 'srv-2' && s.id !== 'srv-4').length > 0 && (
+          {/* ADDITIONAL MUNICIPAL SERVICES GRID (For Any Other Dynamic Services) */}
+          {serviceList.filter(s => s && !['srv-1', 'srv-2', 'srv-3', 'srv-4', 'srv-5', 'srv-6'].includes(s.id)).length > 0 && (
             <div style={{ marginTop: '36px' }}>
               <div style={{ marginBottom: '16px' }}>
                 <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-main)', margin: '0 0 4px' }}>
@@ -923,7 +1222,7 @@ export default function CitizenDashboard({
               </div>
 
               <div className="services-grid">
-                {serviceList.filter(s => s && s.id !== 'srv-1' && s.id !== 'srv-2' && s.id !== 'srv-4').map(service => {
+                {serviceList.filter(s => s && !['srv-1', 'srv-2', 'srv-3', 'srv-4', 'srv-5', 'srv-6'].includes(s.id)).map(service => {
                   const IconComponent = (service && service.icon && ICON_MAP[service.icon]) || FileText;
                   return (
                     <div key={service.id || Math.random()} className="service-card glass-card">
