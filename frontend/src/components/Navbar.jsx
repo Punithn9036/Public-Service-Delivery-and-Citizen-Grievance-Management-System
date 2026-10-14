@@ -49,9 +49,9 @@ export default function Navbar({
     <header className={`navbar-header ${isHeroTab ? 'navbar-hero-merged' : ''}`}>
       <div className="nav-container">
         
-        {/* Left Section: Back Button & JanSeva Brand Heading */}
+        {/* Left Section: Back Button (Strictly for Citizens navigating subpages, NEVER for Officers/Admins) */}
         <div className="nav-left-group">
-          {canGoBack && (
+          {canGoBack && isCitizen && (
             <button
               type="button"
               className="nav-back-btn"

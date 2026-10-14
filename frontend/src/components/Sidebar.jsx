@@ -75,10 +75,16 @@ export default function Sidebar({
           <div 
             className="sidebar-brand-left"
             onClick={() => {
-              setActiveTab('overview');
+              if (isCitizen) {
+                setActivePortal('citizen');
+                setActiveTab('overview');
+              } else {
+                setActivePortal('admin');
+                setActiveTab('admin-dashboard');
+              }
               if (onClose) onClose();
             }}
-            title="JanSeva Governance Portal"
+            title={isCitizen ? "JanSeva Governance Portal" : "JanSeva Official Governance Center"}
           >
             <div className="sidebar-brand-icon">
               <Building size={20} color="#ffffff" />
@@ -86,9 +92,9 @@ export default function Sidebar({
             <div className="sidebar-brand-text">
               <div className="sidebar-brand-title">
                 <span className="brand-name">JanSeva</span>
-                <span className="sidebar-gov-tag">GOV</span>
+                <span className="sidebar-gov-tag">{isCitizen ? 'GOV' : (user?.role === 'OFFICER' ? 'OFFICER' : 'ADMIN')}</span>
               </div>
-              <span className="sidebar-brand-sub">Navigation Menu</span>
+              <span className="sidebar-brand-sub">{isCitizen ? 'Navigation Menu' : 'Official Workspace'}</span>
             </div>
           </div>
 
@@ -122,7 +128,9 @@ export default function Sidebar({
 
         {/* Main Navigation Links */}
         <nav className="sidebar-nav">
-          <div className="sidebar-section-label">SERVICES & NAVIGATION</div>
+          <div className="sidebar-section-label">
+            {isCitizen ? 'SERVICES & NAVIGATION' : 'OFFICIAL WORKSPACE'}
+          </div>
 
           {isCitizen ? (
             navItems.map((item) => {
@@ -147,46 +155,23 @@ export default function Sidebar({
               );
             })
           ) : (
-            /* Official Admin Navigation */
-            <>
-              <button
-                type="button"
-                className={`sidebar-nav-item ${activeTab === 'admin-dashboard' ? 'active' : ''}`}
-                onClick={() => {
-                  setActivePortal('admin');
-                  setActiveTab('admin-dashboard');
-                  if (onClose) onClose();
-                }}
-                title={t('nodalOfficerControl') || 'Admin Governance Center'}
-              >
-                <ShieldCheck size={18} className="sidebar-nav-icon" />
-                <span className="sidebar-nav-label">{t('nodalOfficerControl') || 'Admin Governance Center'}</span>
-                {activeTab === 'admin-dashboard' && <ChevronRight size={14} className="sidebar-active-arrow" />}
-              </button>
-
-              {/* Quick Switch for Admin to view Citizen Interface */}
-              <div className="sidebar-section-label" style={{ marginTop: '16px' }}>CITIZEN VIEW</div>
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = activePortal === 'citizen' && activeTab === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
-                    onClick={() => {
-                      setActivePortal('citizen');
-                      setActiveTab(item.id);
-                      if (onClose) onClose();
-                    }}
-                    title={item.label}
-                  >
-                    <Icon size={18} className="sidebar-nav-icon" />
-                    <span className="sidebar-nav-label">{item.label}</span>
-                  </button>
-                );
-              })}
-            </>
+            /* Official Admin & Officer Navigation Only (Strictly isolated from Citizen View) */
+            <button
+              type="button"
+              className={`sidebar-nav-item active`}
+              onClick={() => {
+                setActivePortal('admin');
+                setActiveTab('admin-dashboard');
+                if (onClose) onClose();
+              }}
+              title={user?.role === 'OFFICER' ? 'Officer Command Center' : 'Admin Governance Center'}
+            >
+              <ShieldCheck size={18} className="sidebar-nav-icon" />
+              <span className="sidebar-nav-label">
+                {user?.role === 'OFFICER' ? 'Officer Duty & Field Desk' : 'Admin Governance Center'}
+              </span>
+              <ChevronRight size={14} className="sidebar-active-arrow" />
+            </button>
           )}
         </nav>
 
