@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
 import CitizenDashboard from './components/CitizenDashboard';
@@ -31,23 +31,102 @@ import {
 
 import './App.css';
 
+// Resilient Navigation State Restoration Helper across Page Refresh & Browser Reloads
+function getInitialNavState(user) {
+  const isOfficial = user && (user.role === 'OFFICER' || user.role === 'ADMIN');
+
+  // 1. Read hash if available in browser URL
+  let hashTab = '';
+  let hashParams = {};
+  if (typeof window !== 'undefined' && window.location.hash) {
+    const raw = window.location.hash.replace(/^#\/?/, '').trim();
+    if (raw) {
+      const [path, query] = raw.split('?');
+      hashTab = path;
+      if (query) {
+        query.split('&').forEach(pair => {
+          const [k, v] = pair.split('=');
+          if (k) hashParams[decodeURIComponent(k)] = decodeURIComponent(v || '');
+        });
+      }
+    }
+  }
+
+  // 2. Read stored session / local state
+  let storedTab = '';
+  let storedPortal = '';
+  let storedSection = '';
+  let storedScope = '';
+  let storedTrackId = '';
+
+  try {
+    storedTab = sessionStorage.getItem('janseva_active_tab') || localStorage.getItem('janseva_active_tab') || '';
+    storedPortal = sessionStorage.getItem('janseva_active_portal') || localStorage.getItem('janseva_active_portal') || '';
+    storedSection = sessionStorage.getItem('janseva_admin_section') || localStorage.getItem('janseva_admin_section') || '';
+    storedScope = sessionStorage.getItem('janseva_officer_queue_scope') || localStorage.getItem('janseva_officer_queue_scope') || '';
+    storedTrackId = sessionStorage.getItem('janseva_selected_track_id') || localStorage.getItem('janseva_selected_track_id') || '';
+  } catch (e) {}
+
+  const validCitizenTabs = ['overview', 'services', 'track', 'faqs'];
+  const validAdminSections = ['grievances', 'applications', 'analytics', 'notifications', 'blockchain', 'roster', 'sla-tribunal'];
+
+  if (isOfficial) {
+    let section = 'grievances';
+    if (validAdminSections.includes(hashParams.section)) {
+      section = hashParams.section;
+    } else if (validAdminSections.includes(storedSection)) {
+      section = storedSection;
+    }
+
+    return {
+      portal: 'admin',
+      tab: 'admin-dashboard',
+      adminSection: section,
+      officerQueueScope: hashParams.scope || storedScope || 'assigned',
+      selectedTrackId: ''
+    };
+  }
+
+  // Citizen Navigation
+  let tab = 'overview';
+  if (validCitizenTabs.includes(hashTab)) {
+    tab = hashTab;
+  } else if (validCitizenTabs.includes(storedTab)) {
+    tab = storedTab;
+  }
+
+  const trackId = hashParams.id || hashParams.trackId || storedTrackId || '';
+
+  return {
+    portal: 'citizen',
+    tab,
+    adminSection: 'grievances',
+    officerQueueScope: 'assigned',
+    selectedTrackId: trackId
+  };
+}
+
 function MainAppContent() {
   const { user } = useAuth();
   const isCitizen = user?.role === 'CITIZEN';
   const isOfficer = user?.role === 'OFFICER';
   const isAdmin = user?.role === 'ADMIN';
 
+  // Restore initial navigation snapshot from URL hash and session persistence
+  const initialNav = getInitialNavState(user);
+
   // Theme state
   const [theme, setTheme] = useState(() => localStorage.getItem('janseva_theme') || 'light');
   
-  // Navigation State
-  const [activePortal, setActivePortal] = useState('citizen'); // 'citizen' | 'admin'
-  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'services' | 'track' | 'faqs' | 'admin-dashboard'
-  const [adminActiveSection, setAdminActiveSection] = useState('grievances'); // 'grievances' | 'applications' | 'analytics' | 'notifications' | 'blockchain' | 'roster' | 'sla-tribunal'
-  const [officerQueueScope, setOfficerQueueScope] = useState('assigned'); // 'assigned' | 'dept-unassigned'
+  // Navigation State with Full Reload & Refresh Persistence
+  const [activePortal, setActivePortal] = useState(() => initialNav.portal);
+  const [activeTab, setActiveTab] = useState(() => initialNav.tab);
+  const [adminActiveSection, setAdminActiveSection] = useState(() => initialNav.adminSection);
+  const [officerQueueScope, setOfficerQueueScope] = useState(() => initialNav.officerQueueScope);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTrackId, setSelectedTrackId] = useState('');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Initially closed by default as requested
+  const [selectedTrackId, setSelectedTrackId] = useState(() => initialNav.selectedTrackId);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const previousUserRef = useRef(user ? `${user.role}:${user.email || user.userId || ''}` : null);
 
   // Modals state
   const [showGrievanceModal, setShowGrievanceModal] = useState(false);
@@ -266,9 +345,12 @@ function MainAppContent() {
     return activeTab !== 'overview' ? 'Overview Dashboard' : '';
   };
 
-  // Synchronize active portal with user role when user changes
+  // Synchronize active portal with user role ONLY when the logged-in user or role actually changes
   useEffect(() => {
-    if (user) {
+    if (!user) return;
+    const currentKey = `${user.role}:${user.email || user.userId || ''}`;
+    if (previousUserRef.current !== currentKey) {
+      previousUserRef.current = currentKey;
       if (user.role === 'CITIZEN') {
         setActivePortal('citizen');
         setActiveTab('overview');
@@ -278,6 +360,78 @@ function MainAppContent() {
       }
     }
   }, [user]);
+
+  // Persist navigation state to sessionStorage & localStorage and synchronize URL hash so page reloads remain on the exact page
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('janseva_active_portal', activePortal);
+      sessionStorage.setItem('janseva_active_tab', activeTab);
+      sessionStorage.setItem('janseva_admin_section', adminActiveSection);
+      sessionStorage.setItem('janseva_officer_queue_scope', officerQueueScope);
+      if (selectedTrackId) {
+        sessionStorage.setItem('janseva_selected_track_id', selectedTrackId);
+      } else {
+        sessionStorage.removeItem('janseva_selected_track_id');
+      }
+
+      localStorage.setItem('janseva_active_tab', activeTab);
+      localStorage.setItem('janseva_active_portal', activePortal);
+      localStorage.setItem('janseva_admin_section', adminActiveSection);
+      localStorage.setItem('janseva_officer_queue_scope', officerQueueScope);
+      if (selectedTrackId) {
+        localStorage.setItem('janseva_selected_track_id', selectedTrackId);
+      } else {
+        localStorage.removeItem('janseva_selected_track_id');
+      }
+
+      // Sync window URL hash without triggering an unnecessary extra history push
+      let targetHash = `#${activeTab}`;
+      if (activeTab === 'admin-dashboard') {
+        const params = new URLSearchParams();
+        if (adminActiveSection) params.set('section', adminActiveSection);
+        if (officerQueueScope) params.set('scope', officerQueueScope);
+        const query = params.toString();
+        targetHash = `#admin-dashboard${query ? '?' + query : ''}`;
+      } else if (activeTab === 'track' && selectedTrackId) {
+        targetHash = `#track?id=${encodeURIComponent(selectedTrackId)}`;
+      }
+
+      if (window.location.hash !== targetHash) {
+        window.history.replaceState(
+          { tab: activeTab, portal: activePortal, trackId: selectedTrackId, section: adminActiveSection, scope: officerQueueScope },
+          '',
+          targetHash
+        );
+      }
+    } catch (e) {
+      console.warn('Failed to sync navigation state to storage / URL hash:', e);
+    }
+  }, [activePortal, activeTab, adminActiveSection, officerQueueScope, selectedTrackId]);
+
+  // Synchronize state when browser URL hash changes
+  useEffect(() => {
+    const handleHashChange = () => {
+      const nextNav = getInitialNavState(user);
+      if (nextNav.portal && nextNav.portal !== activePortal) {
+        setActivePortal(nextNav.portal);
+      }
+      if (nextNav.tab && nextNav.tab !== activeTab) {
+        setActiveTab(nextNav.tab);
+      }
+      if (nextNav.adminSection && nextNav.adminSection !== adminActiveSection) {
+        setAdminActiveSection(nextNav.adminSection);
+      }
+      if (nextNav.officerQueueScope && nextNav.officerQueueScope !== officerQueueScope) {
+        setOfficerQueueScope(nextNav.officerQueueScope);
+      }
+      if (nextNav.selectedTrackId !== undefined && nextNav.selectedTrackId !== selectedTrackId) {
+        setSelectedTrackId(nextNav.selectedTrackId);
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [user, activePortal, activeTab, adminActiveSection, officerQueueScope, selectedTrackId]);
 
   // Sync Theme to document root
   useEffect(() => {
