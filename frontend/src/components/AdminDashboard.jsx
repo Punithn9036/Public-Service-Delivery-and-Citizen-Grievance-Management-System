@@ -51,14 +51,23 @@ export default function AdminDashboard({
   applications = [],
   departments,
   onUpdateGrievanceStatus,
-  onAssignOfficer
+  onAssignOfficer,
+  onGoBack,
+  canGoBack,
+  activeSection: propActiveSection,
+  setActiveSection: propSetActiveSection,
+  officerQueueScope: propOfficerQueueScope,
+  setOfficerQueueScope: propSetOfficerQueueScope
 }) {
   const { t } = useLanguage();
   const { user } = useAuth();
   const isOfficer = user?.role === 'OFFICER';
   const isAdmin = user?.role === 'ADMIN';
 
-  const [activeSection, setActiveSection] = useState('grievances'); // 'grievances' | 'applications' | 'analytics' | 'notifications' | 'blockchain'
+  const [localActiveSection, setLocalActiveSection] = useState('grievances'); // 'grievances' | 'applications' | 'analytics' | 'notifications' | 'blockchain' | 'roster' | 'sla-tribunal'
+  const activeSection = propActiveSection !== undefined ? propActiveSection : localActiveSection;
+  const setActiveSection = propSetActiveSection || setLocalActiveSection;
+
   const [selectedDept, setSelectedDept] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [selectedPriority, setSelectedPriority] = useState('All');
@@ -67,7 +76,9 @@ export default function AdminDashboard({
   const [newStatus, setNewStatus] = useState('');
   const [officerName, setOfficerName] = useState('');
   const [resolutionNote, setResolutionNote] = useState('');
-  const [officerQueueScope, setOfficerQueueScope] = useState('assigned'); // 'assigned' | 'dept-unassigned'
+  const [localQueueScope, setLocalQueueScope] = useState('assigned'); // 'assigned' | 'dept-unassigned'
+  const officerQueueScope = propOfficerQueueScope !== undefined ? propOfficerQueueScope : localQueueScope;
+  const setOfficerQueueScope = propSetOfficerQueueScope || setLocalQueueScope;
 
   // Local state for applications if updated
   const [serviceApps, setServiceApps] = useState(applications);
