@@ -52,6 +52,7 @@ export default function TrackingView({
   const { lang, setLang, t } = useLanguage();
   const { user } = useAuth();
   const gList = Array.isArray(grievances) ? grievances : [];
+  const aList = Array.isArray(applications) ? applications : [];
   const isCitizen = !user || user.role === 'CITIZEN';
   const isOfficer = user?.role === 'OFFICER';
   const isAdmin = user?.role === 'ADMIN';
@@ -78,14 +79,29 @@ export default function TrackingView({
     return Boolean(matchPhone || matchEmail || matchName || matchUserId);
   }) : [];
 
+  const myUserApplications = user ? aList.filter(a => {
+    if (!a) return false;
+    const cleanAPhone = (a.citizenPhone || a.phone || '').replace(/\D/g, '').slice(-10);
+    const matchPhone = cleanUserPhone && cleanAPhone && cleanAPhone === cleanUserPhone;
+    const matchEmail = (a.citizenEmail || a.email) && cleanUserEmail && (a.citizenEmail || a.email).toLowerCase().trim() === cleanUserEmail;
+    const matchName = (a.citizenName || a.name) && cleanUserName && (a.citizenName || a.name).toLowerCase().trim() === cleanUserName;
+    const matchUserId = a.userId && user.id && String(a.userId) === String(user.id);
+    return Boolean(matchPhone || matchEmail || matchName || matchUserId);
+  }) : [];
+
   const [trackInput, setTrackInput] = useState(selectedTrackId || '');
 
   const [activeSearchResult, setActiveSearchResult] = useState(() => {
     if (selectedTrackId) {
-      return gList.find(g => g && g.id === selectedTrackId) || aList.find(a => a && a.id === selectedTrackId);
+      const cleanId = String(selectedTrackId).toUpperCase();
+      return gList.find(g => g && g.id && g.id.toUpperCase() === cleanId) || 
+             aList.find(a => a && a.id && a.id.toUpperCase() === cleanId) || null;
     }
     if (user && myUserGrievances.length > 0) {
       return myUserGrievances[0];
+    }
+    if (user && myUserApplications.length > 0) {
+      return myUserApplications[0];
     }
     return null;
   });
