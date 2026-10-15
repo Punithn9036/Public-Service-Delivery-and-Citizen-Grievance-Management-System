@@ -43,6 +43,8 @@ function MainAppContent() {
   // Navigation State
   const [activePortal, setActivePortal] = useState('citizen'); // 'citizen' | 'admin'
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'services' | 'track' | 'faqs' | 'admin-dashboard'
+  const [adminActiveSection, setAdminActiveSection] = useState('grievances'); // 'grievances' | 'applications' | 'analytics' | 'notifications' | 'blockchain' | 'roster' | 'sla-tribunal'
+  const [officerQueueScope, setOfficerQueueScope] = useState('assigned'); // 'assigned' | 'dept-unassigned'
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTrackId, setSelectedTrackId] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Initially closed by default as requested
@@ -547,6 +549,12 @@ function MainAppContent() {
           setActiveTab={(tab) => navigateTo(tab)}
           activePortal={activePortal}
           setActivePortal={(portal) => navigateTo(activeTab, { portal })}
+          adminActiveSection={adminActiveSection}
+          setAdminActiveSection={setAdminActiveSection}
+          officerQueueScope={officerQueueScope}
+          setOfficerQueueScope={setOfficerQueueScope}
+          grievances={grievances}
+          applications={applications}
           openGrievanceModal={() => {
             navigateTo(activeTab, { closeModals: false });
             setShowGrievanceModal(true);
@@ -617,6 +625,10 @@ function MainAppContent() {
             onAssignOfficer={handleUpdateGrievanceStatus}
             onGoBack={handleGoBack}
             canGoBack={canGoBack}
+            activeSection={adminActiveSection}
+            setActiveSection={setAdminActiveSection}
+            officerQueueScope={officerQueueScope}
+            setOfficerQueueScope={setOfficerQueueScope}
           />
         ) : (
           /* Citizen View Tabs */

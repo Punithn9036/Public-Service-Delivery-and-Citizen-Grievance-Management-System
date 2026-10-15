@@ -46,6 +46,12 @@ import casteIncomeImg from '../assets/service-caste-income.jpg';
 import tradeLicenseImg from '../assets/service-trade-license.jpg';
 import propertyTaxImg from '../assets/service-property-tax.jpg';
 import streetLightImg from '../assets/service-street-light.jpg';
+import electricityMeterImg from '../assets/service-electricity-meter.jpg';
+import lpgGasImg from '../assets/service-lpg-gas.jpg';
+import seniorCitizenImg from '../assets/service-senior-citizen.jpg';
+import deathCertImg from '../assets/service-death-cert.jpg';
+import drivingLicenseImg from '../assets/service-driving-license.jpg';
+import eKhataImg from '../assets/service-e-khata.jpg';
 
 const ICON_MAP = {
   FileText: FileText,
@@ -1280,47 +1286,604 @@ export default function CitizenDashboard({
               );
             })()}
 
-          </div>
-
-          {/* ADDITIONAL STATUTORY & UTILITY SERVICES GRID (ONLY SHOWN ON VIEW ALL SERVICES PAGE) */}
-          {activeTab === 'services' && serviceList.filter(s => s && !['srv-1', 'srv-2', 'srv-3', 'srv-4', 'srv-5', 'srv-6'].includes(s.id)).length > 0 && (
-            <div id="additional-services-catalog" style={{ marginTop: '40px', marginBottom: '32px' }}>
-              <div style={{ marginBottom: '18px' }}>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Flame size={20} color="#ea580c" />
-                  {t('Additional Statutory Public Services & Citizen Amenities')}
-                </h3>
-                <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-muted)' }}>
-                  {t('Newly integrated statutory public services including domestic LPG gas connections, power meters, transport licensing, vital records, and social welfare pensions.')}
-                </p>
-              </div>
-
-              <div className="services-grid">
-                {serviceList.filter(s => s && !['srv-1', 'srv-2', 'srv-3', 'srv-4', 'srv-5', 'srv-6'].includes(s.id)).map(service => {
-                  const IconComponent = (service && service.icon && ICON_MAP[service.icon]) || FileText;
+            {/* ========================================================================= */}
+            {/* EXTENDED SERVICES CATALOG (SHOWN EXCLUSIVELY ON VIEW ALL SERVICES PAGE) */}
+            {/* ========================================================================= */}
+            {activeTab === 'services' && (
+              <>
+                {/* SERVICE 7: NEW DOMESTIC ELECTRICITY CONNECTION (IMAGE RIGHT, BLENDS TO LEFT) */}
+                {(() => {
+                  const srv = serviceList.find(s => s && s.id === 'srv-8') || {
+                    id: 'srv-8',
+                    name: 'New Domestic Electricity Connection & Smart Meter',
+                    department: 'Energy & Power Distribution (DISCOM)',
+                    slaDays: 5,
+                    fee: '₹750'
+                  };
                   return (
-                    <div key={service.id || Math.random()} className="service-card glass-card">
-                      <div className="service-header">
-                        <div className="service-icon-box">
-                          <IconComponent size={22} />
-                        </div>
-                        <span className="sla-pill">{service.slaDays || 3} {t('daysSla')}</span>
+                    <div className="featured-service-card image-right" id="service-card-electricity">
+                      <div className="service-image-backdrop">
+                        <img 
+                          src={electricityMeterImg} 
+                          alt="New Domestic Electricity Connection and Smart Meter" 
+                          className="service-banner-img" 
+                        />
+                        <div className="service-blend-gradient-overlay" />
                       </div>
-                      <h3>{t(service.name)}</h3>
-                      <p className="service-dept">{t(service.department)}</p>
-                      <p className="service-desc">{t(service.description)}</p>
-                      <div className="service-footer">
-                        <span className="service-fee">{t('fee')}: <strong>{service.fee}</strong></span>
-                        <button className="btn btn-primary btn-sm" onClick={() => openServiceModal(service)}>
-                          {t('applyNow')}
-                        </button>
+
+                      <div className="service-info-panel">
+                        <div className="service-badges-row">
+                          <span className="service-badge-pill service-badge-dept">{t('Energy & Power Distribution (DISCOM)')}</span>
+                          <span className="service-badge-pill service-badge-sla">
+                            <Clock size={12} /> {srv.slaDays || 5} {t('Days Statutory SLA')}
+                          </span>
+                          <span className="service-badge-pill service-badge-fee">{t('Statutory Fee')}: {srv.fee || '₹750'}</span>
+                        </div>
+
+                        <h3 className="service-banner-title">{t('New Domestic Electricity Connection & Smart Meter')}</h3>
+                        <p className="service-banner-desc">
+                          {t('Statutory DISCOM application for domestic LT single-phase or three-phase power supply connection, digital smart meter installation, and computerized load sanction.')}
+                        </p>
+
+                        <div className="service-structured-data-grid">
+                          <div className="service-data-section">
+                            <div className="service-section-icon-box">
+                              <Zap size={17} />
+                            </div>
+                            <div className="service-section-content">
+                              <div className="service-section-heading">{t('Power Supply Scope & Load Category')}</div>
+                              <ul className="service-bullets-list">
+                                <li>{t('Single-Phase (Up to 5kW) or Three-Phase Domestic Power Supply')}</li>
+                                <li>{t('Smart Tamper-Proof Prepaid/Postpaid Digital Electronic Meter')}</li>
+                                <li>{t('Direct Central Substation & Feeder Grid Interconnection')}</li>
+                              </ul>
+                            </div>
+                          </div>
+
+                          <div className="service-data-section">
+                            <div className="service-section-icon-box">
+                              <TrendingUp size={17} />
+                            </div>
+                            <div className="service-section-content">
+                              <div className="service-section-heading">{t('Statutory Delivery SLA & Tariffs')}</div>
+                              <ul className="service-bullets-list">
+                                <li>{t('Guaranteed 5 Working Days SLA for Site Inspection & Energization')}</li>
+                                <li>{t('Subsidized Connection Fee with Transparent Security Deposit')}</li>
+                                <li>{t('Automated SMS Updates on Lineman Dispatch & Meter Setup')}</li>
+                              </ul>
+                            </div>
+                          </div>
+
+                          <div className="service-data-section">
+                            <div className="service-section-icon-box">
+                              <ShieldCheck size={17} />
+                            </div>
+                            <div className="service-section-content">
+                              <div className="service-section-heading">{t('Required Documents & Safety Check')}</div>
+                              <ul className="service-bullets-list">
+                                <li>{t('Registered Property Ownership Deed / Rent Agreement Copy')}</li>
+                                <li>{t('Latest Municipal Property Tax Paid Receipt & E-Khata Extract')}</li>
+                                <li>{t('Wiring Safety Certificate & Applicant Aadhaar Card')}</li>
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="service-action-row">
+                          <button 
+                            type="button" 
+                            className="service-apply-btn" 
+                            onClick={() => openServiceModal(srv)}
+                            title="Apply Online for New Electricity Connection"
+                          >
+                            <FilePlus size={16} />
+                            <span>{t('Apply for Electricity Connection')}</span>
+                            <ArrowRight size={15} />
+                          </button>
+                          <span className="service-footer-note">
+                            <CheckCircle size={14} color="#16a34a" /> {t('National Electricity Grid Synchronised • DISCOM Verified')}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   );
-                })}
-              </div>
-            </div>
-          )}
+                })()}
+
+                {/* SERVICE 8: NEW DOMESTIC LPG GAS CONNECTION (IMAGE LEFT, BLENDS TO RIGHT) */}
+                {(() => {
+                  const srv = serviceList.find(s => s && s.id === 'srv-7') || {
+                    id: 'srv-7',
+                    name: 'New Domestic LPG Gas Connection (PMUY / City Gas)',
+                    department: 'Food, Civil Supplies & Consumer Affairs',
+                    slaDays: 7,
+                    fee: '₹1,600'
+                  };
+                  return (
+                    <div className="featured-service-card image-left" id="service-card-lpg">
+                      <div className="service-image-backdrop">
+                        <img 
+                          src={lpgGasImg} 
+                          alt="New Domestic LPG Gas Connection" 
+                          className="service-banner-img" 
+                        />
+                        <div className="service-blend-gradient-overlay" />
+                      </div>
+
+                      <div className="service-info-panel">
+                        <div className="service-badges-row">
+                          <span className="service-badge-pill service-badge-dept">{t('Food, Civil Supplies & Consumer Affairs')}</span>
+                          <span className="service-badge-pill service-badge-sla">
+                            <Clock size={12} /> {srv.slaDays || 7} {t('Days Statutory SLA')}
+                          </span>
+                          <span className="service-badge-pill service-badge-fee">{t('Statutory Fee')}: {srv.fee || '₹1,600'}</span>
+                        </div>
+
+                        <h3 className="service-banner-title">{t('New Domestic LPG Gas Connection (PMUY / City Gas)')}</h3>
+                        <p className="service-banner-desc">
+                          {t('Application for new subsidized or general domestic LPG cylinder connection with gas stove, regulator, steel-braided hose pipe, and mandatory safety inspection.')}
+                        </p>
+
+                        <div className="service-structured-data-grid">
+                          <div className="service-data-section">
+                            <div className="service-section-icon-box">
+                              <Flame size={17} />
+                            </div>
+                            <div className="service-section-content">
+                              <div className="service-section-heading">{t('LPG Distribution Scope & Equipment')}</div>
+                              <ul className="service-bullets-list">
+                                <li>{t('14.2 kg Subsidized Domestic Cylinder + Safety Valve Regulator')}</li>
+                                <li>{t('100% Free Cylinder Deposit & Stove under Pradhan Mantri Ujjwala Yojana (PMUY)')}</li>
+                                <li>{t('Piped Natural Gas (PNG) / City Gas Network Option (Where Available)')}</li>
+                              </ul>
+                            </div>
+                          </div>
+
+                          <div className="service-data-section">
+                            <div className="service-section-icon-box">
+                              <TrendingUp size={17} />
+                            </div>
+                            <div className="service-section-content">
+                              <div className="service-section-heading">{t('Statutory SLA & DBTL Subsidy')}</div>
+                              <ul className="service-bullets-list">
+                                <li>{t('7 Days Delivery SLA from Application to Kitchen Installation')}</li>
+                                <li>{t('Direct Cash Subsidy (PAHAL/DBTL) into Aadhaar-Linked Bank Account')}</li>
+                                <li>{t('24x7 Toll-Free Emergency Gas Leakage Support (1906)')}</li>
+                              </ul>
+                            </div>
+                          </div>
+
+                          <div className="service-data-section">
+                            <div className="service-section-icon-box">
+                              <ShieldCheck size={17} />
+                            </div>
+                            <div className="service-section-content">
+                              <div className="service-section-heading">{t('Required Documents & Proofs')}</div>
+                              <ul className="service-bullets-list">
+                                <li>{t('Aadhaar Card of Applicant & All Adult Family Members')}</li>
+                                <li>{t('Ration Card / BPL Certificate (Mandatory for PMUY Subsidy)')}</li>
+                                <li>{t('Bank Account Passbook Copy with IFSC & Address Proof')}</li>
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="service-action-row">
+                          <button 
+                            type="button" 
+                            className="service-apply-btn" 
+                            onClick={() => openServiceModal(srv)}
+                            title="Apply Online for New Domestic LPG Connection"
+                          >
+                            <FilePlus size={16} />
+                            <span>{t('Apply for LPG Connection')}</span>
+                            <ArrowRight size={15} />
+                          </button>
+                          <span className="service-footer-note">
+                            <CheckCircle size={14} color="#16a34a" /> {t('Ministry of Petroleum & Natural Gas • PAHAL (DBTL) Integrated')}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* SERVICE 9: SENIOR CITIZEN IDENTITY CARD (IMAGE RIGHT, BLENDS TO LEFT) */}
+                {(() => {
+                  const srv = serviceList.find(s => s && s.id === 'srv-12') || {
+                    id: 'srv-12',
+                    name: 'Senior Citizen Identity Card & Pension Enrollment',
+                    department: 'Social Welfare & Empowerment',
+                    slaDays: 10,
+                    fee: 'Free'
+                  };
+                  return (
+                    <div className="featured-service-card image-right" id="service-card-senior-citizen">
+                      <div className="service-image-backdrop">
+                        <img 
+                          src={seniorCitizenImg} 
+                          alt="Senior Citizen Identity Card and Pension Enrollment" 
+                          className="service-banner-img" 
+                        />
+                        <div className="service-blend-gradient-overlay" />
+                      </div>
+
+                      <div className="service-info-panel">
+                        <div className="service-badges-row">
+                          <span className="service-badge-pill service-badge-dept">{t('Social Welfare & Empowerment')}</span>
+                          <span className="service-badge-pill service-badge-sla">
+                            <Clock size={12} /> {srv.slaDays || 10} {t('Days Statutory SLA')}
+                          </span>
+                          <span className="service-badge-pill service-badge-fee" style={{ background: '#ecfdf5', color: '#047857', borderColor: '#a7f3d0' }}>
+                            {t('100% Free Civic Welfare Scheme')}
+                          </span>
+                        </div>
+
+                        <h3 className="service-banner-title">{t('Senior Citizen Identity Card & Pension Enrollment')}</h3>
+                        <p className="service-banner-desc">
+                          {t('Issuance of National Senior Citizen Smart Identity Card for travel fare concessions, medical subsidies, priority public services, and Old Age Pension enrollment.')}
+                        </p>
+
+                        <div className="service-structured-data-grid">
+                          <div className="service-data-section">
+                            <div className="service-section-icon-box">
+                              <Award size={17} />
+                            </div>
+                            <div className="service-section-content">
+                              <div className="service-section-heading">{t('Statutory Concessions & Welfare Scope')}</div>
+                              <ul className="service-bullets-list">
+                                <li>{t('Up to 50% Concession on State Road Transport (RTC) & Railways')}</li>
+                                <li>{t('Priority Counters at Government Hospitals, Banks & Courts')}</li>
+                                <li>{t('Monthly Direct Benefit Old Age Pension (IGNOAPS Integration)')}</li>
+                              </ul>
+                            </div>
+                          </div>
+
+                          <div className="service-data-section">
+                            <div className="service-section-icon-box">
+                              <TrendingUp size={17} />
+                            </div>
+                            <div className="service-section-content">
+                              <div className="service-section-heading">{t('Statutory Delivery SLA & Card Dispatch')}</div>
+                              <ul className="service-bullets-list">
+                                <li>{t('10 Days Statutory Delivery SLA with Ward Welfare Scrutiny')}</li>
+                                <li>{t('100% Free Application Processing (Zero State Treasury Fee)')}</li>
+                                <li>{t('Tamper-Proof QR Smart PVC Identity Card Dispatched to Doorstep')}</li>
+                              </ul>
+                            </div>
+                          </div>
+
+                          <div className="service-data-section">
+                            <div className="service-section-icon-box">
+                              <ShieldCheck size={17} />
+                            </div>
+                            <div className="service-section-content">
+                              <div className="service-section-heading">{t('Required Documents & Age Proof')}</div>
+                              <ul className="service-bullets-list">
+                                <li>{t('Age Proof (Aadhaar / Voter ID / 10th TC showing 60+ Years)')}</li>
+                                <li>{t('Residential Address Proof (Electricity / Water Bill / Ration Card)')}</li>
+                                <li>{t('Passport Size Photographs & Bank Passbook Copy (for Pension)')}</li>
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="service-action-row">
+                          <button 
+                            type="button" 
+                            className="service-apply-btn" 
+                            onClick={() => openServiceModal(srv)}
+                            title="Enroll Online for Senior Citizen Identity Card"
+                          >
+                            <FilePlus size={16} />
+                            <span>{t('Enroll for Senior Citizen Benefits')}</span>
+                            <ArrowRight size={15} />
+                          </button>
+                          <span className="service-footer-note">
+                            <CheckCircle size={14} color="#16a34a" /> {t('Ministry of Social Justice & Empowerment • Valid Pan-India')}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* SERVICE 10: DEATH & LEGAL HEIR SUCCESSION CERTIFICATE (IMAGE LEFT, BLENDS TO RIGHT) */}
+                {(() => {
+                  const srv = serviceList.find(s => s && s.id === 'srv-10') || {
+                    id: 'srv-10',
+                    name: 'Death & Legal Heir Succession Certificate',
+                    department: 'Revenue & Vital Statistics',
+                    slaDays: 7,
+                    fee: '₹50'
+                  };
+                  return (
+                    <div className="featured-service-card image-left" id="service-card-death-cert">
+                      <div className="service-image-backdrop">
+                        <img 
+                          src={deathCertImg} 
+                          alt="Official Death and Legal Heir Succession Certificate" 
+                          className="service-banner-img" 
+                        />
+                        <div className="service-blend-gradient-overlay" />
+                      </div>
+
+                      <div className="service-info-panel">
+                        <div className="service-badges-row">
+                          <span className="service-badge-pill service-badge-dept">{t('Revenue & Vital Statistics')}</span>
+                          <span className="service-badge-pill service-badge-sla">
+                            <Clock size={12} /> {srv.slaDays || 7} {t('Days Statutory SLA')}
+                          </span>
+                          <span className="service-badge-pill service-badge-fee">{t('Statutory Fee')}: {srv.fee || '₹50'}</span>
+                        </div>
+
+                        <h3 className="service-banner-title">{t('Death & Legal Heir Succession Certificate')}</h3>
+                        <p className="service-banner-desc">
+                          {t('Official legal registration of death under the Registration of Births and Deaths Act and computerized issuance of statutory family member survivor and succession certificate.')}
+                        </p>
+
+                        <div className="service-structured-data-grid">
+                          <div className="service-data-section">
+                            <div className="service-section-icon-box">
+                              <FileCheck2 size={17} />
+                            </div>
+                            <div className="service-section-content">
+                              <div className="service-section-heading">{t('Legal Purpose & Inheritance Claims')}</div>
+                              <ul className="service-bullets-list">
+                                <li>{t('Essential Document for Settling Bank Accounts, PF & LIC Claims')}</li>
+                                <li>{t('Statutory Legal Heir Verification for Real Estate & Vehicle Transfer')}</li>
+                                <li>{t('Pension Family Succession & Compassionate Appointment Processing')}</li>
+                              </ul>
+                            </div>
+                          </div>
+
+                          <div className="service-data-section">
+                            <div className="service-section-icon-box">
+                              <TrendingUp size={17} />
+                            </div>
+                            <div className="service-section-content">
+                              <div className="service-section-heading">{t('Time-Bound SLA & Verification')}</div>
+                              <ul className="service-bullets-list">
+                                <li>{t('7 Days Statutory SLA with Digitally Signed Sub-Registrar Seal')}</li>
+                                <li>{t('₹50 Subsidized Treasury Fee with Direct CRS Synchronisation')}</li>
+                                <li>{t('Tamper-Proof 2D QR Verification Valid across Indian Courts & Banks')}</li>
+                              </ul>
+                            </div>
+                          </div>
+
+                          <div className="service-data-section">
+                            <div className="service-section-icon-box">
+                              <ShieldCheck size={17} />
+                            </div>
+                            <div className="service-section-content">
+                              <div className="service-section-heading">{t('Required Documents & Enclosures')}</div>
+                              <ul className="service-bullets-list">
+                                <li>{t('Hospital Death Summary Slip or Medical Attendant Certificate')}</li>
+                                <li>{t('Crematorium / Burial Ground Receipt & Deceased Aadhaar Copy')}</li>
+                                <li>{t('Aadhaar ID of Applicant / Legal Heirs & Family Affidavit')}</li>
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="service-action-row">
+                          <button 
+                            type="button" 
+                            className="service-apply-btn" 
+                            onClick={() => openServiceModal(srv)}
+                            title="Apply Online for Death & Legal Heir Certificate"
+                          >
+                            <FilePlus size={16} />
+                            <span>{t('Apply for Death & Legal Heir Certificate')}</span>
+                            <ArrowRight size={15} />
+                          </button>
+                          <span className="service-footer-note">
+                            <CheckCircle size={14} color="#16a34a" /> {t('Civil Registration System (CRS) • Registrar General of India Synchronised')}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* SERVICE 11: DRIVING LICENSE LL/DL (IMAGE RIGHT, BLENDS TO LEFT) */}
+                {(() => {
+                  const srv = serviceList.find(s => s && s.id === 'srv-9') || {
+                    id: 'srv-9',
+                    name: "Learner's License & Driving License (LL/DL)",
+                    department: 'Transport & Road Safety',
+                    slaDays: 7,
+                    fee: '₹350'
+                  };
+                  return (
+                    <div className="featured-service-card image-right" id="service-card-driving-license">
+                      <div className="service-image-backdrop">
+                        <img 
+                          src={drivingLicenseImg} 
+                          alt="Learner's License and Driving License Application" 
+                          className="service-banner-img" 
+                        />
+                        <div className="service-blend-gradient-overlay" />
+                      </div>
+
+                      <div className="service-info-panel">
+                        <div className="service-badges-row">
+                          <span className="service-badge-pill service-badge-dept">{t('Transport & Road Safety (RTO)')}</span>
+                          <span className="service-badge-pill service-badge-sla">
+                            <Clock size={12} /> {srv.slaDays || 7} {t('Days Statutory SLA')}
+                          </span>
+                          <span className="service-badge-pill service-badge-fee">{t('Statutory Fee')}: {srv.fee || '₹350'}</span>
+                        </div>
+
+                        <h3 className="service-banner-title">{t("Learner's License & Driving License (LL/DL)")}</h3>
+                        <p className="service-banner-desc">
+                          {t('Online application for computerized Learner’s License test slot and permanent biometric driving license issuance under the Motor Vehicles Act.')}
+                        </p>
+
+                        <div className="service-structured-data-grid">
+                          <div className="service-data-section">
+                            <div className="service-section-icon-box">
+                              <Car size={17} />
+                            </div>
+                            <div className="service-section-content">
+                              <div className="service-section-heading">{t('License Categories & Facilities')}</div>
+                              <ul className="service-bullets-list">
+                                <li>{t('Motor Cycle with Gear (MCWG), Without Gear & Light Motor Vehicle (LMV)')}</li>
+                                <li>{t('Contactless Online Computerized Traffic Sign & Regulation Test')}</li>
+                                <li>{t('Sarathi Parivahan Database Integration with DigiLocker Synchronization')}</li>
+                              </ul>
+                            </div>
+                          </div>
+
+                          <div className="service-data-section">
+                            <div className="service-section-icon-box">
+                              <TrendingUp size={17} />
+                            </div>
+                            <div className="service-section-content">
+                              <div className="service-section-heading">{t('Statutory Delivery SLA')}</div>
+                              <ul className="service-bullets-list">
+                                <li>{t('Instant Contactless Electronic Learner’s License (Same Day Issuance)')}</li>
+                                <li>{t('7 Days Statutory SLA for Automated Driving Track Test & Card')}</li>
+                                <li>{t('₹350 Fixed Government Fee without Middlemen or Intermediaries')}</li>
+                              </ul>
+                            </div>
+                          </div>
+
+                          <div className="service-data-section">
+                            <div className="service-section-icon-box">
+                              <ShieldCheck size={17} />
+                            </div>
+                            <div className="service-section-content">
+                              <div className="service-section-heading">{t('Required Documents & Fitness')}</div>
+                              <ul className="service-bullets-list">
+                                <li>{t('Aadhaar Card for Online Authentication & Address Verification')}</li>
+                                <li>{t('Age Proof (Class 10th Marks Card / Birth Certificate / Passport)')}</li>
+                                <li>{t('Form 1A Medical Fitness Certificate (For Commercial or Age 40+)')}</li>
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="service-action-row">
+                          <button 
+                            type="button" 
+                            className="service-apply-btn" 
+                            onClick={() => openServiceModal(srv)}
+                            title="Apply Online for Driving License"
+                          >
+                            <FilePlus size={16} />
+                            <span>{t('Apply for Driving License')}</span>
+                            <ArrowRight size={15} />
+                          </button>
+                          <span className="service-footer-note">
+                            <CheckCircle size={14} color="#16a34a" /> {t('Ministry of Road Transport & Highways • Sarathi 4.0 Platform Synchronised')}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* SERVICE 12: DIGITIZED E-KHATA & PROPERTY TITLE MUTATION (IMAGE LEFT, BLENDS TO RIGHT) */}
+                {(() => {
+                  const srv = serviceList.find(s => s && s.id === 'srv-11') || {
+                    id: 'srv-11',
+                    name: 'Digitized E-Khata & Property Title Mutation',
+                    department: 'Revenue & Municipal Land Records',
+                    slaDays: 15,
+                    fee: '₹500'
+                  };
+                  return (
+                    <div className="featured-service-card image-left" id="service-card-e-khata">
+                      <div className="service-image-backdrop">
+                        <img 
+                          src={eKhataImg} 
+                          alt="Digitized E-Khata and Municipal Property Title Mutation" 
+                          className="service-banner-img" 
+                        />
+                        <div className="service-blend-gradient-overlay" />
+                      </div>
+
+                      <div className="service-info-panel">
+                        <div className="service-badges-row">
+                          <span className="service-badge-pill service-badge-dept">{t('Revenue & Municipal Land Records')}</span>
+                          <span className="service-badge-pill service-badge-sla">
+                            <Clock size={12} /> {srv.slaDays || 15} {t('Days Statutory SLA')}
+                          </span>
+                          <span className="service-badge-pill service-badge-fee">{t('Mutation Fee')}: {srv.fee || '₹500'}</span>
+                        </div>
+
+                        <h3 className="service-banner-title">{t('Digitized E-Khata & Property Title Mutation')}</h3>
+                        <p className="service-banner-desc">
+                          {t('Statutory digital transfer of municipal property title, revenue register mutation, and issuance of tamper-proof 24-digit digital E-Khata certificate for secure real-estate ownership.')}
+                        </p>
+
+                        <div className="service-structured-data-grid">
+                          <div className="service-data-section">
+                            <div className="service-section-icon-box">
+                              <Building size={17} />
+                            </div>
+                            <div className="service-section-content">
+                              <div className="service-section-heading">{t('Municipal Scope & Title Authenticity')}</div>
+                              <ul className="service-bullets-list">
+                                <li>{t('Computerized Digitized E-Khata Extract with Geotagged GIS Identifier')}</li>
+                                <li>{t('Elimination of Fake B-Khata / Unsanctioned Layout Revenue Entries')}</li>
+                                <li>{t('Mandatory Document for Home Loans, Property Sale & Utility Sanction')}</li>
+                              </ul>
+                            </div>
+                          </div>
+
+                          <div className="service-data-section">
+                            <div className="service-section-icon-box">
+                              <TrendingUp size={17} />
+                            </div>
+                            <div className="service-section-content">
+                              <div className="service-section-heading">{t('Revenue Redressal SLA')}</div>
+                              <ul className="service-bullets-list">
+                                <li>{t('15 Days Statutory SLA under Right to Public Service Delivery Act')}</li>
+                                <li>{t('Automated Dual Notice to Previous Owner with 30-Day Objection Window')}</li>
+                                <li>{t('₹500 Fixed Government Mutation Fee Linked to Digital Treasury Challan')}</li>
+                              </ul>
+                            </div>
+                          </div>
+
+                          <div className="service-data-section">
+                            <div className="service-section-icon-box">
+                              <ShieldCheck size={17} />
+                            </div>
+                            <div className="service-section-content">
+                              <div className="service-section-heading">{t('Required Legal Enclosures')}</div>
+                              <ul className="service-bullets-list">
+                                <li>{t('Registered Sale Deed / Gift Deed / Partition Deed Copy')}</li>
+                                <li>{t('Latest 15-Year Encumbrance Certificate (EC - Form 15)')}</li>
+                                <li>{t('Up-to-Date Municipal Property Tax Paid Challan & Building Plan')}</li>
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="service-action-row">
+                          <button 
+                            type="button" 
+                            className="service-apply-btn" 
+                            onClick={() => openServiceModal(srv)}
+                            title="Apply Online for Digitized E-Khata & Mutation"
+                          >
+                            <FilePlus size={16} />
+                            <span>{t('Apply for Digitized E-Khata')}</span>
+                            <ArrowRight size={15} />
+                          </button>
+                          <span className="service-footer-note">
+                            <CheckCircle size={14} color="#16a34a" /> {t('Bhoomi & Kaveri 2.0 Integration • 100% Tamper-Proof Digital Revenue Record')}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </>
+            )}
+
+          </div>
 
         </div>
 
