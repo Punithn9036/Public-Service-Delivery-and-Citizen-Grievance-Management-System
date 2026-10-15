@@ -60,7 +60,7 @@ export default function Navbar({
               aria-label="Go back to previous page"
             >
               <ArrowLeft size={16} />
-              <span className="nav-back-text">Back</span>
+              <span className="nav-back-text">{t('Back')}</span>
             </button>
           )}
 

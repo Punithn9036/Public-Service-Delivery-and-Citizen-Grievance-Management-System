@@ -454,105 +454,105 @@ export default function CitizenDashboard({
                   onChange={(e) => setSelectedCategory(e.target.value)}
                   className="hero-category-select"
                 >
-                  <option value="All Categories">All Categories</option>
-                  <option value="Grievances">Citizen Grievances</option>
-                  <option value="Public Services">Public Services</option>
-                  <option value="Certificates">Certificates & Revenue</option>
-                  <option value="Municipal">Municipal & Roads</option>
-                  <option value="Health">Water & Sanitation</option>
+                  <option value="All Categories">{t('All Categories')}</option>
+                  <option value="Grievances">{t('Citizen Grievances')}</option>
+                  <option value="Public Services">{t('Public Services')}</option>
+                  <option value="Certificates">{t('Certificates & Revenue')}</option>
+                  <option value="Municipal">{t('Municipal & Roads')}</option>
+                  <option value="Health">{t('Water & Sanitation')}</option>
                 </select>
               </div>
 
               <button type="submit" className="hero-search-submit-btn">
-                <span>Search</span>
+                <span>{t('Search')}</span>
               </button>
             </form>
 
             {/* Trending / Fast-Track Searches Row */}
             <div className="hero-trending-row">
-              <span className="trending-label">Trending Searches:</span>
+              <span className="trending-label">{t('Trending Searches:')}</span>
               <div className="trending-chips-wrap">
                 <button 
                   type="button" 
                   className="trending-chip highlight-chip"
                   onClick={() => handleTrendingClick('', 'modal-grievance')}
-                  title="Lodge an official citizen grievance"
+                  title={t('Lodge Grievance')}
                 >
                   <FilePlus size={12} />
-                  <span>+ Lodge Grievance</span>
+                  <span>+ {t('Lodge Grievance')}</span>
                 </button>
 
                 <button 
                   type="button" 
                   className="trending-chip"
                   onClick={() => handleTrendingClick('citizen-grievances-section', 'tab-track')}
-                  title="Redirect to My Submissions card and track ticket status"
+                  title={t('Track Ticket')}
                 >
                   <Clock size={12} />
-                  <span>Track Ticket</span>
+                  <span>{t('Track Ticket')}</span>
                 </button>
 
                 <button 
                   type="button" 
                   className="trending-chip"
                   onClick={() => handleTrendingClick('', 'modal-grievance')}
-                  title="Lodge a complaint for Pothole & Road Repair"
+                  title={t('Pothole Repair')}
                 >
-                  <span>Pothole Repair</span>
+                  <span>{t('Pothole Repair')}</span>
                 </button>
 
                 <button 
                   type="button" 
                   className="trending-chip"
                   onClick={() => handleTrendingClick('service-card-water')}
-                  title="Redirect to New Water & Sewerage Connection card"
+                  title={t('Water Supply')}
                 >
-                  <span>Water Supply</span>
+                  <span>{t('Water Supply')}</span>
                 </button>
 
                 <button 
                   type="button" 
                   className="trending-chip"
                   onClick={() => handleTrendingClick('service-card-birth-cert')}
-                  title="Redirect to Issue of Birth Certificate card"
+                  title={t('Birth Certificate')}
                 >
-                  <span>Birth Certificate</span>
+                  <span>{t('Birth Certificate')}</span>
                 </button>
 
                 <button 
                   type="button" 
                   className="trending-chip"
                   onClick={() => handleTrendingClick('service-card-street-light')}
-                  title="Redirect to Street Lighting & Maintenance card"
+                  title={t('Streetlight Outage')}
                 >
-                  <span>Streetlight Outage</span>
+                  <span>{t('Streetlight Outage')}</span>
                 </button>
 
                 <button 
                   type="button" 
                   className="trending-chip"
                   onClick={() => handleTrendingClick('service-card-trade-license')}
-                  title="Redirect to Municipal Trade License card"
+                  title={t('Trade License')}
                 >
-                  <span>Trade License</span>
+                  <span>{t('Trade License')}</span>
                 </button>
 
                 <button 
                   type="button" 
                   className="trending-chip"
                   onClick={() => handleTrendingClick('service-card-property-tax')}
-                  title="Redirect to Property Tax Assessment & Mutation card"
+                  title={t('Property Tax')}
                 >
-                  <span>Property Tax</span>
+                  <span>{t('Property Tax')}</span>
                 </button>
 
                 <button 
                   type="button" 
                   className="trending-chip"
                   onClick={() => handleTrendingClick('service-card-caste-income')}
-                  title="Redirect to Caste & Income Certificate card"
+                  title={t('Caste Certificate')}
                 >
-                  <span>Caste Certificate</span>
+                  <span>{t('Caste Certificate')}</span>
                 </button>
               </div>
             </div>
@@ -570,13 +570,13 @@ export default function CitizenDashboard({
                   target.scrollIntoView({ behavior: 'smooth' });
                 }
               }}
-              aria-label="Scroll down to explore more services"
-              title="Scroll down to explore more services"
+              aria-label={t('Explore More Services')}
+              title={t('Explore More Services')}
             >
               <div className="scroll-arrow-circle">
                 <ChevronDown size={26} className="bouncing-arrow" />
               </div>
-              <span className="scroll-arrow-label">Explore More Services</span>
+              <span className="scroll-arrow-label">{t('Explore More Services')}</span>
             </button>
           </div>
 
@@ -594,12 +594,12 @@ export default function CitizenDashboard({
                 type="button" 
                 className="subpage-back-btn" 
                 onClick={onGoBack}
-                title="Return to Overview Dashboard"
+                title={t('Return to Overview Dashboard')}
               >
                 <ArrowLeft size={16} />
-                <span>Back to Overview Dashboard</span>
+                <span>{t('Back to Overview Dashboard')}</span>
               </button>
-              <span className="subpage-breadcrumb">JanSeva &gt; Public Services Catalog</span>
+              <span className="subpage-breadcrumb">{t('JanSeva')} &gt; {t('Public Services Catalog')}</span>
             </div>
 
             <div className="subpage-actions-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -673,16 +673,16 @@ export default function CitizenDashboard({
         <div className="section-block" id="citizen-services-section" style={{ marginTop: '32px' }}>
           <div className="section-header">
             <div>
-              <h2>{activeTab === 'services' ? 'All Statutory Public Services Catalog' : t('popularServices')}</h2>
+              <h2>{activeTab === 'services' ? t('All Statutory Public Services Catalog') : t('popularServices')}</h2>
               <p>
                 {activeTab === 'services' 
-                  ? 'Complete catalog of statutory citizen services, utility connections, certificates, and welfare programs.' 
-                  : 'Direct online statutory applications with guaranteed Service Level Agreements (SLAs) & instant digital delivery'}
+                  ? t('Complete catalog of statutory citizen services, utility connections, certificates, and welfare programs.') 
+                  : t('Direct online statutory applications with guaranteed Service Level Agreements (SLAs) & instant digital delivery')}
               </p>
             </div>
             {activeTab !== 'services' && (
               <button className="btn btn-outline btn-sm" onClick={() => setActiveTab && setActiveTab('services')}>
-                View All Services ({serviceList.length})
+                {t('View All Services')} ({serviceList.length})
                 <ChevronRight size={14} />
               </button>
             )}
@@ -712,16 +712,16 @@ export default function CitizenDashboard({
 
                   <div className="service-info-panel">
                     <div className="service-badges-row">
-                      <span className="service-badge-pill service-badge-dept">Vital Statistics &amp; Public Health</span>
+                      <span className="service-badge-pill service-badge-dept">{t('Vital Statistics & Public Health')}</span>
                       <span className="service-badge-pill service-badge-sla">
-                        <Clock size={12} /> {srv.slaDays || 7} Days Statutory SLA
+                        <Clock size={12} /> {srv.slaDays || 7} {t('Days Statutory SLA')}
                       </span>
-                      <span className="service-badge-pill service-badge-fee">Statutory Fee: {srv.fee || '₹50'}</span>
+                      <span className="service-badge-pill service-badge-fee">{t('Statutory Fee')}: {srv.fee || '₹50'}</span>
                     </div>
 
-                    <h3 className="service-banner-title">Issue of Official Birth Certificate</h3>
+                    <h3 className="service-banner-title">{t('Issue of Official Birth Certificate')}</h3>
                     <p className="service-banner-desc">
-                      Official legal birth registration and instant QR-verifiable certificate issuance under the Registration of Births and Deaths Act.
+                      {t('Official legal birth registration and instant QR-verifiable certificate issuance under the Registration of Births and Deaths Act.')}
                     </p>
 
                     <div className="service-structured-data-grid">
@@ -730,11 +730,11 @@ export default function CitizenDashboard({
                           <Building size={17} />
                         </div>
                         <div className="service-section-content">
-                          <div className="service-section-heading">Service Highlights &amp; Scope</div>
+                          <div className="service-section-heading">{t('Service Highlights & Scope')}</div>
                           <ul className="service-bullets-list">
-                            <li>Direct Hospital &amp; Municipal Vital Statistics Synchronisation</li>
-                            <li>Legally Authenticated Biometric Hologram &amp; Digital Seal</li>
-                            <li>Lifelong Civic Proof for School Admissions &amp; Passports</li>
+                            <li>{t('Direct Hospital & Municipal Vital Statistics Synchronisation')}</li>
+                            <li>{t('Legally Authenticated Biometric Hologram & Digital Seal')}</li>
+                            <li>{t('Lifelong Civic Proof for School Admissions & Passports')}</li>
                           </ul>
                         </div>
                       </div>
@@ -744,11 +744,11 @@ export default function CitizenDashboard({
                           <TrendingUp size={17} />
                         </div>
                         <div className="service-section-content">
-                          <div className="service-section-heading">Statutory SLA &amp; Key Data</div>
+                          <div className="service-section-heading">{t('Statutory SLA & Key Data')}</div>
                           <ul className="service-bullets-list">
-                            <li>7 Days Guaranteed SLA Delivery (GIGW 3.0 Standard)</li>
-                            <li>₹50 Nominal Municipal Treasury Application Fee</li>
-                            <li>Instant DigiLocker Push Upon Approval by Chief Registrar</li>
+                            <li>{t('7 Days Guaranteed SLA Delivery (GIGW 3.0 Standard)')}</li>
+                            <li>{t('₹50 Nominal Municipal Treasury Application Fee')}</li>
+                            <li>{t('Instant DigiLocker Push Upon Approval by Chief Registrar')}</li>
                           </ul>
                         </div>
                       </div>
@@ -758,11 +758,11 @@ export default function CitizenDashboard({
                           <ShieldCheck size={17} />
                         </div>
                         <div className="service-section-content">
-                          <div className="service-section-heading">Mandatory Enclosures &amp; Verification</div>
+                          <div className="service-section-heading">{t('Mandatory Enclosures & Verification')}</div>
                           <ul className="service-bullets-list">
-                            <li>Hospital Birth Discharge Slip / Form-1 Report</li>
-                            <li>Parents' Aadhaar ID &amp; Marriage Registration Proof</li>
-                            <li>Residential Address Document / Ration Card</li>
+                            <li>{t('Hospital Birth Discharge Slip / Form-1 Report')}</li>
+                            <li>{t("Parents' Aadhaar ID & Marriage Registration Proof")}</li>
+                            <li>{t('Residential Address Document / Ration Card')}</li>
                           </ul>
                         </div>
                       </div>
@@ -776,11 +776,11 @@ export default function CitizenDashboard({
                         title="Apply Online for Birth Certificate"
                       >
                         <FilePlus size={16} />
-                        <span>Apply for Birth Certificate</span>
+                        <span>{t('Apply for Birth Certificate')}</span>
                         <ArrowRight size={15} />
                       </button>
                       <span className="service-footer-note">
-                        <CheckCircle size={14} color="#16a34a" /> 100% Paperless • UIDAI &amp; DigiLocker Integrated
+                        <CheckCircle size={14} color="#16a34a" /> {t('100% Paperless • UIDAI & DigiLocker Integrated')}
                       </span>
                     </div>
                   </div>
@@ -810,16 +810,16 @@ export default function CitizenDashboard({
 
                   <div className="service-info-panel">
                     <div className="service-badges-row">
-                      <span className="service-badge-pill service-badge-dept">Water Supply &amp; Sanitation Board</span>
+                      <span className="service-badge-pill service-badge-dept">{t('Water Supply & Sanitation Board')}</span>
                       <span className="service-badge-pill service-badge-sla">
-                        <Clock size={12} /> {srv.slaDays || 14} Days Statutory SLA
+                        <Clock size={12} /> {srv.slaDays || 14} {t('Days Statutory SLA')}
                       </span>
-                      <span className="service-badge-pill service-badge-fee">Connection Charge: {srv.fee || '₹1,200'}</span>
+                      <span className="service-badge-pill service-badge-fee">{t('Connection Charge')}: {srv.fee || '₹1,200'}</span>
                     </div>
 
-                    <h3 className="service-banner-title">New Water &amp; Sewerage Connection</h3>
+                    <h3 className="service-banner-title">{t('New Water & Sewerage Connection')}</h3>
                     <p className="service-banner-desc">
-                      Sanction of piped potable drinking water tap connection and underground domestic drainage lines for residential &amp; commercial properties.
+                      {t('Sanction of piped potable drinking water tap connection and underground domestic drainage lines for residential & commercial properties.')}
                     </p>
 
                     <div className="service-structured-data-grid">
@@ -828,11 +828,11 @@ export default function CitizenDashboard({
                           <Droplets size={17} />
                         </div>
                         <div className="service-section-content">
-                          <div className="service-section-heading">Network Highlights &amp; Infrastructure</div>
+                          <div className="service-section-heading">{t('Network Highlights & Infrastructure')}</div>
                           <ul className="service-bullets-list">
-                            <li>High-Pressure Potable Municipal Drinking Water Supply</li>
-                            <li>Scientific Underground Sewerage &amp; Stormwater Grid Link</li>
-                            <li>AMR Smart Electronic Water Metering Allotment</li>
+                            <li>{t('High-Pressure Potable Municipal Drinking Water Supply')}</li>
+                            <li>{t('Scientific Underground Sewerage & Stormwater Grid Link')}</li>
+                            <li>{t('AMR Smart Electronic Water Metering Allotment')}</li>
                           </ul>
                         </div>
                       </div>
@@ -842,11 +842,11 @@ export default function CitizenDashboard({
                           <TrendingUp size={17} />
                         </div>
                         <div className="service-section-content">
-                          <div className="service-section-heading">Technical SLA &amp; Inspection Data</div>
+                          <div className="service-section-heading">{t('Technical SLA & Inspection Data')}</div>
                           <ul className="service-bullets-list">
-                            <li>14 Days Statutory SLA with On-Site Verification within 48h</li>
-                            <li>₹1,200 Standard Residential Tap Connection &amp; Testing Fee</li>
-                            <li>Direct Real-Time GPS Feasibility Mapping &amp; Engineer Dispatch</li>
+                            <li>{t('14 Days Statutory SLA with On-Site Verification within 48h')}</li>
+                            <li>{t('₹1,200 Standard Residential Tap Connection & Testing Fee')}</li>
+                            <li>{t('Direct Real-Time GPS Feasibility Mapping & Engineer Dispatch')}</li>
                           </ul>
                         </div>
                       </div>
@@ -856,11 +856,11 @@ export default function CitizenDashboard({
                           <ShieldCheck size={17} />
                         </div>
                         <div className="service-section-content">
-                          <div className="service-section-heading">Required Property Documents</div>
+                          <div className="service-section-heading">{t('Required Property Documents')}</div>
                           <ul className="service-bullets-list">
-                            <li>Property Ownership Sale Deed or Building Allotment Letter</li>
-                            <li>Latest Municipal Property Tax Paid Receipt / Khata Extract</li>
-                            <li>Site Plan Blueprint Showing Nearest Municipal Main Line</li>
+                            <li>{t('Property Ownership Sale Deed or Building Allotment Letter')}</li>
+                            <li>{t('Latest Municipal Property Tax Paid Receipt / Khata Extract')}</li>
+                            <li>{t('Site Plan Blueprint Showing Nearest Municipal Main Line')}</li>
                           </ul>
                         </div>
                       </div>
@@ -874,11 +874,11 @@ export default function CitizenDashboard({
                         title="Apply Online for Water Connection"
                       >
                         <FilePlus size={16} />
-                        <span>Apply for Water Connection</span>
+                        <span>{t('Apply for Water Connection')}</span>
                         <ArrowRight size={15} />
                       </button>
                       <span className="service-footer-note">
-                        <CheckCircle size={14} color="#16a34a" /> Statutory Guarantee • Smart Metering Included
+                        <CheckCircle size={14} color="#16a34a" /> {t('Statutory Guarantee • Smart Metering Included')}
                       </span>
                     </div>
                   </div>
@@ -908,16 +908,16 @@ export default function CitizenDashboard({
 
                   <div className="service-info-panel">
                     <div className="service-badges-row">
-                      <span className="service-badge-pill service-badge-dept">Revenue &amp; Land Administration</span>
+                      <span className="service-badge-pill service-badge-dept">{t('Revenue & Land Administration')}</span>
                       <span className="service-badge-pill service-badge-sla">
-                        <Clock size={12} /> {srv.slaDays || 10} Days Statutory SLA
+                        <Clock size={12} /> {srv.slaDays || 10} {t('Days Statutory SLA')}
                       </span>
-                      <span className="service-badge-pill service-badge-fee">Treasury Fee: {srv.fee || '₹30'}</span>
+                      <span className="service-badge-pill service-badge-fee">{t('Treasury Fee')}: {srv.fee || '₹30'}</span>
                     </div>
 
-                    <h3 className="service-banner-title">Caste &amp; Annual Income Certificate</h3>
+                    <h3 className="service-banner-title">{t('Caste & Annual Income Certificate')}</h3>
                     <p className="service-banner-desc">
-                      Issuance of authenticated caste (SC/ST/OBC/EWS) and family income certificate for educational scholarships, welfare schemes, and quotas.
+                      {t('Issuance of authenticated caste (SC/ST/OBC/EWS) and family income certificate for educational scholarships, welfare schemes, and quotas.')}
                     </p>
 
                     <div className="service-structured-data-grid">
@@ -926,11 +926,11 @@ export default function CitizenDashboard({
                           <Award size={17} />
                         </div>
                         <div className="service-section-content">
-                          <div className="service-section-heading">Statutory Purpose &amp; Citizen Benefits</div>
+                          <div className="service-section-heading">{t('Statutory Purpose & Citizen Benefits')}</div>
                           <ul className="service-bullets-list">
-                            <li>Formal Category Verification (SC / ST / OBC / General-EWS)</li>
-                            <li>Certified Family Annual Income for State &amp; Central Schemes</li>
-                            <li>Tuition Fee Waivers, Competitive Exam Quotas &amp; Grants</li>
+                            <li>{t('Formal Category Verification (SC / ST / OBC / General-EWS)')}</li>
+                            <li>{t('Certified Family Annual Income for State & Central Schemes')}</li>
+                            <li>{t('Tuition Fee Waivers, Competitive Exam Quotas & Grants')}</li>
                           </ul>
                         </div>
                       </div>
@@ -940,11 +940,11 @@ export default function CitizenDashboard({
                           <TrendingUp size={17} />
                         </div>
                         <div className="service-section-content">
-                          <div className="service-section-heading">Statutory SLA &amp; Revenue Data</div>
+                          <div className="service-section-heading">{t('Statutory SLA & Revenue Data')}</div>
                           <ul className="service-bullets-list">
-                            <li>10 Days Statutory Delivery SLA with Revenue Field Scrutiny</li>
-                            <li>₹30 Subsidized Treasury Processing Charge (GIGW Compliant)</li>
-                            <li>Tamper-Proof 2D QR Code &amp; Nadakacheri Portal Verification</li>
+                            <li>{t('10 Days Statutory Delivery SLA with Revenue Field Scrutiny')}</li>
+                            <li>{t('₹30 Subsidized Treasury Processing Charge (GIGW Compliant)')}</li>
+                            <li>{t('Tamper-Proof 2D QR Code & Nadakacheri Portal Verification')}</li>
                           </ul>
                         </div>
                       </div>
@@ -954,11 +954,11 @@ export default function CitizenDashboard({
                           <ShieldCheck size={17} />
                         </div>
                         <div className="service-section-content">
-                          <div className="service-section-heading">Required Enclosures &amp; Affidavit</div>
+                          <div className="service-section-heading">{t('Required Enclosures & Affidavit')}</div>
                           <ul className="service-bullets-list">
-                            <li>Family BPL Ration Card / Antyodaya Anna Yojana Card Copy</li>
-                            <li>Salary Slip or Agricultural RTC Land Record / Income Affidavit</li>
-                            <li>School Leaving Certificate / Ancestral Caste Record</li>
+                            <li>{t('Family BPL Ration Card / Antyodaya Anna Yojana Card Copy')}</li>
+                            <li>{t('Salary Slip or Agricultural RTC Land Record / Income Affidavit')}</li>
+                            <li>{t('School Leaving Certificate / Ancestral Caste Record')}</li>
                           </ul>
                         </div>
                       </div>
@@ -972,11 +972,11 @@ export default function CitizenDashboard({
                         title="Apply Online for Caste & Income Certificate"
                       >
                         <FilePlus size={16} />
-                        <span>Apply for Caste &amp; Income Certificate</span>
+                        <span>{t('Apply for Caste & Income Certificate')}</span>
                         <ArrowRight size={15} />
                       </button>
                       <span className="service-footer-note">
-                        <CheckCircle size={14} color="#16a34a" /> Revenue Tahsildar Verified • Valid for 5 Years
+                        <CheckCircle size={14} color="#16a34a" /> {t('Revenue Tahsildar Verified • Valid for 5 Years')}
                       </span>
                     </div>
                   </div>
@@ -1006,16 +1006,16 @@ export default function CitizenDashboard({
 
                   <div className="service-info-panel">
                     <div className="service-badges-row">
-                      <span className="service-badge-pill service-badge-dept">Commercial &amp; Trade Licensing Authority</span>
+                      <span className="service-badge-pill service-badge-dept">{t('Commercial & Trade Licensing Authority')}</span>
                       <span className="service-badge-pill service-badge-sla">
-                        <Clock size={12} /> {srv.slaDays || 5} Days Statutory SLA
+                        <Clock size={12} /> {srv.slaDays || 5} {t('Days Statutory SLA')}
                       </span>
-                      <span className="service-badge-pill service-badge-fee">Statutory Fee: {srv.fee || '₹850'}</span>
+                      <span className="service-badge-pill service-badge-fee">{t('Statutory Fee')}: {srv.fee || '₹850'}</span>
                     </div>
 
-                    <h3 className="service-banner-title">Municipal Trade License &amp; Business Permit</h3>
+                    <h3 className="service-banner-title">{t('Municipal Trade License & Business Permit')}</h3>
                     <p className="service-banner-desc">
-                      Statutory commercial operating license issuance and paperless annual renewals for retail, MSMEs, manufacturing, and food business establishments.
+                      {t('Statutory commercial operating license issuance and paperless annual renewals for retail, MSMEs, manufacturing, and food business establishments.')}
                     </p>
 
                     <div className="service-structured-data-grid">
@@ -1024,11 +1024,11 @@ export default function CitizenDashboard({
                           <Building2 size={17} />
                         </div>
                         <div className="service-section-content">
-                          <div className="service-section-heading">Business Scope &amp; Trade Clearances</div>
+                          <div className="service-section-heading">{t('Business Scope & Trade Clearances')}</div>
                           <ul className="service-bullets-list">
-                            <li>Commercial, Retail, Warehouse &amp; Manufacturing Permissibility</li>
-                            <li>Integrated Municipal Health &amp; Sanitary Fitness Clearances</li>
-                            <li>Single-Window Ease of Doing Business (EoDB) Fast-Track</li>
+                            <li>{t('Commercial, Retail, Warehouse & Manufacturing Permissibility')}</li>
+                            <li>{t('Integrated Municipal Health & Sanitary Fitness Clearances')}</li>
+                            <li>{t('Single-Window Ease of Doing Business (EoDB) Fast-Track')}</li>
                           </ul>
                         </div>
                       </div>
@@ -1038,11 +1038,11 @@ export default function CitizenDashboard({
                           <TrendingUp size={17} />
                         </div>
                         <div className="service-section-content">
-                          <div className="service-section-heading">Statutory SLA &amp; Tariffs</div>
+                          <div className="service-section-heading">{t('Statutory SLA & Tariffs')}</div>
                           <ul className="service-bullets-list">
-                            <li>5 Days Statutory Guarantee under State Right to Services</li>
-                            <li>₹850 Transparent Treasury Fee with Instant Digital Receipt</li>
-                            <li>Real-Time DigiLocker Push &amp; QR-Secured Trade Certificate</li>
+                            <li>{t('5 Days Statutory Guarantee under State Right to Services')}</li>
+                            <li>{t('₹850 Transparent Treasury Fee with Instant Digital Receipt')}</li>
+                            <li>{t('Real-Time DigiLocker Push & QR-Secured Trade Certificate')}</li>
                           </ul>
                         </div>
                       </div>
@@ -1052,11 +1052,11 @@ export default function CitizenDashboard({
                           <ShieldCheck size={17} />
                         </div>
                         <div className="service-section-content">
-                          <div className="service-section-heading">Mandatory Business Enclosures</div>
+                          <div className="service-section-heading">{t('Mandatory Business Enclosures')}</div>
                           <ul className="service-bullets-list">
-                            <li>GSTIN Certificate / Udyam MSME Registration Copy</li>
-                            <li>Shop Commercial Lease Agreement / Property Tax Receipt</li>
-                            <li>Fire Safety NOC &amp; Pollution Consent (if applicable)</li>
+                            <li>{t('GSTIN Certificate / Udyam MSME Registration Copy')}</li>
+                            <li>{t('Shop Commercial Lease Agreement / Property Tax Receipt')}</li>
+                            <li>{t('Fire Safety NOC & Pollution Consent (if applicable)')}</li>
                           </ul>
                         </div>
                       </div>
@@ -1070,11 +1070,11 @@ export default function CitizenDashboard({
                         title="Apply Online for Trade License"
                       >
                         <FilePlus size={16} />
-                        <span>Apply for Trade License</span>
+                        <span>{t('Apply for Trade License')}</span>
                         <ArrowRight size={15} />
                       </button>
                       <span className="service-footer-note">
-                        <CheckCircle size={14} color="#16a34a" /> Ease of Doing Business • Ministry of Corporate Affairs Aligned
+                        <CheckCircle size={14} color="#16a34a" /> {t('Ease of Doing Business • Ministry of Corporate Affairs Aligned')}
                       </span>
                     </div>
                   </div>
@@ -1104,16 +1104,16 @@ export default function CitizenDashboard({
 
                   <div className="service-info-panel">
                     <div className="service-badges-row">
-                      <span className="service-badge-pill service-badge-dept">Municipal Revenue &amp; Taxation Division</span>
+                      <span className="service-badge-pill service-badge-dept">{t('Municipal Revenue & Taxation Division')}</span>
                       <span className="service-badge-pill service-badge-sla">
-                        <Clock size={12} /> {srv.slaDays || 15} Days Statutory SLA
+                        <Clock size={12} /> {srv.slaDays || 15} {t('Days Statutory SLA')}
                       </span>
-                      <span className="service-badge-pill service-badge-fee">Assessment Charge: {srv.fee || '₹500'}</span>
+                      <span className="service-badge-pill service-badge-fee">{t('Assessment Charge')}: {srv.fee || '₹500'}</span>
                     </div>
 
-                    <h3 className="service-banner-title">Property Tax Assessment &amp; Khata Mutation</h3>
+                    <h3 className="service-banner-title">{t('Property Tax Assessment & Khata Mutation')}</h3>
                     <p className="service-banner-desc">
-                      GIS-mapped self-assessment of annual property tax liabilities, municipal Khata transfer, title mutation post-sale deed, and clearance certificate issuance.
+                      {t('GIS-mapped self-assessment of annual property tax liabilities, municipal Khata transfer, title mutation post-sale deed, and clearance certificate issuance.')}
                     </p>
 
                     <div className="service-structured-data-grid">
@@ -1122,11 +1122,11 @@ export default function CitizenDashboard({
                           <Home size={17} />
                         </div>
                         <div className="service-section-content">
-                          <div className="service-section-heading">Assessment Scope &amp; Mutation</div>
+                          <div className="service-section-heading">{t('Assessment Scope & Mutation')}</div>
                           <ul className="service-bullets-list">
-                            <li>A-Khata / B-Khata Digital Name Transfer on Registered Sale Deeds</li>
-                            <li>Unit Area Value (UAV) Scientific Property Tax Self-Calculation</li>
-                            <li>Official Nil-Encumbrance Tax Clearance Certificate (Form-3)</li>
+                            <li>{t('A-Khata / B-Khata Digital Name Transfer on Registered Sale Deeds')}</li>
+                            <li>{t('Unit Area Value (UAV) Scientific Property Tax Self-Calculation')}</li>
+                            <li>{t('Official Nil-Encumbrance Tax Clearance Certificate (Form-3)')}</li>
                           </ul>
                         </div>
                       </div>
@@ -1136,11 +1136,11 @@ export default function CitizenDashboard({
                           <TrendingUp size={17} />
                         </div>
                         <div className="service-section-content">
-                          <div className="service-section-heading">Statutory SLA &amp; Revenue Verification</div>
+                          <div className="service-section-heading">{t('Statutory SLA & Revenue Verification')}</div>
                           <ul className="service-bullets-list">
-                            <li>15 Days Statutory Delivery SLA with Revenue Inspector Field Survey</li>
-                            <li>₹500 Subsidized Title Registry &amp; Khata Mutation Fee</li>
-                            <li>Direct Linkage with Sub-Registrar Electronic Deeds Database</li>
+                            <li>{t('15 Days Statutory Delivery SLA with Revenue Inspector Field Survey')}</li>
+                            <li>{t('₹500 Subsidized Title Registry & Khata Mutation Fee')}</li>
+                            <li>{t('Direct Linkage with Sub-Registrar Electronic Deeds Database')}</li>
                           </ul>
                         </div>
                       </div>
@@ -1150,11 +1150,11 @@ export default function CitizenDashboard({
                           <ShieldCheck size={17} />
                         </div>
                         <div className="service-section-content">
-                          <div className="service-section-heading">Required Property Records</div>
+                          <div className="service-section-heading">{t('Required Property Records')}</div>
                           <ul className="service-bullets-list">
-                            <li>Registered Sale Deed / Partition Deed / Gift Deed Document</li>
-                            <li>Latest Municipal Property Tax Paid Challan &amp; Khata Extract</li>
-                            <li>Approved Building Plan Blueprint or Encumbrance Certificate</li>
+                            <li>{t('Registered Sale Deed / Partition Deed / Gift Deed Document')}</li>
+                            <li>{t('Latest Municipal Property Tax Paid Challan & Khata Extract')}</li>
+                            <li>{t('Approved Building Plan Blueprint or Encumbrance Certificate')}</li>
                           </ul>
                         </div>
                       </div>
@@ -1168,11 +1168,11 @@ export default function CitizenDashboard({
                         title="Apply Online for Property Tax / Mutation"
                       >
                         <FilePlus size={16} />
-                        <span>Apply for Property Tax / Mutation</span>
+                        <span>{t('Apply for Property Tax / Mutation')}</span>
                         <ArrowRight size={15} />
                       </button>
                       <span className="service-footer-note">
-                        <CheckCircle size={14} color="#16a34a" /> Sub-Registrar Linked • Kaveri / Bhoomi Land Registry Synchronised
+                        <CheckCircle size={14} color="#16a34a" /> {t('Sub-Registrar Linked • Kaveri / Bhoomi Land Registry Synchronised')}
                       </span>
                     </div>
                   </div>
@@ -1202,18 +1202,18 @@ export default function CitizenDashboard({
 
                   <div className="service-info-panel">
                     <div className="service-badges-row">
-                      <span className="service-badge-pill service-badge-dept">Public Works &amp; Electrical Infrastructure</span>
+                      <span className="service-badge-pill service-badge-dept">{t('Public Works & Electrical Infrastructure')}</span>
                       <span className="service-badge-pill service-badge-sla">
-                        <Clock size={12} /> {srv.slaDays || 3} Days Statutory SLA
+                        <Clock size={12} /> {srv.slaDays || 3} {t('Days Statutory SLA')}
                       </span>
                       <span className="service-badge-pill service-badge-fee" style={{ background: '#ecfdf5', color: '#047857', borderColor: '#a7f3d0' }}>
-                        100% Free Civic Service
+                        {t('100% Free Civic Service')}
                       </span>
                     </div>
 
-                    <h3 className="service-banner-title">Public Street Lighting &amp; Civic Electrical Maintenance</h3>
+                    <h3 className="service-banner-title">{t('Public Street Lighting & Civic Electrical Maintenance')}</h3>
                     <p className="service-banner-desc">
-                      Fast-track municipal service for smart LED street lamp installations, pole replacements, dark-spot elimination, and rapid electrical grid repair across wards.
+                      {t('Fast-track municipal service for smart LED street lamp installations, pole replacements, dark-spot elimination, and rapid electrical grid repair across wards.')}
                     </p>
 
                     <div className="service-structured-data-grid">
@@ -1222,11 +1222,11 @@ export default function CitizenDashboard({
                           <Zap size={17} />
                         </div>
                         <div className="service-section-content">
-                          <div className="service-section-heading">Civic Grid Scope &amp; Public Safety</div>
+                          <div className="service-section-heading">{t('Civic Grid Scope & Public Safety')}</div>
                           <ul className="service-bullets-list">
-                            <li>Energy-Efficient Centralized CCMS Smart LED Street Lights</li>
-                            <li>Targeted Dark-Spot Rectification for Pedestrian &amp; Women Safety</li>
-                            <li>Automated Sunrise-to-Sunset Timer &amp; Cable Network Upgrades</li>
+                            <li>{t('Energy-Efficient Centralized CCMS Smart LED Street Lights')}</li>
+                            <li>{t('Targeted Dark-Spot Rectification for Pedestrian & Women Safety')}</li>
+                            <li>{t('Automated Sunrise-to-Sunset Timer & Cable Network Upgrades')}</li>
                           </ul>
                         </div>
                       </div>
@@ -1236,11 +1236,11 @@ export default function CitizenDashboard({
                           <TrendingUp size={17} />
                         </div>
                         <div className="service-section-content">
-                          <div className="service-section-heading">Rapid Field Redressal SLA</div>
+                          <div className="service-section-heading">{t('Rapid Field Redressal SLA')}</div>
                           <ul className="service-bullets-list">
-                            <li>72 Hours (3 Days) Guaranteed SLA for Civic Repair &amp; Bulb Swap</li>
-                            <li>Zero Statutory Application Fee (100% Public Funded Amenity)</li>
-                            <li>Automated SMS Dispatch to Ward Junior Electrical Engineer</li>
+                            <li>{t('72 Hours (3 Days) Guaranteed SLA for Civic Repair & Bulb Swap')}</li>
+                            <li>{t('Zero Statutory Application Fee (100% Public Funded Amenity)')}</li>
+                            <li>{t('Automated SMS Dispatch to Ward Junior Electrical Engineer')}</li>
                           </ul>
                         </div>
                       </div>
@@ -1250,11 +1250,11 @@ export default function CitizenDashboard({
                           <ShieldCheck size={17} />
                         </div>
                         <div className="service-section-content">
-                          <div className="service-section-heading">Locality Details &amp; Geo-Information</div>
+                          <div className="service-section-heading">{t('Locality Details & Geo-Information')}</div>
                           <ul className="service-bullets-list">
-                            <li>Street / Cross-Road Landmark, Ward &amp; House Number</li>
-                            <li>Electrical Pole Serial Number / Transformer Tag (if visible)</li>
-                            <li>Optional Mobile Photo / Geotagged Location Upload</li>
+                            <li>{t('Street / Cross-Road Landmark, Ward & House Number')}</li>
+                            <li>{t('Electrical Pole Serial Number / Transformer Tag (if visible)')}</li>
+                            <li>{t('Optional Mobile Photo / Geotagged Location Upload')}</li>
                           </ul>
                         </div>
                       </div>
@@ -1268,11 +1268,11 @@ export default function CitizenDashboard({
                         title="Request Street Light Service / Maintenance"
                       >
                         <FilePlus size={16} />
-                        <span>Request Street Light Service</span>
+                        <span>{t('Request Street Light Service')}</span>
                         <ArrowRight size={15} />
                       </button>
                       <span className="service-footer-note">
-                        <CheckCircle size={14} color="#16a34a" /> 72-Hour Rapid Response • National LED Street Lighting Programme
+                        <CheckCircle size={14} color="#16a34a" /> {t('72-Hour Rapid Response • National LED Street Lighting Programme')}
                       </span>
                     </div>
                   </div>
@@ -1288,10 +1288,10 @@ export default function CitizenDashboard({
               <div style={{ marginBottom: '18px' }}>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Flame size={20} color="#ea580c" />
-                  Additional Statutory Public Services &amp; Citizen Amenities
+                  {t('Additional Statutory Public Services & Citizen Amenities')}
                 </h3>
                 <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-muted)' }}>
-                  Newly integrated statutory public services including domestic LPG gas connections, power meters, transport licensing, vital records, and social welfare pensions.
+                  {t('Newly integrated statutory public services including domestic LPG gas connections, power meters, transport licensing, vital records, and social welfare pensions.')}
                 </p>
               </div>
 
@@ -1304,13 +1304,13 @@ export default function CitizenDashboard({
                         <div className="service-icon-box">
                           <IconComponent size={22} />
                         </div>
-                        <span className="sla-pill">{service.slaDays || 3} Days SLA</span>
+                        <span className="sla-pill">{service.slaDays || 3} {t('daysSla')}</span>
                       </div>
-                      <h3>{service.name}</h3>
-                      <p className="service-dept">{service.department}</p>
-                      <p className="service-desc">{service.description}</p>
+                      <h3>{t(service.name)}</h3>
+                      <p className="service-dept">{t(service.department)}</p>
+                      <p className="service-desc">{t(service.description)}</p>
                       <div className="service-footer">
-                        <span className="service-fee">Fee: <strong>{service.fee}</strong></span>
+                        <span className="service-fee">{t('fee')}: <strong>{service.fee}</strong></span>
                         <button className="btn btn-primary btn-sm" onClick={() => openServiceModal(service)}>
                           {t('applyNow')}
                         </button>
@@ -1345,15 +1345,15 @@ export default function CitizenDashboard({
                     </div>
                     <div>
                       <div className="submissions-tag-pill">
-                        <span className="pulse-dot-green" /> Authenticated Submissions Registry
+                        <span className="pulse-dot-green" /> {t('Authenticated Submissions Registry')}
                       </div>
                       <h2 className="submissions-card-title">
-                        {isOfficer ? 'My Assigned Grievance Queue & Field Redressal' : 'My Registered Grievances & Service Submissions'}
+                        {isOfficer ? t('My Assigned Grievance Queue & Field Redressal') : t('My Registered Grievances & Service Submissions')}
                       </h2>
                       <p className="submissions-card-subtitle">
                         {isOfficer 
-                          ? 'Inspect complaints allocated to your department queue, update site inspection notes, and clear SLA deadlines.'
-                          : 'Access your submitted complaints, track real-time statutory SLA countdowns, and inspect verified officer redressal reports.'}
+                          ? t('Inspect complaints allocated to your department queue, update site inspection notes, and clear SLA deadlines.')
+                          : t('Access your submitted complaints, track real-time statutory SLA countdowns, and inspect verified officer redressal reports.')}
                       </p>
                     </div>
                   </div>
@@ -1370,7 +1370,7 @@ export default function CitizenDashboard({
                       style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
                     >
                       <Eye size={16} />
-                      <span>View My Submissions ({currentList.length + myApplications.length})</span>
+                      <span>{t('View My Submissions')} ({currentList.length + myApplications.length})</span>
                       <ArrowRight size={15} />
                     </button>
                     {isCitizen && (
@@ -1394,19 +1394,19 @@ export default function CitizenDashboard({
                 {/* Metrics Grid */}
                 <div className="submissions-metrics-grid">
                   <div className="sub-metric-item">
-                    <span className="sub-metric-label">Total Submissions</span>
+                    <span className="sub-metric-label">{t('Total Submissions')}</span>
                     <span className="sub-metric-val">{currentList.length + myApplications.length}</span>
                   </div>
                   <div className="sub-metric-item">
-                    <span className="sub-metric-label">In Progress / Review</span>
+                    <span className="sub-metric-label">{t('In Progress / Review')}</span>
                     <span className="sub-metric-val val-progress">{inProgressCount}</span>
                   </div>
                   <div className="sub-metric-item">
-                    <span className="sub-metric-label">Resolved / Delivered</span>
+                    <span className="sub-metric-label">{t('Resolved / Delivered')}</span>
                     <span className="sub-metric-val val-resolved">{resolvedCount}</span>
                   </div>
                   <div className="sub-metric-item">
-                    <span className="sub-metric-label">Statutory SLA Compliance</span>
+                    <span className="sub-metric-label">{t('Statutory SLA Compliance')}</span>
                     <span className="sub-metric-val val-sla">{resolutionRate}%</span>
                   </div>
                 </div>
@@ -1415,7 +1415,7 @@ export default function CitizenDashboard({
                 {currentList.length > 0 || myApplications.length > 0 ? (
                   <div className="submissions-preview-bar">
                     <div className="preview-label">
-                      <Clock size={14} /> <strong>Latest Activity:</strong>
+                      <Clock size={14} /> <strong>{t('Latest Activity:')}</strong>
                     </div>
                     <div className="preview-content">
                       {currentList[0] ? (
@@ -1435,14 +1435,14 @@ export default function CitizenDashboard({
                       )}
                     </div>
                     <div className="preview-action-hint">
-                      <span>Click card to inspect full list &amp; timeline</span>
+                      <span>{t('Click card to inspect full list & timeline')}</span>
                       <ChevronRight size={14} />
                     </div>
                   </div>
                 ) : (
                   <div className="submissions-empty-preview">
                     <CheckCircle size={16} color="#16a34a" />
-                    <span>You currently have zero pending complaints. Click here or use '+ Lodge Grievance' to report an issue.</span>
+                    <span>{t('You currently have zero pending complaints. Click here or use \'+ Lodge Grievance\' to report an issue.')}</span>
                   </div>
                 )}
               </div>
@@ -1453,15 +1453,15 @@ export default function CitizenDashboard({
               <div className="gov-sla-strip-left">
                 <ShieldCheck size={20} className="text-brand-green" />
                 <div>
-                  <strong>Time-Bound Public Service Delivery Act (GIGW 3.0 Standard)</strong>
+                  <strong>{t('Time-Bound Public Service Delivery Act (GIGW 3.0 Standard)')}</strong>
                   <p className="text-muted small-text" style={{ margin: 0 }}>
-                    Every grievance is assigned a statutory SLA deadline. Breached cases auto-escalate directly to Senior Zonal Commissioners.
+                    {t('Every grievance is assigned a statutory SLA deadline. Breached cases auto-escalate directly to Senior Zonal Commissioners.')}
                   </p>
                 </div>
               </div>
               <div className="gov-sla-strip-right">
                 <div className="sla-rate-pill">
-                  <span className="small-text">SLA Redressal Rate:</span>
+                  <span className="small-text">{t('SLA Redressal Rate:')}</span>
                   <strong style={{ fontSize: '1.05rem', color: 'var(--brand-700)' }}>{resolutionRate}%</strong>
                 </div>
                 <button className="btn btn-primary btn-sm" onClick={openGrievanceModal}>
@@ -1506,7 +1506,7 @@ export default function CitizenDashboard({
                 </div>
                 <div>
                   <h3 style={{ margin: 0, color: '#ffffff', fontSize: '1.25rem', fontWeight: 800 }}>
-                    {isOfficer ? 'My Assigned Duty Queue & Field Inspections' : 'My Registered Grievances & Service Submissions'}
+                    {isOfficer ? t('My Assigned Duty Queue & Field Inspections') : t('My Registered Grievances & Service Submissions')}
                   </h3>
                   <p style={{ margin: '2px 0 0', color: 'rgba(255,255,255,0.85)', fontSize: '0.8rem' }}>
                     Citizen: {user?.fullName || 'Verified Citizen'} • National JanSeva Governance Registry
@@ -1532,7 +1532,7 @@ export default function CitizenDashboard({
                 onClick={() => setSubmissionsTab('grievances')}
               >
                 <FileText size={16} />
-                <span>Grievance Complaints ({currentList.length})</span>
+                <span>{t('Grievance Complaints')} ({currentList.length})</span>
               </button>
               <button
                 type="button"
@@ -1540,7 +1540,7 @@ export default function CitizenDashboard({
                 onClick={() => setSubmissionsTab('applications')}
               >
                 <Layers size={16} />
-                <span>Service Applications ({myApplications.length})</span>
+                <span>{t('Service Applications')} ({myApplications.length})</span>
               </button>
             </div>
 
@@ -1550,7 +1550,7 @@ export default function CitizenDashboard({
                 <Search size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                 <input 
                   type="text"
-                  placeholder="Search by ID, keyword, department, or location..."
+                  placeholder={t('Search by ID, keyword, department, or location...')}
                   value={submissionsSearch}
                   onChange={(e) => setSubmissionsSearch(e.target.value)}
                   style={{
@@ -1580,12 +1580,12 @@ export default function CitizenDashboard({
                     cursor: 'pointer'
                   }}
                 >
-                  <option value="All">All Statuses</option>
-                  <option value="Submitted">Submitted</option>
-                  <option value="Under Review">Under Review</option>
-                  <option value="Assigned">Assigned</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Resolved">Resolved</option>
+                  <option value="All">{t('All Statuses')}</option>
+                  <option value="Submitted">{t('Submitted')}</option>
+                  <option value="Under Review">{t('Under Review')}</option>
+                  <option value="Assigned">{t('Assigned')}</option>
+                  <option value="In Progress">{t('In Progress')}</option>
+                  <option value="Resolved">{t('Resolved')}</option>
                 </select>
               </div>
             </div>
@@ -1612,12 +1612,12 @@ export default function CitizenDashboard({
                       <div className="empty-state glass-card" style={{ padding: '36px', textAlign: 'center' }}>
                         <FileText size={44} className="empty-icon" style={{ margin: '0 auto 12px', opacity: 0.4 }} />
                         <h4 style={{ margin: '0 0 6px', fontSize: '1.05rem', color: 'var(--text-main)' }}>
-                          {isOfficer ? 'No assigned tickets found' : 'No matching grievances found'}
+                          {isOfficer ? t('No assigned tickets found') : t('No matching grievances found')}
                         </h4>
                         <p className="text-muted small-text" style={{ margin: 0 }}>
                           {isCitizen 
-                            ? 'You have not submitted any complaints matching this filter.'
-                            : 'Zero assignments matching this search criteria in your queue.'}
+                            ? t('You have not submitted any complaints matching this filter.')
+                            : t('Zero assignments matching this search criteria in your queue.')}
                         </p>
                         {isCitizen && (
                           <button 
@@ -1629,7 +1629,7 @@ export default function CitizenDashboard({
                               openGrievanceModal();
                             }}
                           >
-                            <FilePlus size={15} /> Lodge New Grievance
+                            <FilePlus size={15} /> {t('lodgeGrievance')}
                           </button>
                         )}
                       </div>
@@ -1671,19 +1671,19 @@ export default function CitizenDashboard({
 
                           <div className="g-meta-grid" style={{ marginBottom: '12px' }}>
                             <div>
-                              <span className="meta-label">Department</span>
+                              <span className="meta-label">{t('Department')}</span>
                               <span className="meta-value">{item.department}</span>
                             </div>
                             <div>
-                              <span className="meta-label">Location / Ward</span>
+                              <span className="meta-label">{t('Location / Ward')}</span>
                               <span className="meta-value">{item.location}</span>
                             </div>
                             <div>
-                              <span className="meta-label">Officer Assigned</span>
+                              <span className="meta-label">{t('Officer Assigned')}</span>
                               <span className="meta-value">{item.assignedOfficer || 'Pending Dispatch'}</span>
                             </div>
                             <div>
-                              <span className="meta-label">Submitted On</span>
+                              <span className="meta-label">{t('Submitted On')}</span>
                               <span className="meta-value">{new Date(item.createdAt).toLocaleDateString()}</span>
                             </div>
                           </div>
@@ -1734,10 +1734,10 @@ export default function CitizenDashboard({
                       <div className="empty-state glass-card" style={{ padding: '36px', textAlign: 'center' }}>
                         <Layers size={44} className="empty-icon" style={{ margin: '0 auto 12px', opacity: 0.4 }} />
                         <h4 style={{ margin: '0 0 6px', fontSize: '1.05rem', color: 'var(--text-main)' }}>
-                          No service applications found
+                          {t('No service applications found')}
                         </h4>
                         <p className="text-muted small-text" style={{ margin: 0 }}>
-                          You have not applied for any official public certificates or municipal connections yet.
+                          {t('You have not applied for any official public certificates or municipal connections yet.')}
                         </p>
                         <button 
                           type="button" 
@@ -1749,7 +1749,7 @@ export default function CitizenDashboard({
                             if (target) target.scrollIntoView({ behavior: 'smooth' });
                           }}
                         >
-                          Explore Public Services Catalog
+                          {t('Explore Public Services Catalog')}
                         </button>
                       </div>
                     );
@@ -1772,26 +1772,26 @@ export default function CitizenDashboard({
 
                           <div className="g-meta-grid" style={{ margin: '12px 0' }}>
                             <div>
-                              <span className="meta-label">Department</span>
+                              <span className="meta-label">{t('Department')}</span>
                               <span className="meta-value">{app.department}</span>
                             </div>
                             <div>
-                              <span className="meta-label">Applicant Name</span>
+                              <span className="meta-label">{t('Applicant Name')}</span>
                               <span className="meta-value">{app.applicantName}</span>
                             </div>
                             <div>
-                              <span className="meta-label">Fee Paid</span>
+                              <span className="meta-label">{t('Fee Paid')}</span>
                               <span className="meta-value">{app.fee || '₹50'}</span>
                             </div>
                             <div>
-                              <span className="meta-label">Applied On</span>
+                              <span className="meta-label">{t('Applied On')}</span>
                               <span className="meta-value">{new Date(app.createdAt || Date.now()).toLocaleDateString()}</span>
                             </div>
                           </div>
 
                           <div className="g-card-footer" style={{ paddingTop: '10px' }}>
                             <span className="small-text text-muted">
-                              <CheckCircle size={14} color="#16a34a" /> UIDAI Verified &amp; DigiLocker Linked
+                              <CheckCircle size={14} color="#16a34a" /> {t('UIDAI Verified & DigiLocker Linked')}
                             </span>
                             <button 
                               type="button"
@@ -1803,7 +1803,7 @@ export default function CitizenDashboard({
                               }}
                               style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                             >
-                              <span>Track Application</span>
+                              <span>{t('Track Application')}</span>
                               <ExternalLink size={14} />
                             </button>
                           </div>
@@ -1818,7 +1818,7 @@ export default function CitizenDashboard({
             {/* Modal Footer */}
             <div style={{ padding: '14px 24px', background: 'var(--bg-card)', borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
               <span className="small-text text-muted">
-                Showing submissions authenticated under JanSeva National Grievance Redressal Registry
+                {t('Showing submissions authenticated under JanSeva National Grievance Redressal Registry')}
               </span>
               <div style={{ display: 'flex', gap: '10px' }}>
                 {isCitizen && (
@@ -1839,7 +1839,7 @@ export default function CitizenDashboard({
                   className="btn btn-secondary btn-sm"
                   onClick={() => setShowSubmissionsModal(false)}
                 >
-                  Close
+                  {t('Close')}
                 </button>
               </div>
             </div>
