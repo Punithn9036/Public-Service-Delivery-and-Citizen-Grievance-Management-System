@@ -85,9 +85,9 @@ export default function KnowledgeBase({
             title={previousPageTitle ? `Back to ${previousPageTitle}` : "Back to Overview Dashboard"}
           >
             <ArrowLeft size={16} />
-            <span>Back to {previousPageTitle || 'Dashboard'}</span>
+            <span>{t('Back to')} {previousPageTitle || t('Dashboard')}</span>
           </button>
-          <span className="subpage-breadcrumb">JanSeva &gt; Knowledge Base &amp; FAQs</span>
+          <span className="subpage-breadcrumb">JanSeva &gt; {t('Knowledge Base & FAQs')}</span>
         </div>
 
         <div className="subpage-actions-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

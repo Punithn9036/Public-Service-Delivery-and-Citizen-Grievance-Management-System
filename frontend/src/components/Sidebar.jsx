@@ -94,7 +94,7 @@ export default function Sidebar({
                 <span className="brand-name">JanSeva</span>
                 <span className="sidebar-gov-tag">{isCitizen ? 'GOV' : (user?.role === 'OFFICER' ? 'OFFICER' : 'ADMIN')}</span>
               </div>
-              <span className="sidebar-brand-sub">{isCitizen ? 'Navigation Menu' : 'Official Workspace'}</span>
+              <span className="sidebar-brand-sub">{isCitizen ? t('Navigation Menu') : t('Official Workspace')}</span>
             </div>
           </div>
 
@@ -129,7 +129,7 @@ export default function Sidebar({
         {/* Main Navigation Links */}
         <nav className="sidebar-nav">
           <div className="sidebar-section-label">
-            {isCitizen ? 'SERVICES & NAVIGATION' : 'OFFICIAL WORKSPACE'}
+            {isCitizen ? t('SERVICES & NAVIGATION') : t('OFFICIAL WORKSPACE')}
           </div>
 
           {isCitizen ? (
@@ -223,7 +223,7 @@ export default function Sidebar({
               title="Sign Out"
             >
               <LogOut size={16} />
-              <span>Sign Out</span>
+              <span>{t('signOut') || 'Sign Out'}</span>
             </button>
           </div>
         </div>
