@@ -1,9 +1,69 @@
-import React, { useState } from 'react';
-import { BookOpen, Bot, Send, Search, ChevronDown, ChevronUp, Sparkles, HelpCircle, CheckCircle2, ArrowLeft, Bell, Globe } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { 
+  BookOpen, 
+  Bot, 
+  Send, 
+  Search, 
+  ChevronDown, 
+  ChevronUp, 
+  Sparkles, 
+  HelpCircle, 
+  CheckCircle2, 
+  ArrowLeft, 
+  Bell, 
+  Globe,
+  FileText,
+  PlusCircle,
+  Phone,
+  MessageSquare,
+  ArrowRight,
+  RotateCcw
+} from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { generateCivicAiResponse } from '../utils/civicAiEngine';
+
+// Lightweight text and markdown line formatter
+function renderFormattedContent(text) {
+  if (!text) return null;
+  const lines = text.split('\n');
+
+  return lines.map((line, idx) => {
+    if (!line.trim()) {
+      return <div key={idx} style={{ height: '6px' }} />;
+    }
+
+    const parts = line.split(/(\*\*.*?\*\*)/g);
+    const renderedParts = parts.map((part, pIdx) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return <strong key={pIdx}>{part.slice(2, -2)}</strong>;
+      }
+      return part;
+    });
+
+    const isBullet = line.trim().startsWith('•') || line.trim().startsWith('*') || line.trim().startsWith('-');
+
+    return (
+      <div 
+        key={idx} 
+        style={{ 
+          marginBottom: '3px', 
+          paddingLeft: isBullet ? '6px' : '0',
+          fontSize: '0.86rem',
+          lineHeight: '1.45'
+        }}
+      >
+        {renderedParts}
+      </div>
+    );
+  });
+}
 
 export default function KnowledgeBase({ 
-  faqs, 
+  faqs = [], 
+  grievances = [],
+  applications = [],
+  services = [],
+  user = null,
   searchQuery, 
   onGoBack, 
   canGoBack, 
@@ -11,24 +71,43 @@ export default function KnowledgeBase({
   unreadNotifications,
   setShowNotifications,
   isSidebarOpen,
-  onToggleSidebar
+  onToggleSidebar,
+  onTrackTicket,
+  onOpenGrievanceModal,
+  onOpenServiceModal,
+  onNavigateServices,
+  onNavigateTrack
 }) {
   const { lang, setLang, t } = useLanguage();
   const [openFaqId, setOpenFaqId] = useState(faqs[0]?.id || null);
-  const [chatMessages, setChatMessages] = useState([
-    {
-      sender: 'bot',
-      text: t('aiGreeting')
-    }
-  ]);
-  const [userChatInput, setUserChatInput] = useState('');
+  
+  const initialBotGreeting = {
+    sender: 'bot',
+    text: t('aiGreeting'),
+    actions: [
+      { label: 'Track Status', type: 'navigate-track', icon: 'Search' },
+      { label: 'Lodge Grievance', type: 'lodge', icon: 'PlusCircle' },
+      { label: 'Explore Services', type: 'navigate-services', icon: 'FileText' }
+    ]
+  };
 
-  const quickPrompts = [
+  const defaultPrompts = [
     t('quickPrompt1'),
     t('quickPrompt2'),
     t('quickPrompt3'),
     t('quickPrompt4')
   ];
+
+  const [chatMessages, setChatMessages] = useState([initialBotGreeting]);
+  const [activePrompts, setActivePrompts] = useState(defaultPrompts);
+  const [userChatInput, setUserChatInput] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const chatMessagesEndRef = useRef(null);
+
+  // Auto-scroll chat drawer
+  useEffect(() => {
+    chatMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatMessages, isTyping]);
 
   const filteredFaqs = faqs.filter(f => 
     !searchQuery || 
@@ -36,6 +115,40 @@ export default function KnowledgeBase({
     f.answer.toLowerCase().includes(searchQuery.toLowerCase()) ||
     f.category.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleActionClick = (action) => {
+    if (!action) return;
+    switch (action.type) {
+      case 'track':
+        if (onTrackTicket) onTrackTicket(action.payload);
+        else if (onNavigateTrack) onNavigateTrack(action.payload);
+        break;
+      case 'navigate-track':
+        if (onNavigateTrack) onNavigateTrack(action.payload);
+        else if (onTrackTicket) onTrackTicket(action.payload);
+        break;
+      case 'service':
+        if (onOpenServiceModal) onOpenServiceModal(action.payload);
+        break;
+      case 'navigate-services':
+        if (onNavigateServices) onNavigateServices();
+        break;
+      case 'lodge':
+        if (onOpenGrievanceModal) onOpenGrievanceModal(action.payload);
+        break;
+      case 'helpline':
+        window.open(`tel:${action.payload || '1800425468'}`);
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handleResetChat = () => {
+    setChatMessages([initialBotGreeting]);
+    setActivePrompts(defaultPrompts);
+    setUserChatInput('');
+  };
 
   const handleSendMessage = (textToSend) => {
     const text = (typeof textToSend === 'string' ? textToSend : userChatInput).trim();
@@ -47,29 +160,48 @@ export default function KnowledgeBase({
       setUserChatInput('');
     }
 
-    // Generate intelligent AI Response simulation
+    setIsTyping(true);
+
     setTimeout(() => {
-      let botResponse = "For specific ticket tracking, please copy your Ticket ID (e.g. GRV-2026-8910) into the 'Track Status' tab.";
-      const lower = text.toLowerCase();
+      const response = generateCivicAiResponse(text, {
+        grievances,
+        applications,
+        services,
+        user,
+        lang
+      });
 
-      if (lower.includes('grv-2026-8910')) {
-        botResponse = "Ticket #GRV-2026-8910 Status: 'In Progress'. Assigned to Er. Rajesh Varma (Sanitation). Dredging team dispatched. SLA Target: 24 Hours.";
-      } else if (lower.includes('grv-2026-8904')) {
-        botResponse = "Ticket #GRV-2026-8904 Status: 'Assigned'. Assigned to Vikram Singh (Public Works). Field technician team dispatched for streetlight LED repair.";
-      } else if (lower.includes('water') || lower.includes('sewer') || lower.includes('drain') || lower.includes('पानी') || lower.includes('ನೀರು')) {
-        botResponse = "Water & Drainage issues: Standard SLA is 24-48 hours. Please lodge a complaint under 'Water Supply & Sanitation' with Ward details.";
-      } else if (lower.includes('birth') || lower.includes('certificate') || lower.includes('जन्म') || lower.includes('ಜನನ')) {
-        botResponse = "Birth Certificates take 7 SLA working days. Documents needed: (1) Hospital birth card, (2) Parents' Aadhaar Card, (3) Address proof.";
-      } else if (lower.includes('urgent') || lower.includes('emergency') || lower.includes('आपात') || lower.includes('ತುರ್ತು')) {
-        botResponse = "For urgent public safety hazards (flooding, exposed high-voltage cables), set Priority to 'Urgent' or call 24x7 Helpline: 1800-425-GOV.";
-      } else if (lower.includes('reopen') || lower.includes('not fixed')) {
-        botResponse = "If your ticket was marked resolved but the problem persists, go to 'Track Status', enter your ticket ID, and click 'Issue Not Fixed? Re-open Ticket'.";
-      } else if (lower.includes('track')) {
-        botResponse = "To track any request, navigate to the 'Track Status & Resolution' tab and enter your Ticket Reference ID.";
+      setIsTyping(false);
+      setChatMessages(prev => [
+        ...prev, 
+        { 
+          sender: 'bot', 
+          text: response.text,
+          actions: response.actions || []
+        }
+      ]);
+
+      if (response.followUps && response.followUps.length > 0) {
+        setActivePrompts(response.followUps);
       }
+    }, 450);
+  };
 
-      setChatMessages(prev => [...prev, { sender: 'bot', text: botResponse }]);
-    }, 500);
+  const renderActionIcon = (iconName) => {
+    switch (iconName) {
+      case 'Search':
+        return <Search size={13} />;
+      case 'FileText':
+        return <FileText size={13} />;
+      case 'PlusCircle':
+        return <PlusCircle size={13} />;
+      case 'Phone':
+        return <Phone size={13} />;
+      case 'MessageSquare':
+        return <MessageSquare size={13} />;
+      default:
+        return <ArrowRight size={13} />;
+    }
   };
 
   return (
@@ -190,7 +322,7 @@ export default function KnowledgeBase({
 
         {/* AI Assistant Right Chat Drawer */}
         <div className="ai-chat-section glass-card">
-          <div className="ai-header">
+          <div className="ai-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div className="ai-title-row">
               <div className="ai-avatar" style={{ background: 'linear-gradient(135deg, #1d4ed8, #2563eb)' }}>
                 <Bot size={20} color="#ffffff" />
@@ -200,24 +332,44 @@ export default function KnowledgeBase({
                 <span className="ai-online-tag"><Sparkles size={12} /> {t('aiBotSub')}</span>
               </div>
             </div>
+
+            <button 
+              type="button" 
+              onClick={handleResetChat}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--text-muted)',
+                padding: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                borderRadius: '4px'
+              }}
+              title="Reset Chat"
+            >
+              <RotateCcw size={15} />
+            </button>
           </div>
 
-          {/* Quick Prompt Chips */}
+          {/* Quick Dynamic Prompt Chips */}
           <div style={{ padding: '8px 12px', background: 'var(--bg-tertiary)', borderBottom: '1px solid var(--border-subtle)', display: 'flex', gap: '6px', overflowX: 'auto' }}>
-            {quickPrompts.map((prompt, i) => (
+            {activePrompts.map((prompt, i) => (
               <button
                 key={i}
                 type="button"
                 onClick={() => handleSendMessage(prompt)}
                 style={{
                   whiteSpace: 'nowrap',
-                  fontSize: '0.7rem',
-                  padding: '4px 8px',
+                  fontSize: '0.72rem',
+                  fontWeight: 600,
+                  padding: '4px 10px',
                   borderRadius: '12px',
                   border: '1px solid var(--border-subtle)',
                   background: 'var(--bg-secondary)',
                   color: 'var(--text-main)',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
                 }}
               >
                 {prompt}
@@ -229,9 +381,37 @@ export default function KnowledgeBase({
             {chatMessages.map((msg, idx) => (
               <div key={idx} className={`chat-bubble ${msg.sender === 'user' ? 'user-msg' : 'bot-msg'}`}>
                 {msg.sender === 'bot' && <Bot size={14} className="msg-bot-icon" />}
-                <p>{msg.text}</p>
+                <div>
+                  {renderFormattedContent(msg.text)}
+
+                  {/* Interactive Action Buttons */}
+                  {msg.actions && msg.actions.length > 0 && (
+                    <div className="chat-msg-actions-row">
+                      {msg.actions.map((act, aIdx) => (
+                        <button
+                          key={aIdx}
+                          type="button"
+                          className="chat-msg-action-btn"
+                          onClick={() => handleActionClick(act)}
+                        >
+                          {renderActionIcon(act.icon)}
+                          <span>{act.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
+
+            {isTyping && (
+              <div className="chat-bubble bot-msg" style={{ fontStyle: 'italic', color: 'var(--text-muted)' }}>
+                <Bot size={14} className="msg-bot-icon" />
+                <span>JanSeva AI is analyzing...</span>
+              </div>
+            )}
+
+            <div ref={chatMessagesEndRef} />
           </div>
 
           <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} className="chat-input-form">
@@ -242,7 +422,7 @@ export default function KnowledgeBase({
               onChange={(e) => setUserChatInput(e.target.value)}
               className="chat-input"
             />
-            <button type="submit" className="btn btn-primary btn-sm">
+            <button type="submit" className="btn btn-primary btn-sm" disabled={!userChatInput.trim()}>
               <Send size={14} />
             </button>
           </form>
