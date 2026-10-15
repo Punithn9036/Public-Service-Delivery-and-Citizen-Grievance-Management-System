@@ -653,6 +653,72 @@
   border-color: rgba(255, 255, 255, 0.45);
 }
 
+/* ========================================================================= */
+/* ADAPTIVE STYLES FOR SUBPAGE CONTEXTUAL BARS & NON-HERO SURFACES */
+/* (Ensures dark institutional readable text and contrast on light backgrounds) */
+/* ========================================================================= */
+.subpage-back-bar .language-selector-pill,
+.subpage-actions-group .language-selector-pill,
+.navbar-header:not(.navbar-hero-merged) .language-selector-pill {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 1px 2px rgba(46, 41, 16, 0.05);
+}
+
+.subpage-back-bar .language-select-dropdown,
+.subpage-actions-group .language-select-dropdown,
+.navbar-header:not(.navbar-hero-merged) .language-select-dropdown {
+  color: var(--text-main) !important;
+  font-weight: 700;
+}
+
+.subpage-back-bar .language-select-dropdown option,
+.subpage-actions-group .language-select-dropdown option,
+.navbar-header:not(.navbar-hero-merged) .language-select-dropdown option {
+  background: var(--bg-card);
+  color: var(--text-main);
+}
+
+.subpage-back-bar .icon-circle-btn,
+.subpage-actions-group .icon-circle-btn,
+.navbar-header:not(.navbar-hero-merged) .icon-circle-btn {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  color: var(--brand-700);
+  box-shadow: 0 1px 2px rgba(46, 41, 16, 0.05);
+}
+
+.subpage-back-bar .icon-circle-btn:hover,
+.subpage-actions-group .icon-circle-btn:hover,
+.navbar-header:not(.navbar-hero-merged) .icon-circle-btn:hover {
+  background: var(--brand-700);
+  color: #FFFFFF;
+  border-color: var(--brand-700);
+}
+
+.subpage-back-bar .tricolour-menu-btn,
+.subpage-actions-group .tricolour-menu-btn,
+.navbar-header:not(.navbar-hero-merged) .tricolour-menu-btn {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 1px 2px rgba(46, 41, 16, 0.05);
+}
+
+.subpage-back-bar .tricolour-menu-btn:hover,
+.subpage-actions-group .tricolour-menu-btn:hover,
+.navbar-header:not(.navbar-hero-merged) .tricolour-menu-btn:hover {
+  background: var(--bg-secondary);
+  border-color: var(--border-medium);
+}
+
+.subpage-back-bar .tricolour-menu-btn .white-bar,
+.subpage-actions-group .tricolour-menu-btn .white-bar,
+.navbar-header:not(.navbar-hero-merged) .tricolour-menu-btn .white-bar {
+  background: #FFFFFF;
+  border: 1px solid rgba(46, 41, 16, 0.35);
+  box-shadow: none;
+}
+
 .notification-badge {
   position: absolute;
   top: -2px;
