@@ -3449,6 +3449,16 @@
   background: linear-gradient(to left, rgba(23,21,10,0.2) 0%, var(--bg-card, #17150a) 24%, var(--bg-card, #17150a) 100%);
 }
 
+/* Card-Specific Fine Adjustments */
+#service-card-death-cert .service-banner-img {
+  transform: translateX(2.5cm);
+}
+
+#service-card-senior-citizen .service-banner-img {
+  transform: scale(0.82);
+  transform-origin: left 38%;
+}
+
 /* Info Panel Elements */
 .service-badges-row {
   display: flex;
@@ -3650,6 +3660,15 @@
     margin: 0;
     padding: 18px 16px;
     background: var(--bg-card, #ffffff);
+  }
+
+  #service-card-death-cert .service-banner-img {
+    transform: translateX(1cm);
+  }
+
+  #service-card-senior-citizen .service-banner-img {
+    transform: scale(0.88);
+    transform-origin: center center;
   }
 }
 
