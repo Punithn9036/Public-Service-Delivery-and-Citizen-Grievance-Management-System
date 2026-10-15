@@ -695,6 +695,10 @@ function MainAppContent() {
             {activeTab === 'faqs' && (
               <KnowledgeBase 
                 faqs={FAQ_ARTICLES}
+                grievances={grievances}
+                applications={applications}
+                services={INITIAL_SERVICES}
+                user={user}
                 searchQuery={searchQuery}
                 onGoBack={handleGoBack}
                 canGoBack={canGoBack}
@@ -703,6 +707,17 @@ function MainAppContent() {
                 setShowNotifications={setShowNotifications}
                 isSidebarOpen={isSidebarOpen}
                 onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
+                onTrackTicket={(id) => navigateTo('track', { trackId: id })}
+                onOpenGrievanceModal={(prefill) => {
+                  navigateTo(activeTab, { closeModals: false });
+                  setShowGrievanceModal(true);
+                }}
+                onOpenServiceModal={(service) => {
+                  navigateTo(activeTab, { closeModals: false });
+                  setSelectedServiceModal(service);
+                }}
+                onNavigateServices={() => navigateTo('services')}
+                onNavigateTrack={(trackId) => navigateTo('track', { trackId })}
               />
             )}
           </>
@@ -789,10 +804,24 @@ function MainAppContent() {
 
   {/* Movable Floating AI Redressal Bot */}
   <FloatingAiChatBot 
+    grievances={grievances}
+    applications={applications}
+    services={INITIAL_SERVICES}
+    user={user}
     onTrackTicket={(id) => navigateTo('track', { trackId: id })}
-    onOpenGrievanceModal={() => {
+    onOpenGrievanceModal={(prefill) => {
       navigateTo(activeTab, { closeModals: false });
       setShowGrievanceModal(true);
+    }}
+    onOpenServiceModal={(service) => {
+      navigateTo(activeTab, { closeModals: false });
+      setSelectedServiceModal(service);
+    }}
+    onNavigateServices={() => navigateTo('services')}
+    onNavigateTrack={(trackId) => navigateTo('track', { trackId })}
+    onOpenSubmissionsModal={() => {
+      const el = document.querySelector('.my-submissions-banner-card');
+      if (el) el.click();
     }}
   />
 

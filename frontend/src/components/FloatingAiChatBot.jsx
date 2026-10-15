@@ -10,12 +10,65 @@ import {
   HelpCircle, 
   ExternalLink,
   Minimize2,
-  Move
+  Move,
+  FileText,
+  PlusCircle,
+  Phone,
+  ArrowRight
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { generateCivicAiResponse } from '../utils/civicAiEngine';
 
-export default function FloatingAiChatBot({ onTrackTicket, onOpenGrievanceModal }) {
-  const { t } = useLanguage();
+// Lightweight text and markdown line formatter
+function renderFormattedContent(text) {
+  if (!text) return null;
+  const lines = text.split('\n');
+
+  return lines.map((line, idx) => {
+    if (!line.trim()) {
+      return <div key={idx} style={{ height: '6px' }} />;
+    }
+
+    // Split bold **phrase**
+    const parts = line.split(/(\*\*.*?\*\*)/g);
+    const renderedParts = parts.map((part, pIdx) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return <strong key={pIdx}>{part.slice(2, -2)}</strong>;
+      }
+      return part;
+    });
+
+    const isBullet = line.trim().startsWith('•') || line.trim().startsWith('*') || line.trim().startsWith('-');
+
+    return (
+      <div 
+        key={idx} 
+        style={{ 
+          marginBottom: '2px', 
+          paddingLeft: isBullet ? '6px' : '0',
+          fontSize: '0.84rem',
+          lineHeight: '1.45'
+        }}
+      >
+        {renderedParts}
+      </div>
+    );
+  });
+}
+
+export default function FloatingAiChatBot({ 
+  grievances = [],
+  applications = [],
+  services = [],
+  user = null,
+  onTrackTicket, 
+  onOpenGrievanceModal,
+  onOpenServiceModal,
+  onNavigateServices,
+  onNavigateTrack,
+  onOpenSubmissionsModal
+}) {
+  const { lang, t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   
   // Position State for Draggable Bot
@@ -33,16 +86,30 @@ export default function FloatingAiChatBot({ onTrackTicket, onOpenGrievanceModal 
   const dragStartRef = useRef({ startX: 0, startY: 0, initialPosX: 0, initialPosY: 0 });
   const hasMovedRef = useRef(false);
 
+  const initialGreeting = {
+    id: 1,
+    sender: 'bot',
+    text: "Namaste Citizen! I am your JanSeva Civic AI Assistant. Ask me to track any ticket ID (e.g. GRV-2026-8910), check statutory SLA timelines, diagnose civic problems (water, road, electricity), or view required documents for government certificates.",
+    actions: [
+      { label: 'Track Ticket', type: 'navigate-track', icon: 'Search' },
+      { label: 'Explore Services', type: 'navigate-services', icon: 'FileText' },
+      { label: 'Lodge Grievance', type: 'lodge', icon: 'PlusCircle' }
+    ],
+    time: 'Just now'
+  };
+
+  const defaultSuggestions = [
+    'Track #GRV-2026-8910',
+    'Water & Drainage SLA?',
+    'Birth certificate documents?',
+    'Pothole on main road',
+    'Emergency safety helpline?'
+  ];
+
   // Chat conversation state
   const [chatInput, setChatInput] = useState('');
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      sender: 'bot',
-      text: 'Hello Citizen! I am your JanSeva Civic Assistant. Ask any question, track your ticket status, check required certificate documents, or know SLA timelines.',
-      time: 'Just now'
-    }
-  ]);
+  const [messages, setMessages] = useState([initialGreeting]);
+  const [suggestions, setSuggestions] = useState(defaultSuggestions);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
 
@@ -51,7 +118,7 @@ export default function FloatingAiChatBot({ onTrackTicket, onOpenGrievanceModal 
     if (isOpen) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, isOpen]);
+  }, [messages, isOpen, isTyping]);
 
   // Keep bot within screen bounds on resize
   useEffect(() => {
@@ -163,6 +230,43 @@ export default function FloatingAiChatBot({ onTrackTicket, onOpenGrievanceModal 
     }
   };
 
+  const handleActionClick = (action) => {
+    if (!action) return;
+    switch (action.type) {
+      case 'track':
+        if (onTrackTicket) onTrackTicket(action.payload);
+        else if (onNavigateTrack) onNavigateTrack(action.payload);
+        break;
+      case 'navigate-track':
+        if (onNavigateTrack) onNavigateTrack(action.payload);
+        else if (onTrackTicket) onTrackTicket(action.payload);
+        break;
+      case 'service':
+        if (onOpenServiceModal) onOpenServiceModal(action.payload);
+        break;
+      case 'navigate-services':
+        if (onNavigateServices) onNavigateServices();
+        break;
+      case 'lodge':
+        if (onOpenGrievanceModal) onOpenGrievanceModal(action.payload);
+        break;
+      case 'submissions-modal':
+        if (onOpenSubmissionsModal) onOpenSubmissionsModal();
+        break;
+      case 'helpline':
+        window.open(`tel:${action.payload || '1800425468'}`);
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handleResetChat = () => {
+    setMessages([initialGreeting]);
+    setSuggestions(defaultSuggestions);
+    setChatInput('');
+  };
+
   const handleSendMessage = (textToSend) => {
     const query = (typeof textToSend === 'string' ? textToSend : chatInput).trim();
     if (!query) return;
@@ -182,28 +286,13 @@ export default function FloatingAiChatBot({ onTrackTicket, onOpenGrievanceModal 
     setIsTyping(true);
 
     setTimeout(() => {
-      let reply = "I can guide you with ticket tracking, municipal services, or SLA escalation policies. Could you provide your Ticket Reference ID or department name?";
-      const lower = query.toLowerCase();
-
-      if (lower.includes('grv-2026-8910')) {
-        reply = "Ticket #GRV-2026-8910 Status: In Progress. Assigned Officer: Er. Rajesh Varma (Sanitation). Action: Field dredging team dispatched to 100 Feet Road, Ward 14. Target SLA: 24 Hours.";
-      } else if (lower.includes('grv-2026-8904')) {
-        reply = "Ticket #GRV-2026-8904 Status: Assigned. Assigned Officer: Vikram Singh (Public Works). Action: Field technician team dispatched for streetlight LED repair. Target SLA: 48 Hours.";
-      } else if (lower.includes('grv-') || lower.includes('app-')) {
-        reply = `Searching official ledger for ${query.toUpperCase()}... The ticket is registered in the municipal database. You can track full timeline details in the 'Track Status' tab.`;
-      } else if (lower.includes('water') || lower.includes('drain') || lower.includes('sewer') || lower.includes('पानी') || lower.includes('ನೀರು')) {
-        reply = "Water & Drainage Redressal: Statutory SLA resolution time is 24 to 48 hours. When lodging a complaint, upload a GPS geotagged photo for automated field dispatch.";
-      } else if (lower.includes('birth') || lower.includes('certificate') || lower.includes('जन्म') || lower.includes('ಜನನ')) {
-        reply = "Birth Certificate Application: Process takes 7 statutory working days. Required documents: (1) Hospital discharge slip, (2) Parents' Aadhaar identification, (3) Address proof.";
-      } else if (lower.includes('urgent') || lower.includes('emergency') || lower.includes('hazard') || lower.includes('आपात') || lower.includes('ತುರ್ತು')) {
-        reply = "For urgent public safety hazards (live electrical wires, open manholes, flood logging), mark Priority as 'Urgent' or call the 24x7 Municipal Control Room at 1800-425-GOV.";
-      } else if (lower.includes('reopen') || lower.includes('not fixed') || lower.includes('unsatisfied')) {
-        reply = "If an issue was closed without proper resolution, you have a 7-day statutory window. Go to 'Track Status', enter your ticket ID, and click 'Issue Not Fixed? Re-open Ticket' for supervisory escalation.";
-      } else if (lower.includes('helpline') || lower.includes('phone') || lower.includes('contact') || lower.includes('number')) {
-        reply = "Official 24x7 Citizen Grievance Helpline: 1800-425-GOV. Nodal Officer Desk: Available Monday to Saturday 9:00 AM - 6:00 PM.";
-      } else if (lower.includes('sla') || lower.includes('timeline') || lower.includes('time')) {
-        reply = "Statutory SLA Timelines: Urgent Hazards (24h), Water/Drainage (48h), Streetlights (48h), Public Works (72h), Birth/Death Certificates (7-14 days).";
-      }
+      const response = generateCivicAiResponse(query, {
+        grievances,
+        applications,
+        services,
+        user,
+        lang
+      });
 
       setIsTyping(false);
       setMessages(prev => [
@@ -211,31 +300,44 @@ export default function FloatingAiChatBot({ onTrackTicket, onOpenGrievanceModal 
         {
           id: Date.now() + 1,
           sender: 'bot',
-          text: reply,
+          text: response.text,
+          actions: response.actions || [],
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }
       ]);
-    }, 600);
+
+      if (response.followUps && response.followUps.length > 0) {
+        setSuggestions(response.followUps);
+      }
+    }, 450);
   };
 
-  // Quick suggestion chips
-  const suggestions = [
-    'Track #GRV-2026-8910',
-    'Water & Drainage SLA?',
-    'Birth certificate documents?',
-    'Emergency safety helpline?',
-    'How to reopen a ticket?'
-  ];
+  const renderActionIcon = (iconName) => {
+    switch (iconName) {
+      case 'Search':
+        return <Search size={13} />;
+      case 'FileText':
+        return <FileText size={13} />;
+      case 'PlusCircle':
+        return <PlusCircle size={13} />;
+      case 'Phone':
+        return <Phone size={13} />;
+      case 'MessageSquare':
+        return <MessageSquare size={13} />;
+      default:
+        return <ArrowRight size={13} />;
+    }
+  };
 
   // Calculate chat window position to stay on screen
   const chatWindowStyle = {
     position: 'fixed',
     bottom: position.y > window.innerHeight / 2 ? 'auto' : `${window.innerHeight - position.y + 10}px`,
-    top: position.y > window.innerHeight / 2 ? `${Math.max(16, position.y - 480)}px` : 'auto',
-    left: position.x > window.innerWidth / 2 ? `${Math.max(16, position.x - 340)}px` : `${position.x}px`,
-    width: '360px',
+    top: position.y > window.innerHeight / 2 ? `${Math.max(16, position.y - 490)}px` : 'auto',
+    left: position.x > window.innerWidth / 2 ? `${Math.max(16, position.x - 360)}px` : `${position.x}px`,
+    width: '380px',
     maxWidth: 'calc(100vw - 32px)',
-    height: '470px',
+    height: '490px',
     maxHeight: 'calc(100vh - 40px)',
     zIndex: 1100
   };
@@ -274,24 +376,32 @@ export default function FloatingAiChatBot({ onTrackTicket, onOpenGrievanceModal 
                 <Bot size={18} color="#ffffff" />
               </div>
               <div>
-                <h4 className="chat-title">JanSeva Assistant</h4>
-                <span className="chat-subtitle">Live Citizen Redressal & SLA Guide</span>
+                <h4 className="chat-title">JanSeva Civic AI</h4>
+                <span className="chat-subtitle">Context-Aware Triage & SLA Engine</span>
               </div>
             </div>
 
-            <div className="chat-header-actions">
+            <div className="chat-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <button 
+                type="button" 
+                className="chat-action-icon-btn" 
+                onClick={handleResetChat}
+                title="Restart Conversation"
+              >
+                <RotateCcw size={14} />
+              </button>
               <button 
                 type="button" 
                 className="chat-action-icon-btn" 
                 onClick={() => setIsOpen(false)}
                 title="Minimize Chat"
               >
-                <Minimize2 size={16} />
+                <Minimize2 size={15} />
               </button>
             </div>
           </div>
 
-          {/* Quick Suggestion Chips */}
+          {/* Quick Dynamic Suggestion Chips */}
           <div className="chat-chips-scroll">
             {suggestions.map((s, idx) => (
               <button
@@ -315,7 +425,25 @@ export default function FloatingAiChatBot({ onTrackTicket, onOpenGrievanceModal 
                   </div>
                 )}
                 <div className={`chat-bubble ${m.sender === 'user' ? 'user-bubble' : 'bot-bubble'}`}>
-                  <p>{m.text}</p>
+                  {renderFormattedContent(m.text)}
+
+                  {/* Interactive Action Buttons */}
+                  {m.actions && m.actions.length > 0 && (
+                    <div className="chat-msg-actions-row">
+                      {m.actions.map((act, aIdx) => (
+                        <button
+                          key={aIdx}
+                          type="button"
+                          className="chat-msg-action-btn"
+                          onClick={() => handleActionClick(act)}
+                        >
+                          {renderActionIcon(act.icon)}
+                          <span>{act.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
                   <span className="chat-msg-time">{m.time}</span>
                 </div>
               </div>
@@ -327,7 +455,7 @@ export default function FloatingAiChatBot({ onTrackTicket, onOpenGrievanceModal 
                   <Bot size={14} />
                 </div>
                 <div className="chat-bubble bot-bubble typing-bubble">
-                  <span>Assistant is typing...</span>
+                  <span>Assistant is analyzing municipal ledger...</span>
                 </div>
               </div>
             )}
@@ -346,7 +474,7 @@ export default function FloatingAiChatBot({ onTrackTicket, onOpenGrievanceModal 
             <input
               type="text"
               className="chat-text-input"
-              placeholder="Ask anything or enter Ticket ID..."
+              placeholder="Ask anything or enter Ticket ID (e.g. GRV-2026-8910)..."
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
             />
