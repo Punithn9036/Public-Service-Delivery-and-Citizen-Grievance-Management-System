@@ -555,6 +555,7 @@ function MainAppContent() {
             navigateTo(activeTab, { closeModals: false });
             setShowSettingsModal(true);
           }}
+          isSettingsOpen={showSettingsModal}
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
         />

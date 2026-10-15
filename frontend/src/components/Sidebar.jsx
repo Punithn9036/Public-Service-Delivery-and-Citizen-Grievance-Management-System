@@ -22,6 +22,7 @@ export default function Sidebar({
   setActivePortal,
   openGrievanceModal,
   onOpenSettings,
+  isSettingsOpen = false,
   isOpen,
   onClose
 }) {
@@ -51,7 +52,7 @@ export default function Sidebar({
     },
     {
       id: 'settings',
-      label: t('generalSettings') || 'General Settings',
+      label: t('settings') || 'Settings',
       icon: Settings,
       role: 'CITIZEN'
     }
@@ -134,7 +135,7 @@ export default function Sidebar({
           {isCitizen ? (
             navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = item.id === 'settings' ? false : activeTab === item.id;
+              const isActive = item.id === 'settings' ? Boolean(isSettingsOpen) : (activeTab === item.id && !isSettingsOpen);
               return (
                 <button
                   key={item.id}
@@ -159,22 +160,38 @@ export default function Sidebar({
             })
           ) : (
             /* Official Admin & Officer Navigation Only (Strictly isolated from Citizen View) */
-            <button
-              type="button"
-              className={`sidebar-nav-item active`}
-              onClick={() => {
-                setActivePortal('admin');
-                setActiveTab('admin-dashboard');
-                if (onClose) onClose();
-              }}
-              title={user?.role === 'OFFICER' ? 'Officer Command Center' : 'Admin Governance Center'}
-            >
-              <ShieldCheck size={18} className="sidebar-nav-icon" />
-              <span className="sidebar-nav-label">
-                {user?.role === 'OFFICER' ? 'Officer Duty & Field Desk' : 'Admin Governance Center'}
-              </span>
-              <ChevronRight size={14} className="sidebar-active-arrow" />
-            </button>
+            <>
+              <button
+                type="button"
+                className={`sidebar-nav-item ${activeTab === 'admin-dashboard' && !isSettingsOpen ? 'active' : ''}`}
+                onClick={() => {
+                  setActivePortal('admin');
+                  setActiveTab('admin-dashboard');
+                  if (onClose) onClose();
+                }}
+                title={user?.role === 'OFFICER' ? 'Officer Command Center' : 'Admin Governance Center'}
+              >
+                <ShieldCheck size={18} className="sidebar-nav-icon" />
+                <span className="sidebar-nav-label">
+                  {user?.role === 'OFFICER' ? 'Officer Duty & Field Desk' : 'Admin Governance Center'}
+                </span>
+                {activeTab === 'admin-dashboard' && !isSettingsOpen && <ChevronRight size={14} className="sidebar-active-arrow" />}
+              </button>
+
+              <button
+                type="button"
+                className={`sidebar-nav-item ${isSettingsOpen ? 'active' : ''}`}
+                onClick={() => {
+                  if (onOpenSettings) onOpenSettings();
+                  if (onClose) onClose();
+                }}
+                title={t('settings') || 'Settings'}
+              >
+                <Settings size={18} className="sidebar-nav-icon" />
+                <span className="sidebar-nav-label">{t('settings') || 'Settings'}</span>
+                {isSettingsOpen && <ChevronRight size={14} className="sidebar-active-arrow" />}
+              </button>
+            </>
           )}
         </nav>
 
@@ -193,27 +210,12 @@ export default function Sidebar({
             </div>
           )}
 
-          {/* Bottom Options: Settings & Sign Out */}
+          {/* Bottom Options: Sign Out */}
           <div className="sidebar-action-buttons">
-            {!isCitizen && (
-              <button 
-                type="button" 
-                className="sidebar-bottom-btn" 
-                onClick={() => {
-                  onOpenSettings();
-                  if (onClose) onClose();
-                }}
-                title="Settings & Appearance"
-              >
-                <Settings size={16} />
-                <span>Settings</span>
-              </button>
-            )}
-
             <button 
               type="button" 
               className="sidebar-bottom-btn sidebar-logout-btn" 
-              style={isCitizen ? { width: '100%', justifyContent: 'center' } : {}}
+              style={{ width: '100%', justifyContent: 'center' }}
               onClick={() => {
                 logout();
                 if (onClose) onClose();
