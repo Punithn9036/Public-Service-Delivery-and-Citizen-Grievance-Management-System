@@ -51,4 +51,10 @@ backend/auth_info_baileys/
 foodie-admin/
 foodie-backend/
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+
 
