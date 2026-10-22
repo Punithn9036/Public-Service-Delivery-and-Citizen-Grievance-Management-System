@@ -10,7 +10,7 @@ let mockUserStore = [
     fullName: 'Aarav Sharma',
     email: 'aarav.sharma@example.com',
     phone: '+91 98765 43210',
-    passwordHash: '$2a$10$eE0oXG9r1mU66t3kY5rEee4zG5U9Oq1u5JkQ4WfUeK.U6FqO8Oa5u', // Password123!
+    passwordHash: '$2b$10$mjCDniADRTfBaA.Qffj8dOAx6aHN5yXRNKwn/2lO17PgcP1FN323a', // Password123!
     role: 'CITIZEN',
     department: null,
     createdAt: new Date().toISOString()
@@ -22,7 +22,7 @@ let mockUserStore = [
     fullName: 'Er. Rajesh Varma',
     email: 'rajesh.varma@gov.in',
     phone: '+91 94433 11223',
-    passwordHash: '$2a$10$eE0oXG9r1mU66t3kY5rEee4zG5U9Oq1u5JkQ4WfUeK.U6FqO8Oa5u', // Officer123!
+    passwordHash: '$2b$10$mjCDniADRTfBaA.Qffj8dO5ZwbsmdEI8IDoGYnwFl2FL6m90zgwUe', // Officer123!
     role: 'OFFICER',
     department: 'Water Supply & Sanitation',
     createdAt: new Date().toISOString()
@@ -34,7 +34,7 @@ let mockUserStore = [
     fullName: 'Smt. Kavitha Reddi',
     email: 'admin.controlroom@gov.in',
     phone: '+91 94411 99887',
-    passwordHash: '$2a$10$eE0oXG9r1mU66t3kY5rEee4zG5U9Oq1u5JkQ4WfUeK.U6FqO8Oa5u', // Admin123!
+    passwordHash: '$2b$10$mjCDniADRTfBaA.Qffj8dOtwmxersM/CL65O6objt3/cCVPlWpaRi', // Admin123!
     role: 'ADMIN',
     department: 'Municipal Governance',
     createdAt: new Date().toISOString()
@@ -55,9 +55,14 @@ const register = async (req, res) => {
       });
     }
 
-    const assignedRole = role && ['CITIZEN', 'OFFICER', 'ADMIN', 'SUPERVISOR'].includes(role.toUpperCase()) 
-      ? role.toUpperCase() 
-      : 'CITIZEN';
+    if (role && (role.toUpperCase() === 'ADMIN' || role.toUpperCase() === 'SUPERVISOR')) {
+      return res.status(403).json({
+        error: 'FORBIDDEN_ROLE',
+        message: 'Administrative roles cannot be self-assigned via public registration. Contact System Administrator.'
+      });
+    }
+
+    const assignedRole = (role && role.toUpperCase() === 'OFFICER') ? 'OFFICER' : 'CITIZEN';
 
     let officialDepartment = department || null;
     let officialDesignation = null;
@@ -260,9 +265,8 @@ const login = async (req, res) => {
     }
 
     const isMatch = await comparePassword(password, user.passwordHash || user.password_hash);
-    const isDemoMatch = password === 'Password123!' || password === 'Officer123!' || password === 'Admin123!';
     
-    if (!isMatch && !isDemoMatch) {
+    if (!isMatch) {
       return res.status(401).json({
         error: 'INVALID_CREDENTIALS',
         message: 'Invalid credentials. Password does not match.'

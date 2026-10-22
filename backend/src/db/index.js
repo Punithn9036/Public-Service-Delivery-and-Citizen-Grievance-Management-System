@@ -21,7 +21,7 @@ const SEED_DATA = {
       fullName: 'Aarav Sharma',
       email: 'aarav.sharma@example.com',
       phone: '+91 98765 43210',
-      passwordHash: '$2a$10$eE0oXG9r1mU66t3kY5rEee4zG5U9Oq1u5JkQ4WfUeK.U6FqO8Oa5u', // Password123!
+      passwordHash: '$2b$10$mjCDniADRTfBaA.Qffj8dOAx6aHN5yXRNKwn/2lO17PgcP1FN323a', // Password123!
       role: 'CITIZEN',
       department: null,
       createdAt: '2026-08-16T10:00:00.000Z'
@@ -32,7 +32,7 @@ const SEED_DATA = {
       fullName: 'Priya Sundaram',
       email: 'priya.sundaram@example.com',
       phone: '+91 98112 33445',
-      passwordHash: '$2a$10$eE0oXG9r1mU66t3kY5rEee4zG5U9Oq1u5JkQ4WfUeK.U6FqO8Oa5u', // Password123!
+      passwordHash: '$2b$10$mjCDniADRTfBaA.Qffj8dOAx6aHN5yXRNKwn/2lO17PgcP1FN323a', // Password123!
       role: 'CITIZEN',
       department: null,
       createdAt: '2026-08-17T11:00:00.000Z'
@@ -44,7 +44,7 @@ const SEED_DATA = {
       fullName: 'Er. Rajesh Varma',
       email: 'rajesh.varma@gov.in',
       phone: '+91 94433 11223',
-      passwordHash: '$2a$10$eE0oXG9r1mU66t3kY5rEee4zG5U9Oq1u5JkQ4WfUeK.U6FqO8Oa5u', // Officer123!
+      passwordHash: '$2b$10$mjCDniADRTfBaA.Qffj8dO5ZwbsmdEI8IDoGYnwFl2FL6m90zgwUe', // Officer123!
       role: 'OFFICER',
       department: 'Water Supply & Sanitation',
       designation: 'Executive Engineer (EE)',
@@ -57,7 +57,7 @@ const SEED_DATA = {
       fullName: 'Vikram Singh',
       email: 'vikram.singh@gov.in',
       phone: '+91 98700 55443',
-      passwordHash: '$2a$10$eE0oXG9r1mU66t3kY5rEee4zG5U9Oq1u5JkQ4WfUeK.U6FqO8Oa5u', // Officer123!
+      passwordHash: '$2b$10$mjCDniADRTfBaA.Qffj8dO5ZwbsmdEI8IDoGYnwFl2FL6m90zgwUe', // Officer123!
       role: 'OFFICER',
       department: 'Public Works & Infrastructure',
       designation: 'Assistant Executive Engineer (AEE)',
@@ -70,7 +70,7 @@ const SEED_DATA = {
       fullName: 'Smt. Kavitha Reddi',
       email: 'admin.controlroom@gov.in',
       phone: '+91 94411 99887',
-      passwordHash: '$2a$10$eE0oXG9r1mU66t3kY5rEee4zG5U9Oq1u5JkQ4WfUeK.U6FqO8Oa5u', // Admin123!
+      passwordHash: '$2b$10$mjCDniADRTfBaA.Qffj8dOtwmxersM/CL65O6objt3/cCVPlWpaRi', // Admin123!
       role: 'ADMIN',
       department: 'Municipal Governance',
       designation: 'Nodal Governance Commissioner',

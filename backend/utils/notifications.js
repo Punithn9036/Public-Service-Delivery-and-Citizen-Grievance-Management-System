@@ -162,7 +162,7 @@ async function sendNotification({ phone, template, data = {}, channels = ['SMS',
       receipt.notice = 'Live WhatsApp dispatch is paused by administrator.';
     } else {
       // Live Fast2SMS Dispatch (Real SMS landing on mobile, active 24/7 in cloud)
-      if (isSms && fast2smsKey && fast2smsKey.length > 0) {
+      if (isSms && fast2smsKey && fast2smsKey.length > 0 && process.env.NODE_ENV !== 'test') {
         try {
           if (clean10.length === 10) {
             const fast2smsRes = await fetch('https://www.fast2sms.com/dev/bulkV2', {
