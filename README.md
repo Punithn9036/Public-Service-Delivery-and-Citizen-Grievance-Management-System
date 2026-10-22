@@ -2,7 +2,8 @@
 ### Unified Public Service Delivery & Citizen Grievance Redressal Architecture
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![React](https://img.shields.io/badge/Frontend-React_18_%7C_Vite-61DAFB?logo=react&logoColor=black)](https://react.dev/)
+[![Tests](https://img.shields.io/badge/Tests-86%20Passed%20%7C%20100%25-brightgreen.svg)](#-automated-testing--validation)
+[![React](https://img.shields.io/badge/Frontend-React_19_%7C_Vite-61DAFB?logo=react&logoColor=black)](https://react.dev/)
 [![TailwindCSS](https://img.shields.io/badge/UI-TailwindCSS_3-38B2AC?logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![Node.js](https://img.shields.io/badge/Backend-Node.js_Express-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![Blockchain](https://img.shields.io/badge/Ledger-Tamper--Evident_SHA--256_Hash_Chain-F7931A?logo=blockchain-dot-com&logoColor=white)](#)
@@ -126,6 +127,7 @@ Public-Service-Delivery-and-Citizen-Grievance-Management-System/
 ### Prerequisites
 * **Node.js** (v18.0.0 or higher)
 * **npm** (v9.0.0 or higher)
+* **Docker & Docker Compose** (Optional, for full containerized deployment)
 * **Python** (v3.8+ — required only if executing the simulation suite)
 
 ### 1. Clone the Repository
@@ -134,7 +136,9 @@ git clone https://github.com/Punithn9036/Public-Service-Delivery-and-Citizen-Gri
 cd Public-Service-Delivery-and-Citizen-Grievance-Management-System
 ```
 
-### 2. Backend Setup
+### 2. Option A: Local Development Setup
+
+#### Backend Setup
 ```bash
 cd backend
 npm install
@@ -142,7 +146,7 @@ node index.js
 ```
 *The backend API server will initialize on `http://localhost:5000`.*
 
-### 3. Frontend Setup
+#### Frontend Setup
 In a new terminal window:
 ```bash
 cd frontend
@@ -150,6 +154,46 @@ npm install
 npm run dev
 ```
 *The Vite development server will launch on `http://localhost:5173`.*
+
+### 2. Option B: Docker Compose Full Stack
+```bash
+docker-compose up --build -d
+```
+*Access Frontend at `http://localhost:3000` and Backend API at `http://localhost:5000`.*
+
+---
+
+### 🔑 Pre-Configured Demo Accounts
+| Role | Name | Email / Login | Password | Capabilities |
+|---|---|---|---|---|
+| **Citizen** | Aarav Sharma | `aarav.sharma@example.com` | `Password123!` | File Grievances, Apply for Services, Community Upvoting, Feedback |
+| **Citizen** | Priya Sundaram | `priya.sundaram@example.com` | `Password123!` | Track Active Submissions, Download QR Receipts, Multi-Language Portal |
+| **Field Officer** | Er. Rajesh Varma | `rajesh.varma@gov.in` | `Officer123!` | Water Supply & Sanitation Zonal Desk, State Transitions |
+| **Field Officer** | Vikram Singh | `vikram.singh@gov.in` | `Officer123!` | Public Works & Infrastructure Desk, LED & Road Repairs |
+| **Control Room Admin** | Smt. Kavitha Reddi | `admin.controlroom@gov.in` | `Admin123!` | Municipal Oversight, Officer Duty Roster, SLA Tribunal, Blockchain Audit |
+
+---
+
+## 🧪 Automated Testing & Validation
+
+JanSeva includes an automated end-to-end integration and security test suite covering Authentication, RBAC, State Machine transitions, Hyperledger Fabric ledger integrity, IPFS content addressing, SLA monitoring, and Webhooks:
+
+```bash
+# Run comprehensive 86-test backend test suite
+npm --prefix backend test
+```
+
+### Verified Test Coverage
+* **`tests/master_audit.test.js`** — 51 tests: Auth/RBAC, Grievance Lifecycle, Public Services, Hyperledger Fabric, IPFS, SLA Monitoring, Notifications, Security Injection & XSS.
+* **`tests/api_integration.test.js`** — 25 tests: REST endpoints, WhatsApp webhook, dual SLA verification.
+* **`tests/auth_and_grievance.test.js`** — 10 tests: Core citizen registration, officer duty assignment, and timeline logging.
+
+```text
+Test Suites: 3 passed, 3 total
+Tests:       86 passed, 86 total
+Snapshots:   0 total
+Time:        6.513 s
+```
 
 ---
 
