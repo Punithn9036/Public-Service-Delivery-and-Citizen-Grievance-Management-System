@@ -3,7 +3,10 @@
 const ApplicationModel = require('../../models/application');
 const ServiceModel = require('../../models/service');
 const { uploadToIPFS } = require('../../utils/ipfs');
+const db = require('../db');
 const { sendNotification } = require('../../utils/notifications');
+const { isSameDepartment } = require('../middleware/departmentAuth');
+const { appendAuditLog } = require('../db/governanceStore');
 
 /**
  * Get all service applications with optional status, department, and phone filters
@@ -11,7 +14,15 @@ const { sendNotification } = require('../../utils/notifications');
 const getAllApplications = async (req, res) => {
   try {
     const { status, department, phone } = req.query;
-    const applications = await ApplicationModel.findAll({ status, department, phone });
+    let applications = await ApplicationModel.findAll({ status, department, phone });
+    if (req.user && req.user.role === 'OFFICER') {
+      const services = await ServiceModel.findAll();
+      const serviceDeptMap = Object.fromEntries(services.map((s) => [s.id, s.department]));
+      applications = applications.filter((item) => {
+        const appDept = item.department || serviceDeptMap[item.serviceId];
+        return isSameDepartment(req.user.department, appDept);
+      });
+    }
     return res.json({
       count: applications.length,
       applications
@@ -28,6 +39,16 @@ const getApplicationById = async (req, res) => {
   try {
     const { id } = req.params;
     const app = await ApplicationModel.findById(id);
+    if (app && req.user && req.user.role === 'OFFICER') {
+      const srv = app.department ? null : await ServiceModel.findById(app.serviceId);
+      const targetDept = app.department || srv?.department;
+      if (!isSameDepartment(req.user.department, targetDept)) {
+        return res.status(403).json({
+          error: 'FORBIDDEN_DEPARTMENT',
+          message: `Officers in '${req.user.department}' cannot access applications belonging to '${targetDept || 'another department'}'.`
+        });
+      }
+    }
     if (!app) {
       return res.status(404).json({ error: 'NOT_FOUND', message: `Application '${id}' not found.` });
     }
@@ -145,16 +166,57 @@ const createApplication = async (req, res) => {
 const updateApplicationStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, remarks } = req.body;
+    const { status, remarks, verifiedDocuments, resubmissionReason, rejectionReason } = req.body;
 
-    if (!status || !['Submitted', 'In Verification', 'Approved', 'Rejected'].includes(status)) {
+    const existingApp = await ApplicationModel.findById(id);
+    if (!existingApp) {
+      return res.status(404).json({ error: 'NOT_FOUND', message: `Application '${id}' not found.` });
+    }
+
+    const linkedService = existingApp.department ? null : await ServiceModel.findById(existingApp.serviceId);
+    const targetDepartment = existingApp.department || linkedService?.department;
+    if (req.user && req.user.role === 'OFFICER' && !isSameDepartment(req.user.department, targetDepartment)) {
+      return res.status(403).json({
+        error: 'FORBIDDEN_DEPARTMENT',
+        message: `Access denied: Officers in '${req.user.department}' cannot review or update '${existingApp.serviceName}' applications owned by '${targetDepartment || 'another department'}'.`
+      });
+    }
+
+    if (!status || !['Submitted', 'Under Review', 'In Verification', 'Resubmission Required', 'Approved', 'Rejected'].includes(status)) {
       return res.status(400).json({
         error: 'VALIDATION_ERROR',
         message: "Status must be one of ['Submitted', 'In Verification', 'Approved', 'Rejected']."
       });
     }
 
-    const updated = await ApplicationModel.updateStatus(id, { status, remarks });
+    const effectiveRemarks = remarks || resubmissionReason || rejectionReason || '';
+    const updated = await ApplicationModel.updateStatus(id, { status, remarks: effectiveRemarks });
+    if (updated) {
+      if (Array.isArray(verifiedDocuments)) {
+        updated.verifiedDocuments = verifiedDocuments;
+      }
+      if (resubmissionReason) {
+        updated.resubmissionReason = resubmissionReason;
+      }
+      if (rejectionReason) {
+        updated.rejectionReason = rejectionReason;
+      }
+      updated.reviewedBy = req.user?.email || 'officer';
+      updated.reviewedAt = new Date().toISOString();
+      if (typeof db.saveStore === 'function') {
+        db.saveStore();
+      }
+      if (req.user?.role === 'ADMIN') {
+        appendAuditLog({
+          actorEmail: req.user.email,
+          actorRole: req.user.role,
+          action: 'APPLICATION_STATUS_UPDATED',
+          targetType: 'APPLICATION',
+          targetId: id,
+          details: `Status set to ${status} (${targetDepartment || 'Municipal'})`
+        });
+      }
+    }
     if (!updated) {
       return res.status(404).json({ error: 'NOT_FOUND', message: `Application '${id}' not found.` });
     }

@@ -9,10 +9,11 @@ const {
 } = require('../controllers/applicationController');
 
 const { verifyToken, requireRole } = require('../middleware/authMiddleware');
+const { optionalVerifyToken } = require('../middleware/departmentAuth');
 
 // Public lookup & submission
-router.get('/', getAllApplications);
-router.get('/:id', getApplicationById);
+router.get('/', optionalVerifyToken, getAllApplications);
+router.get('/:id', optionalVerifyToken, getApplicationById);
 router.post('/', createApplication);
 
 // Officer status update

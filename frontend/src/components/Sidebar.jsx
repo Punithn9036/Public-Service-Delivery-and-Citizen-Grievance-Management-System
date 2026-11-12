@@ -21,10 +21,15 @@ import {
   Smartphone,
   Database,
   PhoneCall,
-  BookOpen
+  BookOpen,
+  MapPin,
+  Scale,
+  Megaphone
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { isSameDepartment, isTicketAssignedToOfficer } from '../utils/departmentScope';
+import { INITIAL_OFFICERS, SECTORS } from '../data/officerRoster';
 
 export default function Sidebar({
   activeTab,
@@ -65,13 +70,28 @@ export default function Sidebar({
     return Boolean(matchName || matchEmpId || matchPhone);
   };
 
-  const officerAssignedGrievances = grievances.filter(isAssignedToCurrentOfficer);
-  const officerAssignedCount = officerAssignedGrievances.filter(g => g.status !== 'Resolved').length;
-  const deptUnassignedCount = isOfficer && user?.department
-    ? grievances.filter(g => g.department === user.department && (!g.assignedOfficer || g.status === 'Submitted')).length
+  const officerDeptGrievances = isOfficer && user?.department
+    ? grievances.filter((g) => isSameDepartment(user.department, g.department))
+    : [];
+  const officerAssignedGrievances = officerDeptGrievances.filter(
+    (g) => isTicketAssignedToOfficer(g, user) || isAssignedToCurrentOfficer(g)
+  );
+  const officerAssignedCount = officerAssignedGrievances.filter((g) => !['Resolved', 'Rejected'].includes(g.status)).length;
+  const deptUnassignedCount = officerDeptGrievances.filter(
+    (g) => !g.assignedOfficer || String(g.assignedOfficer).includes('Pending Dispatch') || g.status === 'Submitted'
+  ).length;
+  const officerEscalatedCount = officerAssignedGrievances.filter((g) => g.status === 'Escalated').length;
+  const officerAppsCount = isOfficer && user?.department
+    ? applications.filter(
+        (a) =>
+          isSameDepartment(user.department, a.department) &&
+          ['Submitted', 'Under Review', 'In Verification', 'Resubmission Required'].includes(a.status)
+      ).length
     : 0;
-  const officerEscalatedCount = officerAssignedGrievances.filter(g => g.status === 'Escalated').length;
-  const officerAppsCount = applications.filter(a => a.status === 'Submitted' || a.status === 'Under Review').length;
+  const officerOnTimePct = officerAssignedGrievances.length > 0
+    ? Math.round((officerAssignedGrievances.filter((g) => g.status !== 'Escalated').length / officerAssignedGrievances.length) * 100)
+    : 100;
+  const totalRosterOfficers = INITIAL_OFFICERS.length;
 
   const adminOpenGrievances = grievances.filter(g => g.status !== 'Resolved').length;
   const adminPendingApps = applications.filter(a => a.status === 'Submitted' || a.status === 'Under Review').length;
@@ -109,7 +129,7 @@ export default function Sidebar({
   // Officer Navigation Groups (Strict Title Case matching Citizen Sidebar)
   const officerNavGroups = [
     {
-      groupLabel: t('Field Queues & Desk'),
+      title: t('Field Desk'),
       items: [
         {
           id: 'officer-queue',
@@ -122,7 +142,7 @@ export default function Sidebar({
         {
           id: 'officer-dept',
           section: 'grievances',
-          scope: 'dept-unassigned',
+          scope: 'department',
           label: t('Department Triage Queue'),
           icon: Inbox,
           badge: deptUnassignedCount > 0 ? { text: `${deptUnassignedCount} Unassigned`, type: 'neutral' } : null
@@ -130,46 +150,35 @@ export default function Sidebar({
         {
           id: 'officer-apps',
           section: 'applications',
-          label: t('Service Applications Desk'),
+          label: t('Same-Dept Applications'),
           icon: FileCheck2,
           badge: officerAppsCount > 0 ? { text: `${officerAppsCount} Pending`, type: 'neutral' } : null
+        },
+        {
+          id: 'officer-map',
+          section: 'map',
+          label: t('Field Ward Map & Route'),
+          icon: MapPin,
+          badge: null
         }
       ]
     },
     {
-      groupLabel: t('Duty & Statutory Compliance'),
+      title: t('Compliance & Duty'),
       items: [
-        {
-          id: 'officer-roster',
-          section: 'roster',
-          label: t('My Duty Profile & Ward'),
-          icon: UserCheck
-        },
         {
           id: 'officer-tribunal',
           section: 'sla-tribunal',
-          label: t('SLA Compliance & Notices'),
-          icon: Gavel,
-          badge: officerEscalatedCount > 0 
-            ? { text: `${officerEscalatedCount} Alert`, type: 'urgent' } 
-            : { text: '0 Notices', type: 'neutral' }
-        },
-        {
-          id: 'officer-notifs',
-          section: 'notifications',
-          label: t('Citizen DLT Alerts & SMS'),
-          icon: Smartphone
-        },
-        {
-          id: 'officer-blockchain',
-          section: 'blockchain',
-          label: t('Blockchain Audit Trail'),
-          icon: Database
+          label: t('My Duty Profile & SLA'),
+          icon: Scale,
+          badge: officerEscalatedCount > 0
+            ? { text: `${officerEscalatedCount} Alert`, type: 'urgent' }
+            : null
         }
       ]
     },
     {
-      groupLabel: t('Portal Preferences'),
+      title: t('System'),
       items: [
         {
           id: 'settings',
@@ -180,69 +189,86 @@ export default function Sidebar({
     }
   ];
 
-  // Admin Navigation Groups (Strict Title Case matching Citizen Sidebar)
+  // Admin Navigation Groups (Full Municipal Governance & Control Suite)
   const adminNavGroups = [
     {
-      groupLabel: t('Governance & Triage'),
+      title: t('Command Operations'),
       items: [
         {
           id: 'admin-grievances',
           section: 'grievances',
-          label: t('Grievance Command Center'),
-          icon: LayoutDashboard,
+          label: t('All Municipal Grievances'),
+          icon: FileSpreadsheet,
           badge: adminOpenGrievances > 0 ? { text: `${adminOpenGrievances} Open`, type: 'active' } : null
         },
         {
           id: 'admin-apps',
           section: 'applications',
-          label: t('Statutory Service Approvals'),
-          icon: FileSpreadsheet,
+          label: t('Service Applications'),
+          icon: FileCheck2,
           badge: adminPendingApps > 0 ? { text: `${adminPendingApps} Pending`, type: 'neutral' } : null
         },
         {
-          id: 'admin-analytics',
-          section: 'analytics',
-          label: t('Governance Analytics & SLA'),
-          icon: BarChart2
-        }
-      ]
-    },
-    {
-      groupLabel: t('Administration & Control'),
-      items: [
+          id: 'admin-appeals',
+          section: 'appeals',
+          label: t('Appeals & Duplicate Audits'),
+          icon: Scale,
+          badge: null
+        },
         {
           id: 'admin-roster',
           section: 'roster',
           label: t('Officer Roster & Dispatch'),
           icon: Users,
-          badge: { text: '28 Officers', type: 'neutral' }
-        },
+          badge: { text: `${totalRosterOfficers} Officers`, type: 'neutral' }
+        }
+      ]
+    },
+    {
+      title: t('Policy & Governance'),
+      items: [
         {
           id: 'admin-tribunal',
           section: 'sla-tribunal',
-          label: t('SLA Tribunal & Discipline'),
+          label: t('SLA Tribunal & Escalations'),
           icon: Gavel,
-          badge: adminEscalated > 0 
-            ? { text: `${adminEscalated} Breached`, type: 'urgent' } 
-            : { text: 'Clear', type: 'neutral' }
+          badge: adminEscalated > 0 ? { text: `${adminEscalated} Escalated`, type: 'urgent' } : null
         },
+        {
+          id: 'admin-governance',
+          section: 'governance',
+          label: t('Services, SLA & Advisories'),
+          icon: Megaphone
+        },
+        {
+          id: 'admin-analytics',
+          section: 'analytics',
+          label: t('Control Room Analytics'),
+          icon: BarChart2
+        },
+        {
+          id: 'admin-audit',
+          section: 'audit',
+          label: t('Admin Audit Logs'),
+          icon: BookOpen
+        }
+      ]
+    },
+    {
+      title: t('Infrastructure'),
+      items: [
         {
           id: 'admin-notifs',
           section: 'notifications',
-          label: t('Statutory DLT & WhatsApp'),
+          label: t('Citizen DLT Alerts & SMS'),
           icon: Smartphone
         },
         {
           id: 'admin-blockchain',
           section: 'blockchain',
-          label: t('Hyperledger Fabric & IPFS'),
+          label: t('Blockchain Audit Trail'),
           icon: Database
-        }
-      ]
-    },
-    {
-      groupLabel: t('Portal Preferences'),
-      items: [
+        },
         {
           id: 'settings',
           label: t('Settings'),
@@ -475,7 +501,7 @@ export default function Sidebar({
             </div>
             <div className="sidebar-status-row">
               <span className="sidebar-status-label">{t('Statutory SLA')}:</span>
-              <span className="sidebar-status-val" style={{ color: '#16a34a' }}>98.2% {t('On-Time')}</span>
+              <span className="sidebar-status-val" style={{ color: '#16a34a' }}>{officerOnTimePct}% {t('On-Time')}</span>
             </div>
           </div>
         )}
@@ -499,7 +525,7 @@ export default function Sidebar({
             </div>
             <div className="sidebar-status-row">
               <span className="sidebar-status-label">{t('Officer Force')}:</span>
-              <span className="sidebar-status-val">4 Sectors • 28 Officers</span>
+              <span className="sidebar-status-val">{SECTORS.length} {t('Sectors')} • {totalRosterOfficers} {t('Officers')}</span>
             </div>
           </div>
         )}

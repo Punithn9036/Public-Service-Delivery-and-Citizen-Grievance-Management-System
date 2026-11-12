@@ -98,6 +98,10 @@ export const grievanceAPI = {
   submitFeedback: (id, feedback) => request(`/grievances/${id}/feedback`, { method: 'POST', body: JSON.stringify(feedback) }),
   reopen: (id, reason) => request(`/grievances/${id}/reopen`, { method: 'POST', body: JSON.stringify({ reason }) }),
   upvote: (id, citizenName) => request(`/grievances/${id}/upvote`, { method: 'POST', body: JSON.stringify({ citizenName }) }),
+  claim: (id, data = {}) => request(`/grievances/${id}/claim`, { method: 'POST', body: JSON.stringify(data) }),
+  transfer: (id, data) => request(`/grievances/${id}/transfer`, { method: 'POST', body: JSON.stringify(data) }),
+  bulkAssign: (data) => request('/grievances/bulk-assign', { method: 'POST', body: JSON.stringify(data) }),
+  linkDuplicate: (id, data) => request(`/grievances/${id}/link-duplicate`, { method: 'POST', body: JSON.stringify(data) }),
   getOfficerRoster: () => request('/grievances/officers/roster', { method: 'GET' })
 };
 
@@ -113,6 +117,8 @@ export const applicationAPI = {
 
 export const serviceAPI = {
   getAll: () => request('/services', { method: 'GET' }),
+  create: (data) => request('/services', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id, data) => request(`/services/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   getById: (id) => request(`/services/${id}`, { method: 'GET' })
 };
 
@@ -180,12 +186,30 @@ export const blockchainAPI = {
   verifyTx: (txId) => request(`/blockchain/verify/${txId}`, { method: 'POST' })
 };
 
+export const adminAPI = {
+  getOfficers: () => request('/admin/officers', { method: 'GET' }),
+  addOfficer: (data) => request('/admin/officers', { method: 'POST', body: JSON.stringify(data) }),
+  updateOfficer: (id, data) => request(`/admin/officers/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  getAuditLogs: (limit = 100) => request(`/admin/audit-logs?limit=${limit}`, { method: 'GET' }),
+  getSlaPolicies: () => request('/admin/sla-policies', { method: 'GET' }),
+  saveSlaPolicy: (data) => request('/admin/sla-policies', { method: 'PUT', body: JSON.stringify(data) }),
+  getAnalytics: () => request('/admin/analytics', { method: 'GET' })
+};
+
+export const advisoryAPI = {
+  getAll: () => request('/advisories', { method: 'GET' }),
+  create: (data) => request('/advisories', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id, data) => request(`/advisories/${id}`, { method: 'PATCH', body: JSON.stringify(data) })
+};
+
 export default {
   auth: authAPI,
   grievance: grievanceAPI,
   application: applicationAPI,
   service: serviceAPI,
   ipfs: ipfsAPI,
+  admin: adminAPI,
+  advisory: advisoryAPI,
   notifications: notificationAPI,
   blockchain: blockchainAPI
 };

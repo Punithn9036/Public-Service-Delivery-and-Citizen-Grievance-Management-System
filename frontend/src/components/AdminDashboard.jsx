@@ -36,6 +36,8 @@ import {
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { applicationAPI, notificationAPI, blockchainAPI } from '../api/apiClient';
+import { isSameDepartment } from '../utils/departmentScope';
+import { AdminOfficerRosterPanel, AdminAppealsDuplicatesPanel, AdminGovernancePolicyPanel, AdminRealAnalyticsPanel, AdminAuditLogsPanel } from './AdminGovernancePanels';
 import { getStoredRoster, saveStoredRoster } from '../utils/officerDispatch';
 import { 
   evaluateDisciplinaryStatus, 
@@ -57,7 +59,15 @@ export default function AdminDashboard({
   activeSection: propActiveSection,
   setActiveSection: propSetActiveSection,
   officerQueueScope: propOfficerQueueScope,
-  setOfficerQueueScope: propSetOfficerQueueScope
+  setOfficerQueueScope: propSetOfficerQueueScope,
+  setApplications,
+  services = [],
+  setServices,
+  advisories = [],
+  setAdvisories,
+  onBulkAssignGrievances,
+  onLinkDuplicateGrievance,
+  onUpdateApplicationStatus
 }) {
   const { t } = useLanguage();
   const { user } = useAuth();
@@ -80,8 +90,12 @@ export default function AdminDashboard({
   const officerQueueScope = propOfficerQueueScope !== undefined ? propOfficerQueueScope : localQueueScope;
   const setOfficerQueueScope = propSetOfficerQueueScope || setLocalQueueScope;
 
-  // Local state for applications if updated
-  const [serviceApps, setServiceApps] = useState(applications);
+  // Derived live applications + bulk assignment & picker states
+  const serviceApps = applications;
+  const [bulkSelectedIds, setBulkSelectedIds] = useState([]);
+  const [bulkTargetOfficer, setBulkTargetOfficer] = useState('');
+  const [customOfficerMode, setCustomOfficerMode] = useState(false);
+  const [adminPanelVersion, setAdminPanelVersion] = useState(0);
 
   // Phase 3: Statutory Notifications & WhatsApp Webhook States
   const [notifLogs, setNotifLogs] = useState([]);
@@ -385,7 +399,8 @@ export default function AdminDashboard({
       return new Date(g.slaDeadline).getTime() < Date.now();
     }).length;
     const complianceRate = deptTotal > 0 ? Math.round(((deptTotal - deptOverdue) / deptTotal) * 100) : 100;
-    const avgTatDays = deptResolved > 0 ? (deptTotal % 3 + 2) : 4; // realistic computed average TAT
+    const deptResolvedItems = deptGrievances.filter(g => g.status === 'Resolved');
+      const avgTatDays = deptResolvedItems.length > 0 ? Number((deptResolvedItems.reduce((acc, g) => { const s = new Date(g.createdAt).getTime(); const e = new Date(g.resolvedAt || g.updatedAt || g.createdAt).getTime(); return acc + ((!Number.isNaN(s) && !Number.isNaN(e) && e >= s) ? (e - s) / (1000 * 60 * 60 * 24) : 0); }, 0) / deptResolvedItems.length).toFixed(1)) : 0;
     return {
       department: dept,
       total: deptTotal,
@@ -421,20 +436,14 @@ export default function AdminDashboard({
       ? 'Verified by Registrar. Digital certificate generated.' 
       : 'Application rejected due to document mismatch.';
 
-    try {
-      await applicationAPI.updateStatus(appId, { status, remarks });
-    } catch (e) {}
-
-    setServiceApps(prev => prev.map(a => {
-      if (a.id === appId) {
-        return {
-          ...a,
-          status,
-          remarks
-        };
-      }
-      return a;
-    }));
+    if (onUpdateApplicationStatus) {
+      await onUpdateApplicationStatus(appId, { status, remarks });
+      return;
+    }
+    try { await applicationAPI.updateStatus(appId, { status, remarks }); } catch (e) {}
+    if (setApplications) {
+      setApplications(prev => prev.map(a => (a.id === appId ? { ...a, status, remarks } : a)));
+    }
   };
 
   const getSlaBadge = (item) => {
@@ -871,6 +880,24 @@ export default function AdminDashboard({
           <Gavel size={16} color={activeSection === 'sla-tribunal' ? '#ffffff' : '#dc2626'} /> 
           {isOfficer ? 'My SLA Compliance & Notices' : `SLA Tribunal & Officer Discipline (${escalatedCount})`}
         </button>
+        <button
+          onClick={() => setActiveSection('appeals')}
+          className={`btn btn-sm ${activeSection === 'appeals' ? 'btn-primary' : 'btn-secondary'}`}
+        >
+          Appeals & Duplicates
+        </button>
+        <button
+          onClick={() => setActiveSection('governance')}
+          className={`btn btn-sm ${activeSection === 'governance' ? 'btn-primary' : 'btn-secondary'}`}
+        >
+          Services, SLA & Advisories
+        </button>
+        <button
+          onClick={() => setActiveSection('audit')}
+          className={`btn btn-sm ${activeSection === 'audit' ? 'btn-primary' : 'btn-secondary'}`}
+        >
+          Audit Logs
+        </button>
       </div>
 
       {activeSection === 'grievances' && (
@@ -983,10 +1010,50 @@ export default function AdminDashboard({
               </div>
             </div>
 
+            {bulkSelectedIds.length > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.6rem', padding: '0.65rem 1rem', margin: '0 1rem 0.75rem', borderRadius: 'var(--radius-sm)', background: 'var(--bg-tertiary)', border: '1px solid var(--border-strong)' }}>
+                <strong>{bulkSelectedIds.length} Tickets Selected</strong>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <select className="filter-select" value={bulkTargetOfficer} onChange={(e) => setBulkTargetOfficer(e.target.value)}>
+                    <option value="">Choose Available Officer...</option>
+                    {officerRoster.filter(o => !o.suspended).map(o => (
+                      <option key={o.id} value={o.name}>{o.name} ({o.department} • {o.activeTickets || 0}/{o.maxCapacity || 5} load)</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-sm"
+                    disabled={!bulkTargetOfficer}
+                    onClick={async () => {
+                      if (!bulkTargetOfficer || !onBulkAssignGrievances) return;
+                      const chosen = officerRoster.find(o => o.name === bulkTargetOfficer);
+                      await onBulkAssignGrievances(bulkSelectedIds, bulkTargetOfficer, chosen?.phone, `Bulk dispatched to ${bulkTargetOfficer}`);
+                      setBulkSelectedIds([]);
+                      setBulkTargetOfficer('');
+                    }}
+                  >
+                    Bulk Assign Selected
+                  </button>
+                  <button type="button" className="btn btn-outline btn-sm" onClick={() => setBulkSelectedIds([])}>Clear</button>
+                </div>
+              </div>
+            )}
+
             <div className="table-wrapper">
               <table className="admin-table">
                 <thead>
                   <tr>
+                    <th style={{ width: '32px' }}>
+                      <input
+                        type="checkbox"
+                        aria-label="Select all visible tickets"
+                        checked={filteredList.length > 0 && filteredList.every(it => bulkSelectedIds.includes(it.id))}
+                        onChange={(e) => {
+                          if (e.target.checked) setBulkSelectedIds(filteredList.map(it => it.id));
+                          else setBulkSelectedIds([]);
+                        }}
+                      />
+                    </th>
                     <th>Ticket ID</th>
                     <th>Title & Category</th>
                     <th>Department</th>
@@ -1000,6 +1067,17 @@ export default function AdminDashboard({
                 <tbody>
                   {filteredList.map(item => (
                     <tr key={item.id}>
+                      <td>
+                        <input
+                          type="checkbox"
+                          aria-label={`Select ${item.id}`}
+                          checked={bulkSelectedIds.includes(item.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) setBulkSelectedIds(prev => [...new Set([...prev, item.id])]);
+                            else setBulkSelectedIds(prev => prev.filter(x => x !== item.id));
+                          }}
+                        />
+                      </td>
                       <td className="td-id">
                         <strong>{item.id}</strong>
                         <span className="td-date">{new Date(item.createdAt).toLocaleDateString()}</span>
@@ -1173,61 +1251,11 @@ export default function AdminDashboard({
       )}
 
       {activeSection === 'analytics' && (
-        /* SLA TAT Analytics Scorecard */
-        <div className="admin-table-card glass-card animate-fade-in">
-          <div className="table-header-controls">
-            <div>
-              <h2>{t('slaTatScorecard')}</h2>
-              <p>Performance auditing by department: Turnaround Time, Compliance %, and Breach counts.</p>
-            </div>
-          </div>
-
-          <div className="table-wrapper">
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>Department</th>
-                  <th>Total Grievances</th>
-                  <th>Resolved Cases</th>
-                  <th>Overdue Breaches</th>
-                  <th>Avg Turnaround Time</th>
-                  <th>SLA Compliance Score</th>
-                </tr>
-              </thead>
-              <tbody>
-                {departmentStats.map(stat => (
-                  <tr key={stat.department}>
-                    <td><strong>{stat.department}</strong></td>
-                    <td>{stat.total}</td>
-                    <td><span className="text-emerald font-bold">{stat.resolved}</span></td>
-                    <td>
-                      {stat.overdue > 0 ? (
-                        <span style={{ color: '#dc2626', fontWeight: 700 }}>{stat.overdue} Breached</span>
-                      ) : (
-                        <span style={{ color: '#16a34a' }}>0</span>
-                      )}
-                    </td>
-                    <td>{stat.avgTatDays} Working Days</td>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <div style={{ flex: 1, height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
-                          <div
-                            style={{
-                              width: `${stat.complianceRate}%`,
-                              height: '100%',
-                              background: stat.complianceRate >= 80 ? '#16a34a' : stat.complianceRate >= 60 ? '#f59e0b' : '#ef4444'
-                            }}
-                          />
-                        </div>
-                        <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>{stat.complianceRate}%</span>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <AdminRealAnalyticsPanel
+          grievances={grievances}
+          applications={serviceApps}
+          departments={departments}
+        />
       )}
 
       {activeSection === 'notifications' && (
@@ -2009,179 +2037,32 @@ export default function AdminDashboard({
 
       {/* SECTOR OFFICER DUTY QUEUE & ROSTER SECTION */}
       {activeSection === 'roster' && (
-        <div className="animate-fade-in" style={{ marginTop: '20px' }}>
-          
-          {/* Header & Controls Card */}
-          <div className="glass-card" style={{ padding: '24px', borderRadius: '16px', marginBottom: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
-              <div>
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(37, 99, 235, 0.1)', color: '#2563eb', padding: '4px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 700, marginBottom: '8px' }}>
-                  <Users size={14} /> {isOfficer ? 'Authorized Officer Roster Card' : 'Multi-Sector Round-Robin Dispatch Engine'}
-                </div>
-                <h2 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '4px 0 6px', color: 'var(--text-main)' }}>
-                  {isOfficer ? 'My Field Duty Profile & Queue Status' : 'Sector Officer Queue & Dynamic Workload Roster'}
-                </h2>
-                <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-muted)', maxWidth: '780px' }}>
-                  {isOfficer 
-                    ? 'Inspect your designated municipal sector, current duty availability, active field assignments, and queue standing. Viewing other sector officers is restricted to Central Administration.'
-                    : 'Officers in each municipal sector and department are organized in a sequential duty queue. Incoming grievances are automatically assigned to the first free officer (1st person, then 2nd person, etc.). When an officer resolves a ticket, they are automatically returned to the end of the available pool.'}
-                </p>
-              </div>
+        <AdminOfficerRosterPanel
+          grievances={grievances}
+          rosterVersion={adminPanelVersion}
+          setRosterVersion={(fn) => { setAdminPanelVersion(fn); refreshRoster(); }}
+        />
+      )}
 
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button 
-                  onClick={refreshRoster} 
-                  className="btn btn-secondary btn-sm" 
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                >
-                  <RefreshCw size={14} /> Refresh Live Roster
-                </button>
-              </div>
-            </div>
+      {activeSection === 'appeals' && (
+        <AdminAppealsDuplicatesPanel
+          grievances={grievances}
+          onLinkDuplicateGrievance={onLinkDuplicateGrievance}
+          onOpenTicketModal={handleOpenEdit}
+        />
+      )}
 
-            {/* Filter Bar (Only for Admin; Officers see privacy shield) */}
-            {isOfficer ? (
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '16px', background: 'rgba(37,99,235,0.08)', padding: '10px 16px', borderRadius: '10px', color: 'var(--brand-700)', fontSize: '0.84rem', border: '1px solid rgba(37,99,235,0.2)' }}>
-                <ShieldCheck size={18} />
-                <span><strong>Privacy Shield Active:</strong> Displaying exclusively your authenticated officer profile and duty status. Other municipal officers' queues and performance records are restricted.</span>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', gap: '12px', marginTop: '20px', flexWrap: 'wrap', alignItems: 'center', background: 'var(--bg-secondary)', padding: '12px 16px', borderRadius: '10px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Filter size={15} className="text-muted" />
-                  <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)' }}>Filter by Sector:</span>
-                </div>
-                <select 
-                  value={selectedRosterSector} 
-                  onChange={(e) => setSelectedRosterSector(e.target.value)}
-                  className="form-input" 
-                  style={{ width: 'auto', padding: '6px 12px', fontSize: '0.85rem' }}
-                >
-                  <option value="All">All Municipal Sectors (5 Zones)</option>
-                  <option value="Sector 1">Sector 1 (North Zone)</option>
-                  <option value="Sector 2">Sector 2 (South Zone)</option>
-                  <option value="Sector 3">Sector 3 (East Zone)</option>
-                  <option value="Sector 4">Sector 4 (West Zone)</option>
-                  <option value="Sector 5">Sector 5 (Central Zone)</option>
-                </select>
+      {activeSection === 'governance' && (
+        <AdminGovernancePolicyPanel
+          services={services}
+          setServices={setServices}
+          advisories={advisories}
+          setAdvisories={setAdvisories}
+        />
+      )}
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '12px' }}>
-                  <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)' }}>Department:</span>
-                </div>
-                <select 
-                  value={selectedRosterDept} 
-                  onChange={(e) => setSelectedRosterDept(e.target.value)}
-                  className="form-input" 
-                  style={{ width: 'auto', padding: '6px 12px', fontSize: '0.85rem' }}
-                >
-                  <option value="All">All Departments</option>
-                  {departments.map(d => (
-                    <option key={d} value={d}>{d}</option>
-                  ))}
-                </select>
-
-                <div style={{ marginLeft: 'auto', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                  Showing <strong>
-                    {officerRoster.filter(o => 
-                      (selectedRosterSector === 'All' || o.sector.toLowerCase().includes(selectedRosterSector.toLowerCase())) &&
-                      (selectedRosterDept === 'All' || o.department === selectedRosterDept)
-                    ).length}
-                  </strong> officers
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Roster Cards Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
-            {effectiveOfficerRoster
-              .filter(o => {
-                if (isOfficer) return true;
-                return (selectedRosterSector === 'All' || o.sector.toLowerCase().includes(selectedRosterSector.toLowerCase())) &&
-                  (selectedRosterDept === 'All' || o.department === selectedRosterDept);
-              })
-              .sort((a, b) => (a.queuePriority || 0) - (b.queuePriority || 0))
-              .map((officer, index) => {
-                const isFree = officer.status === 'AVAILABLE' && (!officer.activeTickets || officer.activeTickets.length === 0);
-                return (
-                  <div 
-                    key={officer.id} 
-                    className="glass-card animate-slide-up" 
-                    style={{ 
-                      padding: '18px', 
-                      borderRadius: '12px', 
-                      borderLeft: `5px solid ${isFree ? '#16a34a' : '#f59e0b'}`,
-                      position: 'relative'
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                      <span style={{ 
-                        fontSize: '0.72rem', 
-                        fontFamily: 'monospace', 
-                        background: 'var(--bg-tertiary)', 
-                        padding: '2px 6px', 
-                        borderRadius: '4px',
-                        color: 'var(--text-muted)'
-                      }}>
-                        #{officer.id} • Queue Pos #{index + 1}
-                      </span>
-                      <span style={{ 
-                        fontSize: '0.75rem', 
-                        fontWeight: 700, 
-                        padding: '2px 8px', 
-                        borderRadius: '12px',
-                        background: isFree ? 'rgba(22, 163, 74, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-                        color: isFree ? '#16a34a' : '#d97706',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}>
-                        {isFree ? '🟢 Free / Next in Queue' : '🟡 Active on Case'}
-                      </span>
-                    </div>
-
-                    <h4 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '6px 0 2px', color: 'var(--text-main)' }}>
-                      {officer.name}
-                    </h4>
-                    <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '8px' }}>
-                      {officer.designation}
-                    </div>
-
-                    <div style={{ fontSize: '0.78rem', background: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', marginBottom: '10px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                        <span className="text-muted">Sector:</span>
-                        <strong style={{ color: '#2563eb' }}>{officer.sector}</strong>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                        <span className="text-muted">Department:</span>
-                        <strong style={{ textAlign: 'right', maxWidth: '65%' }}>{officer.department}</strong>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span className="text-muted">Phone Hotline:</span>
-                        <span>{officer.phone}</span>
-                      </div>
-                    </div>
-
-                    {/* Active Workload Badges */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-subtle)', paddingTop: '10px', fontSize: '0.78rem' }}>
-                      <span className="text-muted">
-                        Total Handled: <strong>{officer.assignedCount || 0}</strong>
-                      </span>
-                      {officer.activeTickets && officer.activeTickets.length > 0 ? (
-                        <span style={{ color: '#d97706', fontWeight: 600 }}>
-                          Active: {officer.activeTickets.join(', ')}
-                        </span>
-                      ) : (
-                        <span style={{ color: '#16a34a', fontWeight: 600 }}>
-                          Ready for assignment
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-          </div>
-        </div>
+      {activeSection === 'audit' && (
+        <AdminAuditLogsPanel />
       )}
 
       {/* SLA TRIBUNAL & OFFICER DISCIPLINARY SECTION */}
@@ -2733,14 +2614,41 @@ export default function AdminDashboard({
               </div>
 
               <div className="form-group">
-                <label>Assign Field Officer / Supervisor</label>
-                <input 
-                  type="text" 
-                  value={officerName} 
-                  onChange={(e) => setOfficerName(e.target.value)}
-                  placeholder="e.g. Er. Rajesh Varma (Sanitation Inspector)"
-                  className="form-input"
-                />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                  <label style={{ margin: 0 }}>Assign Field Officer / Supervisor</label>
+                  <button type="button" className="btn btn-outline btn-sm" style={{ padding: '2px 8px', fontSize: '0.72rem' }} onClick={() => setCustomOfficerMode(m => !m)}>
+                    {customOfficerMode ? 'Use Smart Roster Picker' : 'Custom Manual Name'}
+                  </button>
+                </div>
+                {customOfficerMode ? (
+                  <input
+                    type="text"
+                    value={officerName}
+                    onChange={(e) => setOfficerName(e.target.value)}
+                    placeholder="e.g. Er. Rajesh Varma"
+                    className="form-input"
+                  />
+                ) : (
+                  <select
+                    value={officerName}
+                    onChange={(e) => setOfficerName(e.target.value)}
+                    className="form-input"
+                  >
+                    <option value={officerName || ''}>{officerName ? `Current: ${officerName}` : 'Select Available Officer...'}</option>
+                    {[...officerRoster]
+                      .filter(o => !o.suspended && o.status !== 'On Leave')
+                      .sort((a, b) => {
+                        const aMatch = isSameDepartment(a.department, editingItem?.department) ? 0 : 1;
+                        const bMatch = isSameDepartment(b.department, editingItem?.department) ? 0 : 1;
+                        return aMatch - bMatch || (a.activeTickets || 0) - (b.activeTickets || 0);
+                      })
+                      .map(o => (
+                        <option key={o.id} value={o.name}>
+                          {isSameDepartment(o.department, editingItem?.department) ? '★ ' : ''}{o.name} — {o.department} ({o.activeTickets || 0}/{o.maxCapacity || 5} active)
+                        </option>
+                      ))}
+                  </select>
+                )}
               </div>
 
               <div className="form-group">

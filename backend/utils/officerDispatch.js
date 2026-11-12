@@ -19,7 +19,14 @@ function loadRoster() {
   try {
     if (fs.existsSync(ROSTER_FILE)) {
       const raw = fs.readFileSync(ROSTER_FILE, 'utf8');
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed)
+        ? parsed.map((o) => ({
+            ...o,
+            activeTickets: Array.isArray(o.activeTickets) ? o.activeTickets : [],
+            assignedCount: Number(o.assignedCount) || 0
+          }))
+        : [];
     }
   } catch (err) {
     console.warn('[Officer Dispatch] Failed to read roster file, resetting to initial seed:', err.message);
@@ -136,9 +143,13 @@ function allocateNextOfficer(department, sector, ticketId) {
   } else {
     // If all are currently busy, pick the one with least active tickets / oldest assignment
     chosenOfficer = [...candidates].sort((a, b) => 
-      (a.activeTickets.length - b.activeTickets.length) || 
+      ((Array.isArray(a.activeTickets) ? a.activeTickets.length : 0) - (Array.isArray(b.activeTickets) ? b.activeTickets.length : 0)) || 
       (new Date(a.lastAssignedAt || 0) - new Date(b.lastAssignedAt || 0))
     )[0];
+  }
+
+  if (!Array.isArray(chosenOfficer.activeTickets)) {
+    chosenOfficer.activeTickets = [];
   }
 
   // Update chosen officer state
@@ -174,11 +185,11 @@ function allocateNextOfficer(department, sector, ticketId) {
 function releaseOfficerFromTicket(ticketId) {
   if (!ticketId) return null;
 
-  const officer = officerRoster.find(o => o.activeTickets.includes(ticketId));
+  const officer = officerRoster.find(o => Array.isArray(o.activeTickets) && o.activeTickets.includes(ticketId));
   if (!officer) return null;
 
   // Remove ticket from active list
-  officer.activeTickets = officer.activeTickets.filter(id => id !== ticketId);
+  officer.activeTickets = (Array.isArray(officer.activeTickets) ? officer.activeTickets : []).filter(id => id !== ticketId);
 
   // If officer has no remaining active tickets, mark them AVAILABLE
   if (officer.activeTickets.length === 0) {
