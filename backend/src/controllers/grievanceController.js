@@ -6,6 +6,18 @@ const FabricClient = require('../../fabric/client');
 const { uploadToIPFS } = require('../../utils/ipfs');
 const { sendNotification } = require('../../utils/notifications');
 const { allocateNextOfficer, releaseOfficerFromTicket, getRosterStatus } = require('../../utils/officerDispatch');
+const db = require('../db');
+const { isSameDepartment } = require('../middleware/departmentAuth');
+const { appendAuditLog, findOfficer } = require('../db/governanceStore');
+
+const sanitizeGrievanceForRole = (grievance, reqUser) => {
+  if (!grievance) return grievance;
+  if (reqUser && (reqUser.role === 'ADMIN' || reqUser.role === 'OFFICER')) {
+    return grievance;
+  }
+  const { internalNotes, ...citizenSafe } = grievance;
+  return citizenSafe;
+};
 
 // Initial Fallback In-Memory Grievance Ledger in case DB is warming up
 let grievancesStore = [
@@ -69,10 +81,11 @@ let grievancesStore = [
 // Valid State Machine Transitions Map
 const VALID_TRANSITIONS = {
   'Submitted': ['Under Review', 'Escalated'],
-  'Under Review': ['Assigned', 'Rejected', 'Escalated'],
-  'Assigned': ['In Progress', 'Under Review', 'Escalated'],
-  'In Progress': ['Resolved', 'Under Review', 'Escalated'],
-  'Escalated': ['In Progress', 'Resolved', 'Under Review'],
+  'Under Review': ['Assigned', 'Pending Citizen Info', 'Rejected', 'Escalated'],
+  'Assigned': ['In Progress', 'Pending Citizen Info', 'Under Review', 'Escalated'],
+  'In Progress': ['Resolved', 'Pending Citizen Info', 'Under Review', 'Escalated'],
+  'Pending Citizen Info': ['Under Review', 'Assigned', 'In Progress', 'Resolved', 'Escalated', 'Rejected'],
+  'Escalated': ['In Progress', 'Pending Citizen Info', 'Resolved', 'Under Review'],
   'Resolved': ['Under Review'], // Citizen Re-open action
   'Rejected': [] // Terminal state
 };
@@ -108,6 +121,11 @@ const getAllGrievances = async (req, res) => {
     } catch (e) {
       results = [...grievancesStore];
     }
+
+    if (req.user && req.user.role === 'OFFICER') {
+      results = results.filter((g) => isSameDepartment(req.user.department, g.department));
+    }
+    results = results.map((g) => sanitizeGrievanceForRole(g, req.user));
 
     if (priority && priority !== 'All') {
       results = results.filter(g => g.priority.toLowerCase() === priority.toLowerCase());
@@ -165,6 +183,13 @@ const getGrievanceById = async (req, res) => {
       });
     }
 
+    if (req.user && req.user.role === 'OFFICER' && !isSameDepartment(req.user.department, grievance.department)) {
+      return res.status(403).json({
+        error: 'FORBIDDEN_DEPARTMENT',
+        message: `Access denied: Officers in '${req.user.department}' cannot inspect grievances owned by '${grievance.department}'.`
+      });
+    }
+    grievance = sanitizeGrievanceForRole(grievance, req.user);
     return res.json({ grievance });
   } catch (err) {
     return res.status(500).json({ error: 'SERVER_ERROR', message: err.message });
@@ -302,7 +327,7 @@ const createGrievance = async (req, res) => {
 const updateGrievanceStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { nextStatus, officerName, officerContact, note } = req.body;
+    let { nextStatus, officerName, officerContact, note, internalNote, resolutionIpfsCid, resolutionFileContent, resolutionFileName, clarificationQuestion } = req.body;
 
     let grievance;
     try {
@@ -319,6 +344,23 @@ const updateGrievanceStatus = async (req, res) => {
       return res.status(404).json({ error: 'NOT_FOUND', message: `Grievance ticket '${id}' not found.` });
     }
 
+    if (req.user && req.user.role === 'OFFICER' && !isSameDepartment(req.user.department, grievance.department)) {
+      return res.status(403).json({
+        error: 'FORBIDDEN_DEPARTMENT',
+        message: `Access denied: Officers in '${req.user.department}' cannot update grievances owned by '${grievance.department}'.`
+      });
+    }
+    const previousOfficer = grievance.assignedOfficer;
+    if (req.user && req.user.role === 'OFFICER') {
+      const isUnassigned = !previousOfficer || previousOfficer.includes('Pending Dispatch');
+      if (!isUnassigned && officerName && officerName !== previousOfficer && officerName !== req.user.fullName) {
+        officerName = previousOfficer;
+      }
+    }
+    if (!note && clarificationQuestion) {
+      note = clarificationQuestion;
+    }
+
     const currentStatus = grievance.status;
     const allowedNext = VALID_TRANSITIONS[currentStatus] || [];
 
@@ -328,6 +370,16 @@ const updateGrievanceStatus = async (req, res) => {
         error: 'INVALID_STATE_TRANSITION',
         message: `Invalid state transition from '${currentStatus}' to '${nextStatus}'. Allowed next transitions: [${allowedNext.join(', ')}].`
       });
+    }
+
+    let finalResolutionCid = resolutionIpfsCid || grievance.resolutionIpfsCid || null;
+    if (resolutionFileContent && !resolutionIpfsCid) {
+      try {
+        const proofRes = await uploadToIPFS(resolutionFileContent, resolutionFileName || 'resolution_proof.jpg');
+        finalResolutionCid = proofRes.cid;
+      } catch (e) {
+        console.warn('Resolution IPFS proof upload failed:', e.message);
+      }
     }
 
     const fabricResult = await FabricClient.submitTransaction('RecordGrievanceState', [
@@ -381,7 +433,56 @@ const updateGrievanceStatus = async (req, res) => {
 
     // Statutory Citizen Notification Dispatch (SMS & WhatsApp)
     try {
-      const recipientPhone = updatedGrievance.citizenPhone || '+91 98765 43210';
+      if (finalResolutionCid) {
+      updatedGrievance.resolutionIpfsCid = finalResolutionCid;
+    }
+    if (internalNote && String(internalNote).trim()) {
+      if (!Array.isArray(updatedGrievance.internalNotes)) updatedGrievance.internalNotes = [];
+      updatedGrievance.internalNotes.push({
+        id: `NOTE-${Date.now()}`,
+        author: req.user?.email || 'staff@gov.in',
+        role: req.user?.role || 'OFFICER',
+        note: String(internalNote).trim(),
+        timestamp: new Date().toISOString()
+      });
+    }
+    if (nextStatus === 'Resolved') {
+      updatedGrievance.resolvedAt = updatedGrievance.resolvedAt || new Date().toISOString();
+      if (Array.isArray(updatedGrievance.linkedDuplicates) && updatedGrievance.linkedDuplicates.length > 0) {
+        for (const dupId of updatedGrievance.linkedDuplicates) {
+          const dupTicket = await GrievanceModel.findById(dupId);
+          if (dupTicket && dupTicket.status !== 'Resolved') {
+            dupTicket.status = 'Resolved';
+            dupTicket.resolvedAt = updatedGrievance.resolvedAt;
+            if (finalResolutionCid) dupTicket.resolutionIpfsCid = finalResolutionCid;
+            dupTicket.updatedAt = new Date().toISOString();
+            if (!Array.isArray(dupTicket.timeline)) dupTicket.timeline = [];
+            dupTicket.timeline.push({
+              status: 'Resolved',
+              officerName: updatedGrievance.assignedOfficer || 'System Cascade',
+              note: `Auto-resolved alongside linked Master Ticket ${id}.`,
+              timestamp: new Date().toISOString()
+            });
+            releaseOfficerFromTicket(dupId);
+          }
+        }
+      }
+    }
+    if (req.user?.role === 'ADMIN') {
+      appendAuditLog({
+        actorEmail: req.user.email,
+        actorRole: req.user.role,
+        action: officerName && officerName !== previousOfficer ? 'ADMIN_GRIEVANCE_REASSIGNED' : 'ADMIN_GRIEVANCE_UPDATED',
+        targetType: 'GRIEVANCE',
+        targetId: id,
+        details: `Transitioned ${currentStatus} -> ${nextStatus}${officerName ? ` (Officer: ${officerName})` : ''}`
+      });
+    }
+    if (typeof db.saveStore === 'function') {
+      db.saveStore();
+    }
+
+    const recipientPhone = updatedGrievance.citizenPhone || '+91 98765 43210';
       if (nextStatus === 'Assigned' || nextStatus === 'In Progress') {
         await sendNotification({
           phone: recipientPhone,
@@ -594,8 +695,304 @@ const upvoteGrievance = async (req, res) => {
  */
 const getOfficerRoster = async (req, res) => {
   try {
-    const status = getRosterStatus();
+    if (req.user && req.user.role === 'OFFICER') {
+    const cleanName = String(req.user.fullName || '').replace(/^er\.\s*/i, '').trim().toLowerCase();
+    const matchedProfile = findOfficer({
+      id: req.user.employeeId,
+      email: req.user.email,
+      name: req.user.fullName
+    });
+    const allGrievances = db.store?.grievances || [];
+    const deptGrievances = allGrievances.filter((g) => isSameDepartment(req.user.department, g.department));
+    const myAssigned = deptGrievances.filter((g) => {
+      const assigned = String(g.assignedOfficer || '').toLowerCase();
+      return (cleanName && assigned.includes(cleanName)) || (matchedProfile?.name && assigned.includes(matchedProfile.name.toLowerCase()));
+    });
+    const activeCount = myAssigned.filter((g) => !['Resolved', 'Rejected'].includes(g.status)).length;
+    const resolvedCount = myAssigned.filter((g) => g.status === 'Resolved').length;
+
+    const ownProfile = {
+      ...(matchedProfile || {}),
+      id: matchedProfile?.id || req.user.employeeId || req.user.id,
+      name: matchedProfile?.name || req.user.fullName,
+      roleTitle: matchedProfile?.roleTitle || 'Department Nodal Officer',
+      department: req.user.department,
+      email: req.user.email,
+      sector: matchedProfile?.sector || 'Assigned Sector',
+      status: matchedProfile?.status || 'Available',
+      activeTickets: activeCount,
+      resolvedTickets: resolvedCount,
+      maxCapacity: matchedProfile?.maxCapacity || 5,
+      disciplinaryStrikes: matchedProfile?.disciplinaryStrikes || 0,
+      suspended: Boolean(matchedProfile?.suspended)
+    };
+
+    return res.json({
+      scopedToSelf: true,
+      totalOfficers: 1,
+      sectors: [],
+      departments: [req.user.department],
+      officers: [ownProfile]
+    });
+  }
+
+  const rawStatus = getRosterStatus();
+  const status = req.user && req.user.role === 'ADMIN'
+    ? rawStatus
+    : {
+        ...rawStatus,
+        officers: (rawStatus.officers || []).map(({ phone, ...rest }) => rest)
+      };
     return res.json(status);
+  } catch (err) {
+    return res.status(500).json({ error: 'SERVER_ERROR', message: err.message });
+  }
+};
+
+const claimGrievance = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const grievance = await GrievanceModel.findById(id);
+    if (!grievance) {
+      return res.status(404).json({ error: 'NOT_FOUND', message: `Grievance '${id}' not found.` });
+    }
+    if (req.user?.role === 'OFFICER' && !isSameDepartment(req.user.department, grievance.department)) {
+      return res.status(403).json({
+        error: 'FORBIDDEN_DEPARTMENT',
+        message: `Officers in '${req.user.department}' cannot claim tickets belonging to '${grievance.department}'.`
+      });
+    }
+    if (['Resolved', 'Rejected'].includes(grievance.status)) {
+      return res.status(400).json({
+        error: 'INVALID_STATUS',
+        message: `Cannot claim grievance '${id}' because it is already '${grievance.status}'.`
+      });
+    }
+
+    const matched = findOfficer({ id: req.user?.employeeId, email: req.user?.email, name: req.user?.fullName });
+    const claimantName = req.user?.role === 'ADMIN' && req.body?.officerName
+      ? req.body.officerName
+      : (matched?.name || req.user?.fullName || req.user?.email || 'Nodal Officer');
+    const claimantContact = matched?.phone || req.body?.officerContact || grievance.assignedOfficerContact || '+91 1800-425-GOV';
+    const nextStatus = ['Submitted', 'Under Review'].includes(grievance.status) ? 'Assigned' : grievance.status;
+    const claimNote = req.body?.note || `Ticket claimed for active field resolution by ${claimantName}.`;
+
+    const fabricResult = await FabricClient.submitTransaction('RecordGrievanceState', [
+      id,
+      grievance.department || 'General Administration',
+      grievance.priority || 'Medium',
+      nextStatus,
+      claimantName,
+      grievance.resolutionIpfsCid || grievance.ipfsDocumentCid || '',
+      claimNote
+    ]);
+
+    const updated = await GrievanceModel.updateStatus(id, {
+      nextStatus,
+      officerName: claimantName,
+      officerContact: claimantContact,
+      note: claimNote,
+      fabricTxId: fabricResult.txId,
+      fabricBlockNumber: fabricResult.blockNumber,
+      fabricBlockHash: fabricResult.blockHash
+    });
+    if (typeof db.saveStore === 'function') db.saveStore();
+
+    return res.json({ success: true, message: `Grievance '${id}' claimed by ${claimantName}.`, grievance: updated });
+  } catch (err) {
+    return res.status(500).json({ error: 'SERVER_ERROR', message: err.message });
+  }
+};
+
+const transferGrievanceDepartment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { targetDepartment, reason } = req.body || {};
+    if (!targetDepartment || !String(targetDepartment).trim()) {
+      return res.status(400).json({ error: 'VALIDATION_ERROR', message: 'targetDepartment is required.' });
+    }
+    if (!reason || String(reason).trim().length < 5) {
+      return res.status(400).json({ error: 'VALIDATION_ERROR', message: 'A transfer justification reason (min 5 characters) is required.' });
+    }
+
+    const grievance = await GrievanceModel.findById(id);
+    if (!grievance) {
+      return res.status(404).json({ error: 'NOT_FOUND', message: `Grievance '${id}' not found.` });
+    }
+    if (req.user?.role === 'OFFICER' && !isSameDepartment(req.user.department, grievance.department)) {
+      return res.status(403).json({
+        error: 'FORBIDDEN_DEPARTMENT',
+        message: `Access denied: Officers in '${req.user.department}' cannot transfer grievances owned by '${grievance.department}'.`
+      });
+    }
+    if (isSameDepartment(targetDepartment, grievance.department)) {
+      return res.status(400).json({
+        error: 'VALIDATION_ERROR',
+        message: `Grievance '${id}' is already mapped to '${grievance.department}'. Choose a different target department.`
+      });
+    }
+
+    const previousDepartment = grievance.department;
+    releaseOfficerFromTicket(id);
+    const allocated = allocateNextOfficer(targetDepartment, grievance.sector || grievance.location || '', id);
+    const nextOfficer = allocated ? allocated.officerName : `${targetDepartment} Nodal Desk (Pending Dispatch)`;
+    const nextContact = allocated ? allocated.officerContact : '+91 1800-425-GOV';
+    const transferNote = `Transferred from '${previousDepartment}' to '${targetDepartment}'. Reason: ${String(reason).trim()}`;
+
+    grievance.department = targetDepartment;
+    grievance.assignedOfficer = nextOfficer;
+    grievance.assignedOfficerContact = nextContact;
+    grievance.status = ['Resolved', 'Rejected'].includes(grievance.status) ? grievance.status : 'Under Review';
+    grievance.updatedAt = new Date().toISOString();
+    if (!Array.isArray(grievance.timeline)) grievance.timeline = [];
+    grievance.timeline.push({
+      status: grievance.status,
+      officerName: req.user?.fullName || req.user?.email || 'Department Officer',
+      note: transferNote,
+      timestamp: new Date().toISOString()
+    });
+    if (!Array.isArray(grievance.internalNotes)) grievance.internalNotes = [];
+    grievance.internalNotes.push({
+      id: `TRF-${Date.now()}`,
+      author: req.user?.email || 'staff@gov.in',
+      role: req.user?.role || 'OFFICER',
+      note: transferNote,
+      timestamp: new Date().toISOString()
+    });
+
+    const fabricResult = await FabricClient.submitTransaction('RecordGrievanceState', [
+      id,
+      targetDepartment,
+      grievance.priority || 'Medium',
+      grievance.status,
+      nextOfficer,
+      grievance.ipfsDocumentCid || '',
+      transferNote
+    ]);
+    grievance.fabricTxId = fabricResult.txId;
+    grievance.fabricBlockNumber = fabricResult.blockNumber;
+    grievance.fabricBlockHash = fabricResult.blockHash;
+
+    if (typeof db.saveStore === 'function') db.saveStore();
+    appendAuditLog({
+      actorEmail: req.user?.email,
+      actorRole: req.user?.role,
+      action: 'GRIEVANCE_DEPARTMENT_TRANSFER',
+      targetType: 'GRIEVANCE',
+      targetId: id,
+      details: transferNote
+    });
+
+    return res.json({ success: true, message: transferNote, grievance });
+  } catch (err) {
+    return res.status(500).json({ error: 'SERVER_ERROR', message: err.message });
+  }
+};
+
+const bulkAssignGrievances = async (req, res) => {
+  try {
+    const { grievanceIds, officerName, officerContact, note } = req.body || {};
+    if (!Array.isArray(grievanceIds) || grievanceIds.length === 0) {
+      return res.status(400).json({ error: 'VALIDATION_ERROR', message: 'grievanceIds non-empty array is required.' });
+    }
+    if (!officerName || !String(officerName).trim()) {
+      return res.status(400).json({ error: 'VALIDATION_ERROR', message: 'officerName is required.' });
+    }
+
+    const updatedList = [];
+    for (const gid of grievanceIds) {
+      const g = await GrievanceModel.findById(gid);
+      if (!g || ['Resolved', 'Rejected'].includes(g.status)) continue;
+      try {
+        releaseOfficerFromTicket(gid);
+      } catch (relErr) {
+        console.warn('[Dispatch Warning] Could not release officer:', relErr.message);
+      }
+      g.assignedOfficer = String(officerName).trim();
+      if (officerContact) g.assignedOfficerContact = String(officerContact).trim();
+      if (['Submitted', 'Under Review'].includes(g.status)) g.status = 'Assigned';
+      g.updatedAt = new Date().toISOString();
+      if (!Array.isArray(g.timeline)) g.timeline = [];
+      g.timeline.push({
+        status: g.status,
+        officerName: String(officerName).trim(),
+        note: note || `Bulk assigned to ${String(officerName).trim()} by Municipal Control Room.`,
+        timestamp: new Date().toISOString()
+      });
+      updatedList.push(g);
+    }
+
+    if (typeof db.saveStore === 'function') db.saveStore();
+    appendAuditLog({
+      actorEmail: req.user?.email,
+      actorRole: req.user?.role,
+      action: 'BULK_ASSIGN_GRIEVANCES',
+      targetType: 'GRIEVANCE_BATCH',
+      targetId: grievanceIds.join(','),
+      details: `Assigned ${updatedList.length} tickets to ${String(officerName).trim()}`
+    });
+
+    return res.json({
+      success: true,
+      updatedCount: updatedList.length,
+      grievances: updatedList
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'SERVER_ERROR', message: err.message });
+  }
+};
+
+const linkDuplicateGrievance = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { masterGrievanceId, note } = req.body || {};
+    if (!masterGrievanceId || masterGrievanceId === id) {
+      return res.status(400).json({ error: 'VALIDATION_ERROR', message: 'A distinct masterGrievanceId is required.' });
+    }
+
+    const dup = await GrievanceModel.findById(id);
+    const master = await GrievanceModel.findById(masterGrievanceId);
+    if (!dup || !master) {
+      return res.status(404).json({ error: 'NOT_FOUND', message: 'Duplicate or Master grievance ticket not found.' });
+    }
+
+    dup.duplicateOf = masterGrievanceId;
+    dup.updatedAt = new Date().toISOString();
+    if (!Array.isArray(dup.timeline)) dup.timeline = [];
+    dup.timeline.push({
+      status: master.status === 'Resolved' ? 'Resolved' : dup.status,
+      officerName: req.user?.fullName || 'Control Room Admin',
+      note: note || `Linked as duplicate of Master Ticket ${masterGrievanceId}.`,
+      timestamp: new Date().toISOString()
+    });
+    if (master.status === 'Resolved' && dup.status !== 'Resolved') {
+      dup.status = 'Resolved';
+      dup.resolvedAt = master.resolvedAt || new Date().toISOString();
+      releaseOfficerFromTicket(id);
+    }
+
+    if (!Array.isArray(master.linkedDuplicates)) master.linkedDuplicates = [];
+    if (!master.linkedDuplicates.includes(id)) {
+      master.linkedDuplicates.push(id);
+    }
+    master.updatedAt = new Date().toISOString();
+
+    if (typeof db.saveStore === 'function') db.saveStore();
+    appendAuditLog({
+      actorEmail: req.user?.email,
+      actorRole: req.user?.role,
+      action: 'LINK_DUPLICATE_GRIEVANCE',
+      targetType: 'GRIEVANCE',
+      targetId: id,
+      details: `Linked duplicate ${id} -> Master ${masterGrievanceId}`
+    });
+
+    return res.json({
+      success: true,
+      message: `Ticket '${id}' linked as duplicate of '${masterGrievanceId}'.`,
+      duplicate: dup,
+      master
+    });
   } catch (err) {
     return res.status(500).json({ error: 'SERVER_ERROR', message: err.message });
   }
@@ -609,5 +1006,9 @@ module.exports = {
   submitFeedback,
   reopenGrievance,
   upvoteGrievance,
-  getOfficerRoster
+  getOfficerRoster,
+  claimGrievance,
+  transferGrievanceDepartment,
+  bulkAssignGrievances,
+  linkDuplicateGrievance
 };

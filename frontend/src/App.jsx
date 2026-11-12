@@ -4,6 +4,7 @@ import Navbar from './components/Navbar';
 import CitizenDashboard from './components/CitizenDashboard';
 import TrackingView from './components/TrackingView';
 import AdminDashboard from './components/AdminDashboard';
+import OfficerDashboard from './components/OfficerDashboard';
 import KnowledgeBase from './components/KnowledgeBase';
 import GrievanceFormModal from './components/GrievanceFormModal';
 import ServiceApplicationModal from './components/ServiceApplicationModal';
@@ -16,7 +17,8 @@ import AuthScreen from './components/AuthScreen';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
 import ErrorBoundary from './components/ErrorBoundary';
-import { grievanceAPI, applicationAPI, serviceAPI } from './api/apiClient';
+import { grievanceAPI, applicationAPI, serviceAPI, advisoryAPI } from './api/apiClient';
+import { isSameDepartment } from './utils/departmentScope';
 import { releaseOfficerFromTicket } from './utils/officerDispatch';
 import { safeSetItem, safeGetItem, sanitizeGrievances } from './utils/safeStorage';
 import { auditAndEscalateGrievances } from './utils/slaEscalationEngine';
@@ -68,7 +70,9 @@ function getInitialNavState(user) {
   } catch (e) {}
 
   const validCitizenTabs = ['overview', 'services', 'track', 'faqs'];
-  const validAdminSections = ['grievances', 'applications', 'analytics', 'notifications', 'blockchain', 'roster', 'sla-tribunal'];
+  const validAdminSections = user?.role === 'OFFICER'
+    ? ['grievances', 'applications', 'map', 'sla-tribunal']
+    : ['grievances', 'applications', 'appeals', 'roster', 'sla-tribunal', 'governance', 'analytics', 'audit', 'notifications', 'blockchain'];
 
   if (isOfficial) {
     let section = 'grievances';
@@ -123,6 +127,8 @@ function MainAppContent() {
   const [activeTab, setActiveTab] = useState(() => initialNav.tab);
   const [adminActiveSection, setAdminActiveSection] = useState(() => initialNav.adminSection);
   const [officerQueueScope, setOfficerQueueScope] = useState(() => initialNav.officerQueueScope);
+  const [services, setServices] = useState(INITIAL_SERVICES);
+  const [advisories, setAdvisories] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTrackId, setSelectedTrackId] = useState(() => initialNav.selectedTrackId);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -454,20 +460,45 @@ function MainAppContent() {
     async function fetchLiveData() {
       try {
         const gData = await grievanceAPI.getAll();
-        if (gData && gData.grievances && gData.grievances.length > 0) {
+        if (gData && Array.isArray(gData.grievances)) {
           setGrievances(gData.grievances);
         }
       } catch (err) {}
 
       try {
         const aData = await applicationAPI.getAll();
-        if (aData && aData.applications && aData.applications.length > 0) {
+        if (aData && Array.isArray(aData.applications)) {
           setApplications(aData.applications);
+        }
+      } catch (err) {}
+      try {
+        const sData = await serviceAPI.getAll();
+        if (Array.isArray(sData?.services) && sData.services.length > 0) {
+          setServices(() => {
+            const byId = new Map(INITIAL_SERVICES.map((s) => [s.id, s]));
+            for (const srv of sData.services) {
+              byId.set(srv.id, { ...(byId.get(srv.id) || {}), ...srv });
+            }
+            return Array.from(byId.values());
+          });
+        }
+      } catch (err) {}
+
+      try {
+        const advData = await advisoryAPI.getAll();
+        if (Array.isArray(advData?.advisories)) {
+          setAdvisories(advData.advisories);
         }
       } catch (err) {}
     }
     fetchLiveData();
-  }, []);
+  }, [user?.role, user?.email]);
+
+  useEffect(() => {
+    if (isOfficer && !['grievances', 'applications', 'map', 'sla-tribunal'].includes(adminActiveSection)) {
+      setAdminActiveSection('grievances');
+    }
+  }, [isOfficer, adminActiveSection]);
 
   // Automated Periodic SLA Breach & Multi-Tier Escalation Audit Engine
   useEffect(() => {
@@ -578,10 +609,149 @@ function MainAppContent() {
     ]);
   };
 
-  const handleUpdateGrievanceStatus = async (id, status, officerName, note) => {
+  const handleClaimGrievance = async (id, extra = {}) => {
+    let backendUpdated = null;
     try {
-      await grievanceAPI.updateStatus(id, { nextStatus: status, officerName, note });
+      const res = await grievanceAPI.claim(id, extra);
+      if (res?.grievance) backendUpdated = res.grievance;
     } catch (e) {}
+
+    setGrievances((prev) => prev.map((g) => {
+      if (g.id !== id) return g;
+      if (backendUpdated) return { ...g, ...backendUpdated };
+      const claimant = user?.fullName || user?.email || 'Field Officer';
+      const nextStatus = ['Submitted', 'Under Review'].includes(g.status) ? 'Assigned' : g.status;
+      return {
+        ...g,
+        status: nextStatus,
+        assignedOfficer: claimant,
+        updatedAt: new Date().toISOString(),
+        timeline: [
+          ...(g.timeline || []),
+          { status: nextStatus, officerName: claimant, timestamp: new Date().toISOString(), note: extra.note || `Claimed by ${claimant}.` }
+        ]
+      };
+    }));
+  };
+
+  const handleTransferGrievance = async (id, targetDepartment, reason) => {
+    let backendUpdated = null;
+    try {
+      const res = await grievanceAPI.transfer(id, { targetDepartment, reason });
+      if (res?.grievance) backendUpdated = res.grievance;
+    } catch (e) {}
+
+    setGrievances((prev) => prev.map((g) => {
+      if (g.id !== id) return g;
+      if (backendUpdated) return { ...g, ...backendUpdated };
+      return {
+        ...g,
+        department: targetDepartment,
+        status: ['Resolved', 'Rejected'].includes(g.status) ? g.status : 'Under Review',
+        assignedOfficer: `${targetDepartment} Desk`,
+        updatedAt: new Date().toISOString(),
+        timeline: [
+          ...(g.timeline || []),
+          { status: 'Under Review', timestamp: new Date().toISOString(), note: `Transferred to ${targetDepartment}. Reason: ${reason}` }
+        ]
+      };
+    }));
+  };
+
+  const handleBulkAssignGrievances = async (grievanceIds, officerName, officerContact, note) => {
+    try {
+      const res = await grievanceAPI.bulkAssign({ grievanceIds, officerName, officerContact, note });
+      if (Array.isArray(res?.grievances) && res.grievances.length > 0) {
+        const updatedMap = new Map(res.grievances.map((item) => [item.id, item]));
+        setGrievances((prev) => prev.map((g) => (updatedMap.has(g.id) ? { ...g, ...updatedMap.get(g.id) } : g)));
+        return res;
+      }
+    } catch (e) {}
+
+    const idSet = new Set(grievanceIds);
+    setGrievances((prev) => prev.map((g) => {
+      if (!idSet.has(g.id) || ['Resolved', 'Rejected'].includes(g.status)) return g;
+      const nextStatus = ['Submitted', 'Under Review'].includes(g.status) ? 'Assigned' : g.status;
+      return {
+        ...g,
+        status: nextStatus,
+        assignedOfficer: officerName,
+        assignedOfficerContact: officerContact || g.assignedOfficerContact,
+        updatedAt: new Date().toISOString(),
+        timeline: [
+          ...(g.timeline || []),
+          { status: nextStatus, officerName, timestamp: new Date().toISOString(), note: note || `Bulk assigned to ${officerName}.` }
+        ]
+      };
+    }));
+    return null;
+  };
+
+  const handleLinkDuplicateGrievance = async (duplicateId, masterGrievanceId, note) => {
+    try {
+      const res = await grievanceAPI.linkDuplicate(duplicateId, { masterGrievanceId, note });
+      if (res?.duplicate && res?.master) {
+        setGrievances((prev) => prev.map((g) => {
+          if (g.id === duplicateId) return { ...g, ...res.duplicate };
+          if (g.id === masterGrievanceId) return { ...g, ...res.master };
+          return g;
+        }));
+        return res;
+      }
+    } catch (e) {}
+
+    setGrievances((prev) => prev.map((g) => {
+      if (g.id === duplicateId) return { ...g, duplicateOf: masterGrievanceId, updatedAt: new Date().toISOString() };
+      if (g.id === masterGrievanceId) {
+        const linked = Array.isArray(g.linkedDuplicates) ? [...g.linkedDuplicates] : [];
+        if (!linked.includes(duplicateId)) linked.push(duplicateId);
+        return { ...g, linkedDuplicates: linked, updatedAt: new Date().toISOString() };
+      }
+      return g;
+    }));
+    return null;
+  };
+
+  const handleUpdateApplicationStatus = async (id, payload) => {
+    let backendApp = null;
+    try {
+      const res = await applicationAPI.updateStatus(id, payload);
+      if (res?.application) backendApp = res.application;
+    } catch (e) {}
+
+    setApplications((prev) => prev.map((a) => {
+      if (a.id !== id) return a;
+      if (backendApp) return { ...a, ...backendApp };
+      return {
+        ...a,
+        status: payload.status,
+        remarks: payload.remarks || payload.resubmissionReason || payload.rejectionReason || a.remarks,
+        verifiedDocuments: payload.verifiedDocuments || a.verifiedDocuments,
+        updatedAt: new Date().toISOString()
+      };
+    }));
+  };
+
+  const handleUpdateGrievanceStatus = async (id, status, officerName, note, extraPayload = {}) => {
+    let backendGrievance = null;
+    try {
+      const res = await grievanceAPI.updateStatus(id, { nextStatus: status, officerName, note, ...extraPayload });
+      if (res?.grievance) backendGrievance = res.grievance;
+    } catch (e) {}
+
+    if (backendGrievance) {
+      if (status === 'Resolved' || status === 'Rejected') {
+        try { releaseOfficerFromTicket(id); } catch (e) {}
+      }
+      setGrievances((prev) => prev.map((g) => (g.id === id ? { ...g, ...backendGrievance } : g)));
+      if (status === 'Resolved' && Array.isArray(backendGrievance.linkedDuplicates) && backendGrievance.linkedDuplicates.length > 0) {
+        try {
+          const gData = await grievanceAPI.getAll();
+          if (Array.isArray(gData?.grievances)) setGrievances(gData.grievances);
+        } catch (e) {}
+      }
+      return;
+    }
 
     // When a ticket is marked Resolved or Rejected, free up the officer and return them to the queue!
     if (status === 'Resolved' || status === 'Rejected') {
@@ -725,8 +895,8 @@ function MainAppContent() {
         {/* Main Application Area */}
         <div className="app-main-wrapper">
           
-          {/* Top Navbar Header - On Dashboard Overview & Admin/Officer Dashboard */}
-          {(activeTab === 'overview' || activeTab === 'admin-dashboard') && (
+          {/* Top Navbar Header - Citizen Overview and Official Portals (Subpages render .subpage-back-bar) */}
+          {(activeTab === 'overview' || activeTab === 'admin-dashboard' || (!isCitizen && activePortal === 'admin')) && (
             <Navbar 
               activeTab={activeTab}
               setActiveTab={(tab) => navigateTo(tab)}
@@ -736,16 +906,6 @@ function MainAppContent() {
               previousPageTitle={getPreviousPageTitle()}
               unreadNotifications={userNotifications.length}
               setShowNotifications={setShowNotifications}
-              openGrievanceModal={() => {
-                navigateTo(activeTab, { closeModals: false });
-                setShowGrievanceModal(true);
-              }}
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              onOpenSettings={() => {
-                navigateTo(activeTab, { closeModals: false });
-                setShowSettingsModal(true);
-              }}
               isSidebarOpen={isSidebarOpen}
               onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
             />
@@ -771,26 +931,53 @@ function MainAppContent() {
         
         {/* Official / Admin Portal View */}
         {!isCitizen && activePortal === 'admin' ? (
-          <AdminDashboard 
-            grievances={grievances}
-            applications={applications}
-            departments={DEPARTMENTS}
-            onUpdateGrievanceStatus={handleUpdateGrievanceStatus}
-            onAssignOfficer={handleUpdateGrievanceStatus}
-            onGoBack={handleGoBack}
-            canGoBack={canGoBack}
-            activeSection={adminActiveSection}
-            setActiveSection={setAdminActiveSection}
-            officerQueueScope={officerQueueScope}
-            setOfficerQueueScope={setOfficerQueueScope}
-          />
+          isOfficer ? (
+            <OfficerDashboard
+              grievances={grievances}
+              applications={applications}
+              advisories={advisories}
+              departments={DEPARTMENTS}
+              onUpdateGrievanceStatus={handleUpdateGrievanceStatus}
+              onClaimGrievance={handleClaimGrievance}
+              onTransferGrievance={handleTransferGrievance}
+              onUpdateApplicationStatus={handleUpdateApplicationStatus}
+              onGoBack={handleGoBack}
+              canGoBack={canGoBack}
+              activeSection={adminActiveSection}
+              setActiveSection={setAdminActiveSection}
+              officerQueueScope={officerQueueScope}
+              setOfficerQueueScope={setOfficerQueueScope}
+            />
+          ) : (
+            <AdminDashboard
+              grievances={grievances}
+              applications={applications}
+              setApplications={setApplications}
+              services={services}
+              setServices={setServices}
+              advisories={advisories}
+              setAdvisories={setAdvisories}
+              departments={DEPARTMENTS}
+              onUpdateGrievanceStatus={handleUpdateGrievanceStatus}
+              onAssignOfficer={handleUpdateGrievanceStatus}
+              onBulkAssignGrievances={handleBulkAssignGrievances}
+              onLinkDuplicateGrievance={handleLinkDuplicateGrievance}
+              onUpdateApplicationStatus={handleUpdateApplicationStatus}
+              onGoBack={handleGoBack}
+              canGoBack={canGoBack}
+              activeSection={adminActiveSection}
+              setActiveSection={setAdminActiveSection}
+              officerQueueScope={officerQueueScope}
+              setOfficerQueueScope={setOfficerQueueScope}
+            />
+          )
         ) : (
           /* Citizen View Tabs */
           <>
             {activeTab === 'overview' && (
               <CitizenDashboard 
                 grievances={grievances}
-                services={INITIAL_SERVICES}
+                services={services}
                 applications={applications}
                 openGrievanceModal={() => {
                   navigateTo(activeTab, { closeModals: false });
@@ -817,7 +1004,7 @@ function MainAppContent() {
             {activeTab === 'services' && (
               <CitizenDashboard 
                 grievances={grievances}
-                services={INITIAL_SERVICES}
+                services={services}
                 applications={applications}
                 openGrievanceModal={() => {
                   navigateTo(activeTab, { closeModals: false });
@@ -863,7 +1050,7 @@ function MainAppContent() {
                 faqs={FAQ_ARTICLES}
                 grievances={grievances}
                 applications={applications}
-                services={INITIAL_SERVICES}
+                services={services}
                 user={user}
                 searchQuery={searchQuery}
                 onGoBack={handleGoBack}
@@ -972,7 +1159,7 @@ function MainAppContent() {
   <FloatingAiChatBot 
     grievances={grievances}
     applications={applications}
-    services={INITIAL_SERVICES}
+    services={services}
     user={user}
     onTrackTicket={(id) => navigateTo('track', { trackId: id })}
     onOpenGrievanceModal={(prefill) => {

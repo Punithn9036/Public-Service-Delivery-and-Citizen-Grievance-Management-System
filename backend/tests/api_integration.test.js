@@ -194,15 +194,24 @@ describe('Phase 1 REST API Integration Tests', () => {
       expect(res.body.applications[0].id).toBe(testAppId);
     });
 
-    test('PATCH /api/applications/:id/status should update application status', async () => {
-      const res = await request(app)
+    test('PATCH /api/applications/:id/status enforces department scoping & updates own-dept apps', async () => {
+      const deniedRes = await request(app)
         .patch(`/api/applications/${testAppId}/status`)
         .set('Authorization', `Bearer ${officerToken}`)
-        .send({
-          status: 'In Verification',
-          remarks: 'Documents received by Registrar officer.'
-        });
+        .send({ status: 'In Verification', remarks: 'Cross-dept attempt' });
+      expect(deniedRes.statusCode).toBe(403);
+      expect(deniedRes.body.error).toBe('FORBIDDEN_DEPARTMENT');
 
+      const waterAppRes = await request(app)
+        .post('/api/applications')
+        .send({ serviceId: 'srv-2', applicantName: 'Kiran Rao', applicantPhone: '+91 98111 22334' });
+      expect(waterAppRes.statusCode).toBe(201);
+      const waterAppId = waterAppRes.body.application.id;
+
+      const res = await request(app)
+        .patch(`/api/applications/${waterAppId}/status`)
+        .set('Authorization', `Bearer ${officerToken}`)
+        .send({ status: 'In Verification', remarks: 'Pipeline feasibility verified by Water Supply officer.' });
       expect(res.statusCode).toBe(200);
       expect(res.body.application.status).toBe('In Verification');
     });

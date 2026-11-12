@@ -456,15 +456,24 @@ describe('JANSEVA MASTER AUDIT & VALIDATION SUITE', () => {
       createdApplicationId = res.body.application.id;
     });
 
-    test('5.5 Application: Officer updates application status to In Verification', async () => {
-      const res = await request(app)
+    test('5.5 Application: Enforces strict department scoping & Water officer verifies Water Connection', async () => {
+      const deniedRes = await request(app)
         .patch(`/api/applications/${createdApplicationId}/status`)
         .set('Authorization', `Bearer ${officerToken}`)
-        .send({
-          status: 'In Verification',
-          remarks: 'Applicant documents verified by Revenue Sub-Registrar.'
-        });
+        .send({ status: 'In Verification', remarks: 'Unauthorized cross-dept update' });
+      expect(deniedRes.statusCode).toBe(403);
+      expect(deniedRes.body.error).toBe('FORBIDDEN_DEPARTMENT');
 
+      const waterCreate = await request(app)
+        .post('/api/applications')
+        .send({ serviceId: 'srv-2', applicantName: 'Asha Menon', applicantPhone: '+91 98222 33445' });
+      expect(waterCreate.statusCode).toBe(201);
+      const waterId = waterCreate.body.application.id;
+
+      const res = await request(app)
+        .patch(`/api/applications/${waterId}/status`)
+        .set('Authorization', `Bearer ${officerToken}`)
+        .send({ status: 'In Verification', remarks: 'Applicant documents verified by Water Supply Engineer.' });
       expect(res.statusCode).toBe(200);
       expect(res.body.application.status).toBe('In Verification');
     });
