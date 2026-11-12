@@ -889,3 +889,235 @@ export function generateCivicAiResponse(query, context = {}) {
     ]
   };
 }
+
+// Speech Recognition BCP-47 locale map aligned with LanguageContext SUPPORTED_LANGUAGES
+export const LANG_TO_SPEECH_LOCALE = {
+  en: 'en-IN',
+  hi: 'hi-IN',
+  kn: 'kn-IN',
+  ta: 'ta-IN',
+  te: 'te-IN',
+  ml: 'ml-IN',
+  mr: 'mr-IN',
+  gu: 'gu-IN',
+  bn: 'bn-IN',
+  or: 'or-IN',
+  pa: 'pa-IN',
+  as: 'as-IN',
+  ur: 'ur-IN'
+};
+
+const DEPARTMENT_PROFILES = [
+  {
+    department: 'Water Supply & Sanitation',
+    category: 'Water & Drainage',
+    defaultTitle: 'Water Supply / Drainage Fault',
+    keywords: [
+      'water', 'pipeline', 'pipe', 'leak', 'leaking', 'burst', 'drain', 'drainage',
+      'sewer', 'sewage', 'overflow', 'manhole', 'borewell', 'tap', 'drinking water',
+      'dirty water', 'contaminated', 'supply', 'flooded drain', 'paani', 'naala', 'naali',
+      'neeru', 'thanni', 'tanker'
+    ]
+  },
+  {
+    department: 'Public Works & Infrastructure',
+    category: 'Roads & Infrastructure',
+    defaultTitle: 'Road Damage / Pothole Issue',
+    keywords: [
+      'pothole', 'road', 'asphalt', 'crater', 'footpath', 'pavement', 'bridge',
+      'culvert', 'divider', 'speed breaker', 'sidewalk', 'broken road', 'road damaged',
+      'road cave', 'sinkhole', 'tar', 'gaddha', 'khadda', 'sadak', 'raste', 'junction'
+    ]
+  },
+  {
+    department: 'Electrical & Infrastructure',
+    category: 'Electricity & Streetlights',
+    defaultTitle: 'Streetlight / Electrical Grid Fault',
+    keywords: [
+      'streetlight', 'street light', 'lamp', 'pole', 'dark road', 'no light', 'light not working',
+      'bulb', 'led', 'wire', 'live wire', 'spark', 'sparking', 'transformer', 'short circuit',
+      'power cut', 'blackout', 'electric', 'electricity', 'shock', 'feeder', 'bijli', 'batti', 'khamba'
+    ]
+  },
+  {
+    department: 'Health & Hygiene',
+    category: 'Sanitation & Waste Management',
+    defaultTitle: 'Sanitation & Solid Waste Hazard',
+    keywords: [
+      'garbage', 'trash', 'waste', 'dustbin', 'dump', 'dumping', 'rubbish', 'cleaning',
+      'sweeping', 'sanitation', 'hygiene', 'smell', 'foul smell', 'stink', 'mosquito', 'dengue',
+      'malaria', 'fogging', 'dead animal', 'carcass', 'stray', 'hospital', 'clinic', 'kachra', 'kooda'
+    ]
+  },
+  {
+    department: 'Revenue & Taxation',
+    category: 'Revenue & Property Tax',
+    defaultTitle: 'Property Tax / Revenue Record Request',
+    keywords: [
+      'property tax', 'tax', 'khata', 'e-khata', 'patta', 'mutation', 'land record',
+      'assessment', 'birth certificate', 'death certificate', 'income certificate', 'caste certificate',
+      'registrar', 'revenue', 'survey number'
+    ]
+  },
+  {
+    department: 'Commercial & Trade Licensing',
+    category: 'Trade & Licensing',
+    defaultTitle: 'Commercial Licensing / Market Compliance Issue',
+    keywords: [
+      'trade license', 'shop license', 'commercial', 'vendor', 'hawker', 'illegal stall',
+      'market stall', 'business permit', 'signage', 'hoarding', 'unlicensed', 'dukaan'
+    ]
+  },
+  {
+    department: 'Town Planning & Environment',
+    category: 'Parks & Town Planning',
+    defaultTitle: 'Park / Tree / Urban Encroachment Issue',
+    keywords: [
+      'tree', 'fallen tree', 'branch', 'park', 'garden', 'playground', 'encroachment',
+      'illegal construction', 'building violation', 'setback', 'debris', 'smoke', 'air pollution',
+      'noise pollution', 'green belt'
+    ]
+  }
+];
+
+const URGENT_TERMS = [
+  'urgent', 'immediately', 'emergency', 'flood', 'flooding', 'danger', 'dangerous',
+  'hazardous', 'hazard', 'shock', 'live wire', 'sparking', 'fire', 'accident', 'injured',
+  'collapse', 'collapsing', 'dead animal', 'carcass', 'contaminated', 'toxic', 'burst',
+  'raw sewage', 'open manhole', 'jaldi', 'turant'
+];
+
+const HIGH_TERMS = [
+  'high priority', 'severe', 'major', 'huge', 'big', 'blocked', 'overflowing',
+  'completely dark', 'darkness', 'broken', 'damaged', 'smelling', 'stinking',
+  'days', 'week', 'since morning', 'traffic jam', 'risk', 'unsafe'
+];
+
+const CONFIRM_RE = /\b(yes|confirm|submit|register|file it|send it|go ahead|proceed|approve|haan|ha|ok submit|auto file|do it)\b/i;
+const CANCEL_RE = /\b(cancel|discard|stop|abort|never mind|clear|reset|mat bhejo|band karo)\b/i;
+const FILE_NEW_RE = /\b(file new|new ticket|submit new|create new|ignore duplicate|different grievance|different complaint|different issue|lodge different|distinct issue|another issue|not this)\b/i;
+const AUTO_GRIEVANCE_TRIGGER_RE = /\b(report|lodge|file|register|complain|complaint|grievance|auto file|pothole|water leak|sewer|sewage|drain|garbage|trash|streetlight|live wire|tree|broken|overflow|kachra|paani|gaddha|bijli)\b/i;
+
+function normalizeText(val) {
+  return String(val || '').replace(/\s+/g, ' ').trim();
+}
+
+function capFirst(val) {
+  const s = normalizeText(val);
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+}
+
+export function classifyCivicText(text) {
+  const lower = String(text || '').toLowerCase();
+  let best = null;
+  let bestScore = 0;
+  let bestKeywords = [];
+
+  for (const prof of DEPARTMENT_PROFILES) {
+    let score = 0;
+    const hits = [];
+    for (const kw of prof.keywords) {
+      if (lower.includes(kw)) {
+        score += kw.includes(' ') ? 3 : 2;
+        hits.push(kw);
+      }
+    }
+    if (score > bestScore) {
+      bestScore = score;
+      best = prof;
+      bestKeywords = hits;
+    }
+  }
+
+  let priority = 'Medium';
+  const urgentHits = URGENT_TERMS.filter(t => lower.includes(t));
+  const highHits = HIGH_TERMS.filter(t => lower.includes(t));
+  if (urgentHits.length > 0) priority = 'Urgent';
+  else if (highHits.length > 0) priority = 'High';
+
+  const resolved = best || DEPARTMENT_PROFILES[1];
+  const extractedKeywords = Array.from(new Set([...bestKeywords, ...urgentHits, ...highHits]));
+  return {
+    matched: Boolean(best),
+    department: resolved.department,
+    category: resolved.category,
+    defaultTitle: resolved.defaultTitle,
+    priority,
+    extractedKeywords,
+    confidence: best ? Math.min(0.98, 0.55 + bestScore * 0.08) : 0.35
+  };
+}
+
+export function isAutoGrievanceIntent(text) {
+  return AUTO_GRIEVANCE_TRIGGER_RE.test(String(text || '').toLowerCase());
+}
+
+/**
+ * Deterministic client-side twin of backend slot extraction so voice/text grievance
+ * drafting keeps working offline or during API timeouts.
+ */
+export function extractGrievanceSlotsFromText(rawText, existingDraft = null) {
+  const raw = normalizeText(rawText);
+  const lower = raw.toLowerCase();
+
+  let intent = 'CHAT_QUERY';
+  if (CANCEL_RE.test(lower)) intent = 'CANCEL';
+  else if (FILE_NEW_RE.test(lower)) intent = 'FILE_NEW';
+  else if (CONFIRM_RE.test(lower) && raw.split(/\s+/).length <= 8) intent = 'CONFIRM';
+  else if (isAutoGrievanceIntent(lower) || existingDraft?.active) intent = 'AUTO_GRIEVANCE';
+
+  const digitsCollapsed = raw.replace(/(?<=\d)[\s-]+(?=\d)/g, '');
+  const phoneMatch = digitsCollapsed.match(/(?:\+?91)?([6-9]\d{9})\b/);
+  const phoneFound = phoneMatch ? `+91 ${phoneMatch[1].slice(0, 5)} ${phoneMatch[1].slice(5)}` : '';
+
+  const landmarkMatch = raw.match(/\b(?:near|opposite|opp\.?|behind|beside|in front of|next to|at)\s+([a-z0-9\s,'-]{3,45}?)(?=(?:\s+(?:since|because|and|for|urgent|please|which|is|are|has|have)|[,.!?]|$))/i);
+  const landmarkHint = landmarkMatch ? capFirst(landmarkMatch[1]) : '';
+
+  const combined = `${raw} ${existingDraft?.description || ''} ${existingDraft?.title || ''}`.trim();
+  const triaged = classifyCivicText(combined);
+
+  const isSubstantive =
+    raw.length >= 6 &&
+    intent !== 'CONFIRM' &&
+    intent !== 'CANCEL' &&
+    intent !== 'FILE_NEW' &&
+    !/^(?:report|lodge|file|register)\s+(?:a\s+)?(?:new\s+)?(?:grievance|complaint)$/i.test(raw);
+
+  const description = isSubstantive
+    ? (existingDraft?.description && !existingDraft.description.includes(raw)
+        ? `${existingDraft.description} ${capFirst(raw)}`.trim()
+        : capFirst(raw))
+    : (existingDraft?.description || '');
+
+  let title = existingDraft?.title || '';
+  if (isSubstantive) {
+    let cleaned = description
+      .replace(/^(?:hello|hi|hey|namaste|please|can you|i want to|i would like to|kindly)\s+/i, '')
+      .replace(/^(?:lodge|file|register|report|submit)\s+(?:a\s+)?(?:new\s+)?(?:grievance|complaint|issue|problem)(?:\s+about|\s+for|\s+regarding|\s+that)?\s*/i, '')
+      .trim();
+    const firstClause = cleaned.split(/[.!?]/)[0].trim();
+    if (firstClause.length >= 10 && firstClause.length <= 68) {
+      title = capFirst(firstClause);
+    } else if (firstClause.length > 68) {
+      title = `${capFirst(firstClause.slice(0, 65).replace(/\s+\S*$/, ''))}...`;
+    } else {
+      const shortLoc = String(existingDraft?.location || '').split(',')[0].trim();
+      title = shortLoc ? `${triaged.defaultTitle} — ${shortLoc}`.slice(0, 72) : triaged.defaultTitle;
+    }
+  }
+
+  return {
+    intent,
+    transcript: raw,
+    title,
+    description,
+    department: triaged.matched ? triaged.department : (existingDraft?.department || triaged.department),
+    category: triaged.matched ? triaged.category : (existingDraft?.category || triaged.category),
+    priority: triaged.priority !== 'Medium' ? triaged.priority : (existingDraft?.priority || 'Medium'),
+    landmarkHint: landmarkHint || existingDraft?.landmarkHint || '',
+    citizenPhone: phoneFound || existingDraft?.citizenPhone || '',
+    confidence: triaged.confidence,
+    matchedKeywords: triaged.matched,
+    extractedKeywords: triaged.extractedKeywords || []
+  };
+}

@@ -136,6 +136,7 @@ function MainAppContent() {
 
   // Modals state
   const [showGrievanceModal, setShowGrievanceModal] = useState(false);
+  const [grievancePrefill, setGrievancePrefill] = useState(null);
   const [selectedServiceModal, setSelectedServiceModal] = useState(null);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
@@ -259,6 +260,7 @@ function MainAppContent() {
     // 1. If any modal is open, closing it is the immediate step back
     if (showGrievanceModal || selectedServiceModal || showSettingsModal || showPrivacyModal || showTermsModal) {
       setShowGrievanceModal(false);
+      setGrievancePrefill(null);
       setSelectedServiceModal(null);
       setShowSettingsModal(false);
       setShowPrivacyModal(false);
@@ -534,21 +536,26 @@ function MainAppContent() {
 
   // Actions
   const handleAddGrievance = async (newGrievance) => {
+    let savedGrievance = newGrievance;
     try {
-      await grievanceAPI.create(newGrievance);
+      const res = await grievanceAPI.create(newGrievance);
+      if (res?.grievance) {
+        savedGrievance = res.grievance;
+      }
     } catch (e) {}
 
-    setGrievances(prev => [newGrievance, ...prev]);
+    setGrievances(prev => [savedGrievance, ...prev]);
     setNotifications(prev => [
       {
         id: `n-${Date.now()}`,
-        title: `New Ticket Lodged #${newGrievance.id}`,
-        message: `Routed to ${newGrievance.department}. SLA deadline: 3 Days.`,
+        title: `New Ticket Lodged #${savedGrievance.id}`,
+        message: `Routed to ${savedGrievance.department}. SLA deadline: 3 Days.`,
         time: 'Just now',
         type: 'submitted'
       },
       ...prev
     ]);
+    return savedGrievance;
   };
 
   const handleUpvoteGrievance = async (existingTicketId) => {
@@ -1121,7 +1128,11 @@ function MainAppContent() {
     <GrievanceFormModal 
       departments={DEPARTMENTS}
       grievances={grievances}
-      onClose={() => handleGoBack()}
+      initialPrefill={grievancePrefill}
+      onClose={() => {
+        setGrievancePrefill(null);
+        handleGoBack();
+      }}
       onSubmitGrievance={handleAddGrievance}
       onUpvoteGrievance={handleUpvoteGrievance}
     />
@@ -1161,8 +1172,11 @@ function MainAppContent() {
     applications={applications}
     services={services}
     user={user}
+    onSubmitGrievance={handleAddGrievance}
+    onUpvoteGrievance={handleUpvoteGrievance}
     onTrackTicket={(id) => navigateTo('track', { trackId: id })}
     onOpenGrievanceModal={(prefill) => {
+      setGrievancePrefill(prefill || null);
       navigateTo(activeTab, { closeModals: false });
       setShowGrievanceModal(true);
     }}

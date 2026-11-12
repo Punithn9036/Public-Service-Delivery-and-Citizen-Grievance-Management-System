@@ -523,7 +523,7 @@ export default function AdminDashboard({
             <span>
               {isOfficer 
                 ? (user?.department ? `${user.department} • Field Officer Control Desk` : 'Nodal Field Officer Command Desk')
-                : 'Central Nodal Administration & Governance Center'}
+                : 'Admin Control Room'}
             </span>
           </div>
 
@@ -701,7 +701,7 @@ export default function AdminDashboard({
                     onClick={() => handleFilterChip('section', 'notifications')}
                   >
                     <MessageSquare size={12} />
-                    <span>DLT Alerts ({notifLogs.length})</span>
+                    <span>SMS & WhatsApp ({notifLogs.length})</span>
                   </button>
 
                   <button 
@@ -710,7 +710,7 @@ export default function AdminDashboard({
                     onClick={() => { handleFilterChip('section', 'blockchain'); fetchFabricData(); }}
                   >
                     <ShieldCheck size={12} />
-                    <span>Blockchain Explorer</span>
+                    <span>Audit Ledger</span>
                   </button>
 
                   <button 
@@ -719,7 +719,7 @@ export default function AdminDashboard({
                     onClick={() => { handleFilterChip('section', 'roster'); refreshRoster(); }}
                   >
                     <Users size={12} />
-                    <span>Officer Roster & Queue</span>
+                    <span>Officers & Teams</span>
                   </button>
 
                   <button 
@@ -729,7 +729,7 @@ export default function AdminDashboard({
                     style={{ borderColor: '#ef4444', color: '#dc2626' }}
                   >
                     <Gavel size={12} color="#dc2626" />
-                    <span>SLA Tribunal ({escalatedCount})</span>
+                    <span>Late Cases ({escalatedCount})</span>
                   </button>
 
                   <button 
@@ -779,7 +779,7 @@ export default function AdminDashboard({
             <Building size={20} className="text-blue" />
           </div>
           <h2>{total}</h2>
-          <span className="kpi-foot">All Municipal Wards</span>
+          <span className="kpi-foot">Across all areas</span>
         </div>
 
         <div className="kpi-card glass-card">
@@ -788,7 +788,7 @@ export default function AdminDashboard({
             <Clock size={20} className="text-amber" />
           </div>
           <h2>{pendingCount}</h2>
-          <span className="kpi-foot text-amber">Needs Routing & Assignment</span>
+          <span className="kpi-foot text-amber">Needs officer assignment</span>
         </div>
 
         <div className="kpi-card glass-card">
@@ -797,7 +797,7 @@ export default function AdminDashboard({
             <UserCheck size={20} className="text-blue" />
           </div>
           <h2>{inProgressCount}</h2>
-          <span className="kpi-foot">Officers dispatched</span>
+          <span className="kpi-foot">Being worked on</span>
         </div>
 
         <div className="kpi-card glass-card">
@@ -806,7 +806,7 @@ export default function AdminDashboard({
             <CheckCircle size={20} className="text-emerald" />
           </div>
           <h2>{resolvedCount}</h2>
-          <span className="kpi-foot text-emerald">{Math.round((resolvedCount/total)*100) || 0}% SLA Compliance</span>
+          <span className="kpi-foot text-emerald">{Math.round((resolvedCount/total)*100) || 0}% On Time</span>
         </div>
 
         <div className="kpi-card glass-card">
@@ -815,7 +815,7 @@ export default function AdminDashboard({
             <AlertTriangle size={20} className="text-rose" />
           </div>
           <h2>{urgentCount}</h2>
-          <span className="kpi-foot text-rose">&lt; 24 hr SLA Limit</span>
+          <span className="kpi-foot text-rose">Due within 24 hrs</span>
         </div>
       </div>
 
@@ -840,28 +840,28 @@ export default function AdminDashboard({
           className={`btn btn-sm ${activeSection === 'analytics' ? 'btn-primary' : 'btn-secondary'}`}
           style={{ padding: '8px 18px', fontWeight: 700 }}
         >
-          <TrendingUp size={16} /> SLA TAT Analytics Scorecard
+          <TrendingUp size={16} /> Reports & Stats
         </button>
         <button
           onClick={() => setActiveSection('notifications')}
           className={`btn btn-sm ${activeSection === 'notifications' ? 'btn-primary' : 'btn-secondary'}`}
           style={{ padding: '8px 18px', fontWeight: 700 }}
         >
-          <MessageSquare size={16} /> Statutory Alerts & DLT Logs ({notifLogs.length})
+          <MessageSquare size={16} /> SMS & WhatsApp ({notifLogs.length})
         </button>
         <button
           onClick={() => { setActiveSection('blockchain'); fetchFabricData(); }}
           className={`btn btn-sm ${activeSection === 'blockchain' ? 'btn-primary' : 'btn-secondary'}`}
           style={{ padding: '8px 18px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
         >
-          <ShieldCheck size={16} /> Hyperledger Fabric Ledger ({fabricBlocks.length || 0} Blocks)
+          <ShieldCheck size={16} /> Audit Ledger ({fabricBlocks.length || 0} Records)
         </button>
         <button
           onClick={() => { setActiveSection('roster'); refreshRoster(); }}
           className={`btn btn-sm ${activeSection === 'roster' ? 'btn-primary' : 'btn-secondary'}`}
           style={{ padding: '8px 18px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
         >
-          <Users size={16} /> {isOfficer ? 'My Duty Profile' : `Sector Officer Queue & Duty Roster (${officerRoster.length} Officers)`}
+          <Users size={16} /> {isOfficer ? 'My Profile' : `Officers & Teams (${officerRoster.length})`}
         </button>
         <button
           onClick={() => { setActiveSection('sla-tribunal'); refreshRoster(); }}
@@ -878,7 +878,7 @@ export default function AdminDashboard({
           }}
         >
           <Gavel size={16} color={activeSection === 'sla-tribunal' ? '#ffffff' : '#dc2626'} /> 
-          {isOfficer ? 'My SLA Compliance & Notices' : `SLA Tribunal & Officer Discipline (${escalatedCount})`}
+          {isOfficer ? 'Deadlines & Notices' : `Late Cases & Actions (${escalatedCount})`}
         </button>
         <button
           onClick={() => setActiveSection('appeals')}
@@ -890,13 +890,13 @@ export default function AdminDashboard({
           onClick={() => setActiveSection('governance')}
           className={`btn btn-sm ${activeSection === 'governance' ? 'btn-primary' : 'btn-secondary'}`}
         >
-          Services, SLA & Advisories
+          Services & Alerts
         </button>
         <button
           onClick={() => setActiveSection('audit')}
           className={`btn btn-sm ${activeSection === 'audit' ? 'btn-primary' : 'btn-secondary'}`}
         >
-          Audit Logs
+          Activity Logs
         </button>
       </div>
 
@@ -1636,7 +1636,7 @@ export default function AdminDashboard({
                 </div>
                 <div>
                   <h3 style={{ margin: 0, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    Hyperledger Fabric Cryptographic Ledger Explorer
+                    Tamper-Proof Audit Ledger
                     <span style={{ fontSize: '0.72rem', background: 'rgba(34, 197, 94, 0.15)', color: '#16a34a', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
                       ● CHANNEL ACTIVE
                     </span>
@@ -2224,7 +2224,7 @@ export default function AdminDashboard({
               <div>
                 <h3 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Gavel size={18} color="#b91c1c" />
-                  {isOfficer ? 'My Official SLA Compliance Record & Disciplinary Standing' : 'Officer 3-Strike Disciplinary Board & Penalty Matrix'}
+                  {isOfficer ? 'My Deadline History & Warnings' : 'Late Case Warnings & Officer Actions'}
                 </h3>
                 <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                   {isOfficer 

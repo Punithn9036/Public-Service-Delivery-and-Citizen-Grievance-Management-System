@@ -590,7 +590,7 @@ export default function CitizenDashboard({
       )}
 
       {/* Main Inner Container for Dashboard Sections */}
-      <div className="dashboard-inner-wrap" style={{ padding: '24px 20px', maxWidth: '1400px', margin: '0 auto' }}>
+      <div className="dashboard-inner-wrap">
 
         {/* Top Contextual Back Bar & Breadcrumb (when on Services Tab) */}
         {activeTab === 'services' && (
@@ -679,11 +679,11 @@ export default function CitizenDashboard({
         <div className="section-block" id="citizen-services-section" style={{ marginTop: '32px' }}>
           <div className="section-header">
             <div>
-              <h2>{activeTab === 'services' ? t('All Statutory Public Services Catalog') : t('popularServices')}</h2>
+              <h2>{activeTab === 'services' ? t('All Public Services') : t('popularServices')}</h2>
               <p>
                 {activeTab === 'services' 
-                  ? t('Complete catalog of statutory citizen services, utility connections, certificates, and welfare programs.') 
-                  : t('Direct online statutory applications with guaranteed Service Level Agreements (SLAs) & instant digital delivery')}
+                  ? t('Apply online for certificates, utility connections, and welfare services.') 
+                  : t('Apply online for common services with clear deadlines and quick digital delivery.')}
               </p>
             </div>
             {activeTab !== 'services' && (
@@ -720,9 +720,9 @@ export default function CitizenDashboard({
                     <div className="service-badges-row">
                       <span className="service-badge-pill service-badge-dept">{t('Vital Statistics & Public Health')}</span>
                       <span className="service-badge-pill service-badge-sla">
-                        <Clock size={12} /> {srv.slaDays || 7} {t('Days Statutory SLA')}
+                        <Clock size={12} /> {srv.slaDays || 7} {t('Days')}
                       </span>
-                      <span className="service-badge-pill service-badge-fee">{t('Statutory Fee')}: {srv.fee || '₹50'}</span>
+                      <span className="service-badge-pill service-badge-fee">{t('Fee')}: {srv.fee || '₹50'}</span>
                     </div>
 
                     <h3 className="service-banner-title">{t('Issue of Official Birth Certificate')}</h3>
@@ -818,7 +818,7 @@ export default function CitizenDashboard({
                     <div className="service-badges-row">
                       <span className="service-badge-pill service-badge-dept">{t('Water Supply & Sanitation Board')}</span>
                       <span className="service-badge-pill service-badge-sla">
-                        <Clock size={12} /> {srv.slaDays || 14} {t('Days Statutory SLA')}
+                        <Clock size={12} /> {srv.slaDays || 14} {t('Days')}
                       </span>
                       <span className="service-badge-pill service-badge-fee">{t('Connection Charge')}: {srv.fee || '₹1,200'}</span>
                     </div>
@@ -916,7 +916,7 @@ export default function CitizenDashboard({
                     <div className="service-badges-row">
                       <span className="service-badge-pill service-badge-dept">{t('Revenue & Land Administration')}</span>
                       <span className="service-badge-pill service-badge-sla">
-                        <Clock size={12} /> {srv.slaDays || 10} {t('Days Statutory SLA')}
+                        <Clock size={12} /> {srv.slaDays || 10} {t('Days')}
                       </span>
                       <span className="service-badge-pill service-badge-fee">{t('Treasury Fee')}: {srv.fee || '₹30'}</span>
                     </div>
@@ -1014,9 +1014,9 @@ export default function CitizenDashboard({
                     <div className="service-badges-row">
                       <span className="service-badge-pill service-badge-dept">{t('Commercial & Trade Licensing Authority')}</span>
                       <span className="service-badge-pill service-badge-sla">
-                        <Clock size={12} /> {srv.slaDays || 5} {t('Days Statutory SLA')}
+                        <Clock size={12} /> {srv.slaDays || 5} {t('Days')}
                       </span>
-                      <span className="service-badge-pill service-badge-fee">{t('Statutory Fee')}: {srv.fee || '₹850'}</span>
+                      <span className="service-badge-pill service-badge-fee">{t('Fee')}: {srv.fee || '₹850'}</span>
                     </div>
 
                     <h3 className="service-banner-title">{t('Municipal Trade License & Business Permit')}</h3>
@@ -1112,7 +1112,7 @@ export default function CitizenDashboard({
                     <div className="service-badges-row">
                       <span className="service-badge-pill service-badge-dept">{t('Municipal Revenue & Taxation Division')}</span>
                       <span className="service-badge-pill service-badge-sla">
-                        <Clock size={12} /> {srv.slaDays || 15} {t('Days Statutory SLA')}
+                        <Clock size={12} /> {srv.slaDays || 15} {t('Days')}
                       </span>
                       <span className="service-badge-pill service-badge-fee">{t('Assessment Charge')}: {srv.fee || '₹500'}</span>
                     </div>
@@ -1210,7 +1210,7 @@ export default function CitizenDashboard({
                     <div className="service-badges-row">
                       <span className="service-badge-pill service-badge-dept">{t('Public Works & Electrical Infrastructure')}</span>
                       <span className="service-badge-pill service-badge-sla">
-                        <Clock size={12} /> {srv.slaDays || 3} {t('Days Statutory SLA')}
+                        <Clock size={12} /> {srv.slaDays || 3} {t('Days')}
                       </span>
                       <span className="service-badge-pill service-badge-fee" style={{ background: '#ecfdf5', color: '#047857', borderColor: '#a7f3d0' }}>
                         {t('100% Free Civic Service')}
@@ -1315,9 +1315,9 @@ export default function CitizenDashboard({
                         <div className="service-badges-row">
                           <span className="service-badge-pill service-badge-dept">{t('Food, Civil Supplies & Consumer Affairs')}</span>
                           <span className="service-badge-pill service-badge-sla">
-                            <Clock size={12} /> {srv.slaDays || 7} {t('Days Statutory SLA')}
+                            <Clock size={12} /> {srv.slaDays || 7} {t('Days')}
                           </span>
-                          <span className="service-badge-pill service-badge-fee">{t('Statutory Fee')}: {srv.fee || '₹1,600'}</span>
+                          <span className="service-badge-pill service-badge-fee">{t('Fee')}: {srv.fee || '₹1,600'}</span>
                         </div>
 
                         <h3 className="service-banner-title">{t('New Domestic LPG Gas Connection (PMUY / City Gas)')}</h3>
@@ -1413,9 +1413,9 @@ export default function CitizenDashboard({
                         <div className="service-badges-row">
                           <span className="service-badge-pill service-badge-dept">{t('Energy & Power Distribution (DISCOM)')}</span>
                           <span className="service-badge-pill service-badge-sla">
-                            <Clock size={12} /> {srv.slaDays || 5} {t('Days Statutory SLA')}
+                            <Clock size={12} /> {srv.slaDays || 5} {t('Days')}
                           </span>
-                          <span className="service-badge-pill service-badge-fee">{t('Statutory Fee')}: {srv.fee || '₹750'}</span>
+                          <span className="service-badge-pill service-badge-fee">{t('Fee')}: {srv.fee || '₹750'}</span>
                         </div>
 
                         <h3 className="service-banner-title">{t('New Domestic Electricity Connection & Smart Meter')}</h3>
@@ -1511,7 +1511,7 @@ export default function CitizenDashboard({
                         <div className="service-badges-row">
                           <span className="service-badge-pill service-badge-dept">{t('Social Welfare & Empowerment')}</span>
                           <span className="service-badge-pill service-badge-sla">
-                            <Clock size={12} /> {srv.slaDays || 10} {t('Days Statutory SLA')}
+                            <Clock size={12} /> {srv.slaDays || 10} {t('Days')}
                           </span>
                           <span className="service-badge-pill service-badge-fee" style={{ background: '#ecfdf5', color: '#047857', borderColor: '#a7f3d0' }}>
                             {t('100% Free Civic Welfare Scheme')}
@@ -1611,9 +1611,9 @@ export default function CitizenDashboard({
                         <div className="service-badges-row">
                           <span className="service-badge-pill service-badge-dept">{t('Revenue & Vital Statistics')}</span>
                           <span className="service-badge-pill service-badge-sla">
-                            <Clock size={12} /> {srv.slaDays || 7} {t('Days Statutory SLA')}
+                            <Clock size={12} /> {srv.slaDays || 7} {t('Days')}
                           </span>
-                          <span className="service-badge-pill service-badge-fee">{t('Statutory Fee')}: {srv.fee || '₹50'}</span>
+                          <span className="service-badge-pill service-badge-fee">{t('Fee')}: {srv.fee || '₹50'}</span>
                         </div>
 
                         <h3 className="service-banner-title">{t('Death & Legal Heir Succession Certificate')}</h3>
@@ -1709,7 +1709,7 @@ export default function CitizenDashboard({
                         <div className="service-badges-row">
                           <span className="service-badge-pill service-badge-dept">{t('Revenue & Municipal Land Records')}</span>
                           <span className="service-badge-pill service-badge-sla">
-                            <Clock size={12} /> {srv.slaDays || 15} {t('Days Statutory SLA')}
+                            <Clock size={12} /> {srv.slaDays || 15} {t('Days')}
                           </span>
                           <span className="service-badge-pill service-badge-fee">{t('Mutation Fee')}: {srv.fee || '₹500'}</span>
                         </div>
@@ -1807,9 +1807,9 @@ export default function CitizenDashboard({
                         <div className="service-badges-row">
                           <span className="service-badge-pill service-badge-dept">{t('Transport & Road Safety (RTO)')}</span>
                           <span className="service-badge-pill service-badge-sla">
-                            <Clock size={12} /> {srv.slaDays || 7} {t('Days Statutory SLA')}
+                            <Clock size={12} /> {srv.slaDays || 7} {t('Days')}
                           </span>
-                          <span className="service-badge-pill service-badge-fee">{t('Statutory Fee')}: {srv.fee || '₹350'}</span>
+                          <span className="service-badge-pill service-badge-fee">{t('Fee')}: {srv.fee || '₹350'}</span>
                         </div>
 
                         <h3 className="service-banner-title">{t("Learner's License & Driving License (LL/DL)")}</h3>
@@ -1908,15 +1908,15 @@ export default function CitizenDashboard({
                     </div>
                     <div>
                       <div className="submissions-tag-pill">
-                        <span className="pulse-dot-green" /> {t('Authenticated Submissions Registry')}
+                        <span className="pulse-dot-green" /> {t('Your Submitted Requests')}
                       </div>
                       <h2 className="submissions-card-title">
-                        {isOfficer ? t('My Assigned Grievance Queue & Field Redressal') : t('My Registered Grievances & Service Submissions')}
+                        {isOfficer ? t('My Assigned Complaints') : t('My Complaints & Service Requests')}
                       </h2>
                       <p className="submissions-card-subtitle">
                         {isOfficer 
-                          ? t('Inspect complaints allocated to your department queue, update site inspection notes, and clear SLA deadlines.')
-                          : t('Access your submitted complaints, track real-time statutory SLA countdowns, and inspect verified officer redressal reports.')}
+                          ? t('Manage your assigned complaints, update site inspection notes, and meet deadlines.')
+                          : t('Check your submitted complaints, track deadlines, and read officer updates.')}
                       </p>
                     </div>
                   </div>
@@ -1969,7 +1969,7 @@ export default function CitizenDashboard({
                     <span className="sub-metric-val val-resolved">{resolvedCount}</span>
                   </div>
                   <div className="sub-metric-item">
-                    <span className="sub-metric-label">{t('Statutory SLA Compliance')}</span>
+                    <span className="sub-metric-label">{t('Solved on Time')}</span>
                     <span className="sub-metric-val val-sla">{resolutionRate}%</span>
                   </div>
                 </div>
@@ -2016,15 +2016,15 @@ export default function CitizenDashboard({
               <div className="gov-sla-strip-left">
                 <ShieldCheck size={20} className="text-brand-green" />
                 <div>
-                  <strong>{t('Time-Bound Public Service Delivery Act (GIGW 3.0 Standard)')}</strong>
+                  <strong>{t('Guaranteed Time-Bound Service')}</strong>
                   <p className="text-muted small-text" style={{ margin: 0 }}>
-                    {t('Every grievance is assigned a statutory SLA deadline. Breached cases auto-escalate directly to Senior Zonal Commissioners.')}
+                    {t('Every complaint has a clear deadline. Late cases are sent automatically to senior officers.')}
                   </p>
                 </div>
               </div>
               <div className="gov-sla-strip-right">
                 <div className="sla-rate-pill">
-                  <span className="small-text">{t('SLA Redressal Rate:')}</span>
+                  <span className="small-text">{t('On-Time Rate:')}</span>
                   <strong style={{ fontSize: '1.05rem', color: 'var(--brand-700)' }}>{resolutionRate}%</strong>
                 </div>
                 <button className="btn btn-primary btn-sm" onClick={openGrievanceModal}>
@@ -2069,7 +2069,7 @@ export default function CitizenDashboard({
                 </div>
                 <div>
                   <h3 style={{ margin: 0, color: '#ffffff', fontSize: '1.25rem', fontWeight: 800 }}>
-                    {isOfficer ? t('My Assigned Duty Queue & Field Inspections') : t('My Registered Grievances & Service Submissions')}
+                    {isOfficer ? t('My Assigned Complaints') : t('My Complaints & Service Requests')}
                   </h3>
                   <p style={{ margin: '2px 0 0', color: 'rgba(255,255,255,0.85)', fontSize: '0.8rem' }}>
                     Citizen: {user?.fullName || 'Verified Citizen'} • National JanSeva Governance Registry

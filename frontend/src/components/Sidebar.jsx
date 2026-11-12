@@ -97,26 +97,26 @@ export default function Sidebar({
   const adminPendingApps = applications.filter(a => a.status === 'Submitted' || a.status === 'Under Review').length;
   const adminEscalated = grievances.filter(g => g.status === 'Escalated').length;
 
-  // Citizen Navigation Items (Strict Title Case)
+  // Citizen Navigation Items (Plain, clear language)
   const citizenNavItems = [
     {
       id: 'overview',
-      label: t('Dashboard Overview'),
+      label: t('Home & Overview'),
       icon: LayoutDashboard
     },
     {
       id: 'services',
-      label: t('Public Services Catalog'),
+      label: t('Public Services'),
       icon: Layers
     },
     {
       id: 'track',
-      label: t('Track Status & Resolution'),
+      label: t('Track My Request'),
       icon: Search
     },
     {
       id: 'faqs',
-      label: t('Knowledge Base & FAQs'),
+      label: t('Help & FAQs'),
       icon: BookOpen
     },
     {
@@ -126,59 +126,59 @@ export default function Sidebar({
     }
   ];
 
-  // Officer Navigation Groups (Strict Title Case matching Citizen Sidebar)
+  // Officer Navigation Groups (Plain, department-scoped labels)
   const officerNavGroups = [
     {
-      title: t('Field Desk'),
+      title: t('My Work'),
       items: [
         {
           id: 'officer-queue',
           section: 'grievances',
           scope: 'assigned',
-          label: t('My Assigned Field Queue'),
+          label: t('Assigned to Me'),
           icon: ClipboardCheck,
-          badge: officerAssignedCount > 0 ? { text: `${officerAssignedCount} Active`, type: 'active' } : null
+          badge: officerAssignedCount > 0 ? { text: `${officerAssignedCount} Open`, type: 'active' } : null
         },
         {
           id: 'officer-dept',
           section: 'grievances',
           scope: 'department',
-          label: t('Department Triage Queue'),
+          label: t('Department Queue'),
           icon: Inbox,
-          badge: deptUnassignedCount > 0 ? { text: `${deptUnassignedCount} Unassigned`, type: 'neutral' } : null
+          badge: deptUnassignedCount > 0 ? { text: `${deptUnassignedCount} Open`, type: 'neutral' } : null
         },
         {
           id: 'officer-apps',
           section: 'applications',
-          label: t('Same-Dept Applications'),
+          label: t('Service Requests'),
           icon: FileCheck2,
           badge: officerAppsCount > 0 ? { text: `${officerAppsCount} Pending`, type: 'neutral' } : null
         },
         {
           id: 'officer-map',
           section: 'map',
-          label: t('Field Ward Map & Route'),
+          label: t('Area Map'),
           icon: MapPin,
           badge: null
         }
       ]
     },
     {
-      title: t('Compliance & Duty'),
+      title: t('Performance'),
       items: [
         {
           id: 'officer-tribunal',
           section: 'sla-tribunal',
-          label: t('My Duty Profile & SLA'),
+          label: t('Deadlines & Profile'),
           icon: Scale,
           badge: officerEscalatedCount > 0
-            ? { text: `${officerEscalatedCount} Alert`, type: 'urgent' }
+            ? { text: `${officerEscalatedCount} Late`, type: 'urgent' }
             : null
         }
       ]
     },
     {
-      title: t('System'),
+      title: t('Account'),
       items: [
         {
           id: 'settings',
@@ -189,84 +189,84 @@ export default function Sidebar({
     }
   ];
 
-  // Admin Navigation Groups (Full Municipal Governance & Control Suite)
+  // Admin Navigation Groups (Clear municipal control room menu)
   const adminNavGroups = [
     {
-      title: t('Command Operations'),
+      title: t('Daily Operations'),
       items: [
         {
           id: 'admin-grievances',
           section: 'grievances',
-          label: t('All Municipal Grievances'),
+          label: t('All Complaints'),
           icon: FileSpreadsheet,
           badge: adminOpenGrievances > 0 ? { text: `${adminOpenGrievances} Open`, type: 'active' } : null
         },
         {
           id: 'admin-apps',
           section: 'applications',
-          label: t('Service Applications'),
+          label: t('Service Requests'),
           icon: FileCheck2,
           badge: adminPendingApps > 0 ? { text: `${adminPendingApps} Pending`, type: 'neutral' } : null
         },
         {
           id: 'admin-appeals',
           section: 'appeals',
-          label: t('Appeals & Duplicate Audits'),
+          label: t('Appeals & Duplicates'),
           icon: Scale,
           badge: null
         },
         {
           id: 'admin-roster',
           section: 'roster',
-          label: t('Officer Roster & Dispatch'),
+          label: t('Officers & Teams'),
           icon: Users,
-          badge: { text: `${totalRosterOfficers} Officers`, type: 'neutral' }
+          badge: { text: `${totalRosterOfficers} Staff`, type: 'neutral' }
         }
       ]
     },
     {
-      title: t('Policy & Governance'),
+      title: t('Rules & Reports'),
       items: [
         {
           id: 'admin-tribunal',
           section: 'sla-tribunal',
-          label: t('SLA Tribunal & Escalations'),
+          label: t('Late Cases & Actions'),
           icon: Gavel,
-          badge: adminEscalated > 0 ? { text: `${adminEscalated} Escalated`, type: 'urgent' } : null
+          badge: adminEscalated > 0 ? { text: `${adminEscalated} Late`, type: 'urgent' } : null
         },
         {
           id: 'admin-governance',
           section: 'governance',
-          label: t('Services, SLA & Advisories'),
+          label: t('Services & Alerts'),
           icon: Megaphone
         },
         {
           id: 'admin-analytics',
           section: 'analytics',
-          label: t('Control Room Analytics'),
+          label: t('Reports & Stats'),
           icon: BarChart2
         },
         {
           id: 'admin-audit',
           section: 'audit',
-          label: t('Admin Audit Logs'),
+          label: t('Activity Logs'),
           icon: BookOpen
         }
       ]
     },
     {
-      title: t('Infrastructure'),
+      title: t('System'),
       items: [
         {
           id: 'admin-notifs',
           section: 'notifications',
-          label: t('Citizen DLT Alerts & SMS'),
+          label: t('SMS & WhatsApp'),
           icon: Smartphone
         },
         {
           id: 'admin-blockchain',
           section: 'blockchain',
-          label: t('Blockchain Audit Trail'),
+          label: t('Audit Ledger'),
           icon: Database
         },
         {
@@ -335,10 +335,10 @@ export default function Sidebar({
               </div>
               <span className="sidebar-brand-sub">
                 {isCitizen 
-                  ? t('Navigation Menu') 
+                  ? t('Citizen Menu') 
                   : (isOfficer 
-                      ? t('Officer Field Desk') 
-                      : t('Nodal Governance Center'))}
+                      ? t('Officer Portal') 
+                      : t('Admin Control Room'))}
               </span>
             </div>
           </div>
@@ -376,7 +376,7 @@ export default function Sidebar({
           {isCitizen ? (
             <>
               <div className="sidebar-section-label">
-                {t('Services & Navigation')}
+                {t('Menu')}
               </div>
               {citizenNavItems.map((item) => {
                 const Icon = item.icon;
@@ -412,7 +412,7 @@ export default function Sidebar({
             /* ========================================================= */
             officerNavGroups.map((group, gIdx) => (
               <React.Fragment key={gIdx}>
-                <div className="sidebar-section-label">{group.groupLabel}</div>
+                <div className="sidebar-section-label">{group.title}</div>
                 {group.items.map((item) => {
                   const Icon = item.icon;
                   const isActive = item.id === 'settings'
@@ -448,7 +448,7 @@ export default function Sidebar({
             /* ========================================================= */
             adminNavGroups.map((group, gIdx) => (
               <React.Fragment key={gIdx}>
-                <div className="sidebar-section-label">{group.groupLabel}</div>
+                <div className="sidebar-section-label">{group.title}</div>
                 {group.items.map((item) => {
                   const Icon = item.icon;
                   const isActive = item.id === 'settings'
@@ -485,14 +485,14 @@ export default function Sidebar({
         {isOfficer && (
           <div className="sidebar-status-card">
             <div className="sidebar-status-header">
-              <span>{t('Field Duty Status')}</span>
+              <span>{t('Duty Status')}</span>
               <span className="sidebar-status-pill">
                 <span className="bot-status-beacon" style={{ position: 'static', width: '6px', height: '6px', display: 'inline-block' }} /> 
                 {t('On Duty')}
               </span>
             </div>
             <div className="sidebar-status-row">
-              <span className="sidebar-status-label">{t('Sector / Ward')}:</span>
+              <span className="sidebar-status-label">{t('Zone / Ward')}:</span>
               <span className="sidebar-status-val">{user?.sector || 'Central'} • {user?.ward || 'Ward 14'}</span>
             </div>
             <div className="sidebar-status-row">
@@ -500,7 +500,7 @@ export default function Sidebar({
               <span className="sidebar-status-val">{user?.department || 'Public Works'}</span>
             </div>
             <div className="sidebar-status-row">
-              <span className="sidebar-status-label">{t('Statutory SLA')}:</span>
+              <span className="sidebar-status-label">{t('On-Time Rate')}:</span>
               <span className="sidebar-status-val" style={{ color: '#16a34a' }}>{officerOnTimePct}% {t('On-Time')}</span>
             </div>
           </div>
@@ -509,23 +509,23 @@ export default function Sidebar({
         {isAdmin && (
           <div className="sidebar-status-card">
             <div className="sidebar-status-header">
-              <span>{t('Governance Grid')}</span>
+              <span>{t('System Health')}</span>
               <span className="sidebar-status-pill">
                 <span className="bot-status-beacon" style={{ position: 'static', width: '6px', height: '6px', display: 'inline-block' }} /> 
-                {t('Healthy')}
+                {t('Online')}
               </span>
             </div>
             <div className="sidebar-status-row">
-              <span className="sidebar-status-label">{t('Hyperledger')}:</span>
-              <span className="sidebar-status-val" style={{ color: '#2563eb' }}>janseva-channel</span>
+              <span className="sidebar-status-label">{t('Audit Ledger')}:</span>
+              <span className="sidebar-status-val" style={{ color: '#2563eb' }}>Connected</span>
             </div>
             <div className="sidebar-status-row">
-              <span className="sidebar-status-label">{t('IPFS Store')}:</span>
-              <span className="sidebar-status-val">SHA-256 Pinned</span>
+              <span className="sidebar-status-label">{t('File Storage')}:</span>
+              <span className="sidebar-status-val">IPFS Verified</span>
             </div>
             <div className="sidebar-status-row">
-              <span className="sidebar-status-label">{t('Officer Force')}:</span>
-              <span className="sidebar-status-val">{SECTORS.length} {t('Sectors')} • {totalRosterOfficers} {t('Officers')}</span>
+              <span className="sidebar-status-label">{t('Active Staff')}:</span>
+              <span className="sidebar-status-val">{SECTORS.length} {t('Zones')} • {totalRosterOfficers} {t('Officers')}</span>
             </div>
           </div>
         )}

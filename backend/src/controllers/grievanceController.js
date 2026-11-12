@@ -251,6 +251,7 @@ const createGrievance = async (req, res) => {
       landmark: landmark || '',
       priority: assignedPriority,
       status: initialStatus,
+      intakeChannel: req.body.intakeChannel || 'WEB_PORTAL',
       citizenName,
       citizenPhone,
       citizenEmail: citizenEmail || '',

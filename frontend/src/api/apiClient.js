@@ -9,6 +9,9 @@ const API_BASE_URL = (() => {
     const { hostname, origin } = window.location;
     // Local development - any port (5173, 5174, 3000, 4173, etc.)
     if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0') {
+      if (window.location.port && !['5173', '5174', '3000', '4173'].includes(window.location.port)) {
+        return `${origin}/api`;
+      }
       return 'http://localhost:5000/api';
     }
 
@@ -202,6 +205,53 @@ export const advisoryAPI = {
   update: (id, data) => request(`/advisories/${id}`, { method: 'PATCH', body: JSON.stringify(data) })
 };
 
+export const aiAPI = {
+  getCapabilities: () => request('/ai/capabilities', { method: 'GET' }),
+  extractGrievance: async ({
+    audioBlob = null,
+    transcript = '',
+    location = '',
+    ocrAddressText = '',
+    lang = 'en',
+    citizenName = '',
+    citizenPhone = '',
+    existingDraft = null
+  }) => {
+    if (audioBlob) {
+      const fd = new FormData();
+      fd.append('audio', audioBlob, 'voice-complaint.webm');
+      if (transcript) fd.append('transcript', transcript);
+      if (location) fd.append('location', location);
+      if (ocrAddressText) fd.append('ocrAddressText', ocrAddressText);
+      if (lang) fd.append('lang', lang);
+      if (citizenName) fd.append('citizenName', citizenName);
+      if (citizenPhone) fd.append('citizenPhone', citizenPhone);
+      if (existingDraft) fd.append('existingDraft', JSON.stringify(existingDraft));
+
+      const res = await fetch(`${API_BASE_URL}/ai/extract-grievance`, {
+        method: 'POST',
+        body: fd
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || 'Voice extraction failed');
+      return data;
+    }
+
+    return request('/ai/extract-grievance', {
+      method: 'POST',
+      body: JSON.stringify({
+        transcript,
+        location,
+        ocrAddressText,
+        lang,
+        citizenName,
+        citizenPhone,
+        existingDraft
+      })
+    });
+  }
+};
+
 export default {
   auth: authAPI,
   grievance: grievanceAPI,
@@ -210,6 +260,7 @@ export default {
   ipfs: ipfsAPI,
   admin: adminAPI,
   advisory: advisoryAPI,
+  ai: aiAPI,
   notifications: notificationAPI,
   blockchain: blockchainAPI
 };
