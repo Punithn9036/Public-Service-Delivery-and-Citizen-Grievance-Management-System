@@ -906,8 +906,8 @@ export default function TrackingView({
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <ShieldCheck size={22} color="#2563eb" />
                 <div>
-                  <h3 style={{ margin: 0 }}>Hyperledger Fabric Ledger Verification</h3>
-                  <p className="small-text text-muted" style={{ margin: 0 }}>Immutable Cryptographic Block Proof • Channel: janseva-channel</p>
+                  <h3 style={{ margin: 0 }}>Tamper-Proof Record Check</h3>
+                  <p className="small-text text-muted" style={{ margin: 0 }}>Verified Complaint History • Channel: janseva-channel</p>
                 </div>
               </div>
               <button className="close-btn" onClick={() => setShowLedgerModal(false)}>&times;</button>

@@ -10,6 +10,7 @@ const ipfsRoutes = require('./src/routes/ipfsRoutes');
 const notificationRoutes = require('./src/routes/notificationRoutes');
 const blockchainRoutes = require('./src/routes/blockchainRoutes');
 const { adminRouter, advisoryRouter } = require('./src/routes/adminGovernanceRoutes');
+const aiRoutes = require('./src/routes/aiRoutes');
 const notificationController = require('./src/controllers/notificationController');
 
 const app = express();
@@ -42,6 +43,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/blockchain', blockchainRoutes);
 app.use('/api/admin', adminRouter);
 app.use('/api/advisories', advisoryRouter);
+app.use('/api/ai', aiRoutes);
 app.use('/api/webhook/whatsapp', notificationController.handleWhatsAppWebhook);
 
 // Fallback 404 handler for API routes (always return JSON, never HTML)

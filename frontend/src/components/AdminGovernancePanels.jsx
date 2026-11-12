@@ -152,8 +152,8 @@ export function AdminOfficerRosterPanel({ grievances = [], rosterVersion, setRos
     <div className="admin-table-card glass-card animate-fade-in">
       <div className="table-header-controls">
         <div>
-          <h2><Users size={18} style={{ verticalAlign: 'middle' }} /> Municipal Officer Force & Lifecycle Management ({officers.length})</h2>
-          <p>Onboard field officers, transfer sector/department postings, toggle On-Leave availability, or reinstate suspended personnel.</p>
+          <h2><Users size={18} style={{ verticalAlign: 'middle' }} /> Officers & Teams Directory ({officers.length})</h2>
+          <p>Add new officers, change their department, mark leave status, or re-activate accounts.</p>
         </div>
         <div className="filter-row" style={{ flexWrap: 'wrap' }}>
           <input
@@ -398,8 +398,8 @@ export function AdminAppealsDuplicatesPanel({ grievances = [], onLinkDuplicateGr
       <div className="admin-table-card glass-card">
         <div className="table-header-controls">
           <div>
-            <h2><Scale size={18} style={{ verticalAlign: 'middle' }} /> Citizen Appeals, Re-opened & Low-CSAT Audit Queue ({appealCandidates.length})</h2>
-            <p>Review grievances reopened by citizens or rated &le; 2 stars for supervisory intervention.</p>
+            <h2><Scale size={18} style={{ verticalAlign: 'middle' }} /> Appeals & Re-opened Complaints ({appealCandidates.length})</h2>
+            <p>Review complaints reopened by citizens or rated 2 stars or less.</p>
           </div>
         </div>
         <div className="table-wrapper">
@@ -453,8 +453,8 @@ export function AdminAppealsDuplicatesPanel({ grievances = [], onLinkDuplicateGr
       <div className="admin-table-card glass-card">
         <div className="table-header-controls">
           <div>
-            <h2><Link2 size={18} style={{ verticalAlign: 'middle' }} /> Duplicate Complaint Deduplication ({linkedTickets.length} Linked)</h2>
-            <p>Link repeat submissions to a primary Master Ticket so resolving the Master cascades closure cleanly to duplicates.</p>
+            <h2><Link2 size={18} style={{ verticalAlign: 'middle' }} /> Duplicate Complaints ({linkedTickets.length} Linked)</h2>
+            <p>Link repeat complaints to one main ticket so solving it closes all duplicates together.</p>
           </div>
         </div>
         <div className="table-wrapper">
@@ -650,7 +650,7 @@ export function AdminGovernancePolicyPanel({ services = [], setServices, advisor
 
       {/* Civic Advisory Broadcaster */}
       <div className="admin-analytics-card">
-        <h3 style={{ margin: '0 0 0.75rem 0' }}><Megaphone size={18} style={{ verticalAlign: 'middle' }} /> Civic & Departmental Advisory Broadcaster</h3>
+        <h3 style={{ margin: '0 0 0.75rem 0' }}><Megaphone size={18} style={{ verticalAlign: 'middle' }} /> Send Public & Staff Alerts</h3>
         <form onSubmit={handlePublishAdvisory} style={{ display: 'grid', gap: '0.75rem', marginBottom: '1rem' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.6rem' }}>
             <input className="filter-select" placeholder="Advisory Headline (e.g., Valve Shutdown Ward 4)" value={advTitle} onChange={(e) => setAdvTitle(e.target.value)} required />
@@ -691,8 +691,8 @@ export function AdminGovernancePolicyPanel({ services = [], setServices, advisor
       <div className="admin-table-card glass-card">
         <div className="table-header-controls">
           <div>
-            <h2><Sliders size={18} style={{ verticalAlign: 'middle' }} /> Department SLA Target & Auto-Escalation Policy Matrix</h2>
-            <p>Tune grievance resolution deadlines across municipal departments.</p>
+            <h2><Sliders size={18} style={{ verticalAlign: 'middle' }} /> Department Deadlines</h2>
+            <p>Set how many days each department gets to solve a complaint.</p>
           </div>
         </div>
         <div className="table-wrapper">
@@ -753,8 +753,8 @@ export function AdminGovernancePolicyPanel({ services = [], setServices, advisor
       <div className="admin-table-card glass-card">
         <div className="table-header-controls">
           <div>
-            <h2>Statutory Citizen Services Catalog ({services.length})</h2>
-            <p>Adjust live service SLAs or launch new citizen certificates dynamically.</p>
+            <h2>Public Services List ({services.length})</h2>
+            <p>Update service deadlines or add new citizen services.</p>
           </div>
           <form onSubmit={handleAddService} style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap' }}>
             <input className="filter-select" placeholder="New service name..." value={newSrvName} onChange={(e) => setNewSrvName(e.target.value)} />
@@ -901,8 +901,8 @@ export function AdminRealAnalyticsPanel({ grievances = [], applications = [], de
       <div className="admin-table-card glass-card">
         <div className="table-header-controls">
           <div>
-            <h2>Authentic Inter-Departmental SLA Scorecard</h2>
-            <p>Real-time resolution velocity and escalation posture per municipal department.</p>
+            <h2>Department Performance</h2>
+            <p>Live resolution speed and late-case rates for each department.</p>
           </div>
         </div>
         <div className="table-wrapper">
@@ -994,8 +994,8 @@ export function AdminAuditLogsPanel() {
     <div className="admin-table-card glass-card animate-fade-in">
       <div className="table-header-controls">
         <div>
-          <h2><BookOpen size={18} style={{ verticalAlign: 'middle' }} /> Immutable Admin Governance Audit Log ({visibleLogs.length})</h2>
-          <p>Chronological accountability ledger tracking roster edits, SLA changes, transfers, bulk assignments, and advisories.</p>
+          <h2><BookOpen size={18} style={{ verticalAlign: 'middle' }} /> Admin Activity Log ({visibleLogs.length})</h2>
+          <p>History of officer updates, deadline changes, transfers, bulk assignments, and alerts.</p>
         </div>
         <select className="filter-select" value={filterAction} onChange={(e) => setFilterAction(e.target.value)}>
           {actionTypes.map((act) => <option key={act} value={act}>{act}</option>)}

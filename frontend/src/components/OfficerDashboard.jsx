@@ -410,10 +410,10 @@ export default function OfficerDashboard({
   const activeMapTicket = mapTickets.find((tItem) => tItem.id === selectedMapTicketId) || mapTickets[0] || null;
 
   const navTabs = [
-    { id: 'grievances', label: t('Field Queue') },
-    { id: 'applications', label: `${t('Same-Dept Applications')} (${deptApplications.length})` },
-    { id: 'map', label: t('Field Ward Map') },
-    { id: 'sla-tribunal', label: t('My Duty Profile & SLA') }
+    { id: 'grievances', label: t('Complaints Queue') },
+    { id: 'applications', label: `${t('Service Requests')} (${deptApplications.length})` },
+    { id: 'map', label: t('Area Map') },
+    { id: 'sla-tribunal', label: t('Deadlines & Profile') }
   ];
 
   // Own-department lifecycle distribution bars (NO cross-department exposure!)
@@ -458,22 +458,22 @@ export default function OfficerDashboard({
         <div>
           <div className="officer-header-badges">
             <span className="officer-portal-badge">
-              <ShieldCheck size={14} /> {t('Department Field Officer Portal')}
+              <ShieldCheck size={14} /> {t('Department Officer Portal')}
             </span>
             <span className="officer-dept-pill">
               {officerDept || t('Department Unspecified')}
             </span>
             {deptSlaPolicy && (
               <span className="sla-rate-pill officer-sla-pill">
-                <Clock size={12} /> SLA Target: {deptSlaPolicy.targetDays} Days
+                <Clock size={12} /> Target Time: {deptSlaPolicy.targetDays} Days
               </span>
             )}
           </div>
           <h1 style={{ margin: '0.2rem 0', fontSize: '1.5rem' }}>
-            {user?.fullName || ownRosterProfile?.name || t('Nodal Officer')} — {t('Field Execution Desk')}
+            {user?.fullName || ownRosterProfile?.name || t('Officer')} — {t('Work Desk')}
           </h1>
           <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-            {t('Strict department isolation enabled: showing only tickets and service applications under')} <strong>{officerDept}</strong>.
+            {t('Showing only complaints and service requests for')} <strong>{officerDept}</strong>.
           </p>
         </div>
 
@@ -515,7 +515,7 @@ export default function OfficerDashboard({
       <div className="admin-kpi-grid">
         <div className="kpi-card">
           <div className="kpi-top">
-            <span>{t('My Active Assigned')}</span>
+            <span>{t('Assigned to Me')}</span>
             <UserCheck size={18} color="var(--brand-700)" />
           </div>
           <h2>{activeAssignedCount}</h2>
@@ -523,7 +523,7 @@ export default function OfficerDashboard({
         </div>
         <div className="kpi-card">
           <div className="kpi-top">
-            <span>{t('Dept Unassigned Triage')}</span>
+            <span>{t('Unassigned in Dept')}</span>
             <Hand size={18} color="var(--brand-500)" />
           </div>
           <h2>{triageUnassignedCount}</h2>
@@ -531,17 +531,17 @@ export default function OfficerDashboard({
         </div>
         <div className="kpi-card">
           <div className="kpi-top">
-            <span>{t('Resolved (Own Dept)')}</span>
+            <span>{t('Solved in Dept')}</span>
             <CheckCircle2 size={18} color="#16a34a" />
           </div>
           <h2>{resolvedDeptCount}</h2>
           <div className="kpi-foot">
-            {realDeptMttrHours !== null ? `${t('Real MTTR')}: ${realDeptMttrHours} hrs` : t('No resolved timestamps yet')}
+            {realDeptMttrHours !== null ? `${t('Avg. Fix Time')}: ${realDeptMttrHours} hrs` : t('No resolved timestamps yet')}
           </div>
         </div>
         <div className="kpi-card">
           <div className="kpi-top">
-            <span>{t('Same-Dept Applications')}</span>
+            <span>{t('Service Requests')}</span>
             <FileText size={18} color="var(--brand-700)" />
           </div>
           <h2>{pendingAppsCount}</h2>
@@ -556,9 +556,9 @@ export default function OfficerDashboard({
           <div className="admin-analytics-card" style={{ marginBottom: '1.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
               <div>
-                <h3 style={{ margin: 0 }}>{officerDept} — {t('Queue Stage Distribution')}</h3>
+                <h3 style={{ margin: 0 }}>{officerDept} — {t('Complaints by Status')}</h3>
                 <p style={{ margin: '0.15rem 0 0 0', fontSize: '0.84rem', color: 'var(--text-muted)' }}>
-                  {t('Scoped exclusively to grievances within your department')}
+                  {t('Only complaints for your department')}
                 </p>
               </div>
               <span className="badge badge-official">
@@ -586,10 +586,10 @@ export default function OfficerDashboard({
               <div>
                 <h2>
                   {officerQueueScope === 'assigned'
-                    ? `${t('My Assigned Field Queue')} (${assignedGrievances.length})`
-                    : `${t('Department Triage Queue')} (${deptGrievances.length})`}
+                    ? `${t('Assigned to Me')} (${assignedGrievances.length})`
+                    : `${t('Department Queue')} (${deptGrievances.length})`}
                 </h2>
-                <p>{t('Claim unassigned departmental tickets, upload resolution proof, request citizen clarification, or transfer misrouted issues.')}</p>
+                <p>{t('Pick up unassigned complaints, upload photos of finished work, or ask citizens for details.')}</p>
               </div>
               <div className="filter-row" style={{ flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', gap: '0.35rem' }}>
@@ -605,7 +605,7 @@ export default function OfficerDashboard({
                     className={`btn btn-sm ${officerQueueScope === 'department' ? 'btn-primary' : 'btn-outline'}`}
                     onClick={() => setOfficerQueueScope && setOfficerQueueScope('department')}
                   >
-                    {t('All Dept Queue')} ({deptGrievances.length})
+                    {t('All Department Cases')} ({deptGrievances.length})
                   </button>
                 </div>
 
@@ -646,11 +646,11 @@ export default function OfficerDashboard({
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>{t('Ticket & Location')}</th>
+                    <th>{t('Complaint & Area')}</th>
                     <th>{t('Citizen')}</th>
-                    <th>{t('Priority / SLA')}</th>
-                    <th>{t('Status & Proof')}</th>
-                    <th>{t('Field Actions')}</th>
+                    <th>{t('Priority & Deadline')}</th>
+                    <th>{t('Status & Photos')}</th>
+                    <th>{t('Actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -754,7 +754,7 @@ export default function OfficerDashboard({
             <div>
               <h2>{officerDept} — {t('Service Applications')} ({deptApplications.length})</h2>
               <p>
-                {t('Only statutory service requests routed to your department appear here. Cross-department certificates (e.g., Birth Certificates for Water Supply) are strictly blocked.')}
+                {t('Only service requests sent to your department appear here.')}
               </p>
             </div>
           </div>
@@ -819,7 +819,7 @@ export default function OfficerDashboard({
         <div className="admin-table-card">
           <div className="table-header-controls">
             <div>
-              <h2><MapPin size={18} style={{ verticalAlign: 'middle' }} /> {officerDept} — {t('Field Ward Map & Dispatch Route')}</h2>
+              <h2><MapPin size={18} style={{ verticalAlign: 'middle' }} /> {officerDept} — {t('Area Map')}</h2>
               <p>{t('Geographic sector plot of open grievances in your department with priority field sequence.')}</p>
             </div>
           </div>
@@ -970,7 +970,7 @@ export default function OfficerDashboard({
       {activeSection === 'sla-tribunal' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div className="admin-analytics-card">
-            <h3 style={{ margin: '0 0 0.75rem 0' }}><Scale size={18} style={{ verticalAlign: 'middle' }} /> {t('My Officer Duty Card & Standing')}</h3>
+            <h3 style={{ margin: '0 0 0.75rem 0' }}><Scale size={18} style={{ verticalAlign: 'middle' }} /> {t('My Officer Profile')}</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
               <div>
                 <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>{t('Officer Name')}</div>
@@ -994,7 +994,7 @@ export default function OfficerDashboard({
           <div className="admin-table-card">
             <div className="table-header-controls">
               <div>
-                <h2>{t('My SLA Breach Notices & Explanations')} ({ownSlaNotices.length})</h2>
+                <h2>{t('Late Case Notices')} ({ownSlaNotices.length})</h2>
                 <p>{t('Submit field justifications for delayed or escalated tickets assigned to you. Other officers records and administrative strike actions are restricted to Admin.')}</p>
               </div>
             </div>
