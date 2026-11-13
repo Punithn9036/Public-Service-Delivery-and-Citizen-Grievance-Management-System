@@ -72,7 +72,7 @@ function getInitialNavState(user) {
   const validCitizenTabs = ['overview', 'services', 'track', 'faqs'];
   const validAdminSections = user?.role === 'OFFICER'
     ? ['grievances', 'applications', 'map', 'sla-tribunal']
-    : ['grievances', 'applications', 'appeals', 'roster', 'sla-tribunal', 'governance', 'analytics', 'audit', 'notifications', 'blockchain'];
+    : ['grievances', 'applications', 'map', 'appeals', 'roster', 'sla-tribunal', 'governance', 'analytics', 'audit', 'notifications', 'blockchain'];
 
   if (isOfficial) {
     let section = 'grievances';

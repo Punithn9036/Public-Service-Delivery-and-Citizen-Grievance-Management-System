@@ -4463,3 +4463,43 @@
 .chat-nearby-upvote-btn:hover {
   background: #d97706;
 }
+
+
+/* ========================================================================= */
+/* BENGALURU GEOSPATIAL MAP (LEAFLET CUSTOM STYLING)                         */
+/* ========================================================================= */
+.custom-bangalore-pin {
+  background: transparent !important;
+  border: none !important;
+}
+
+.custom-bangalore-pin:hover div {
+  transform: scale(1.15);
+}
+
+.leaflet-container {
+  width: 100% !important;
+  height: 100% !important;
+  font-family: var(--font-body) !important;
+  z-index: 10 !important;
+}
+
+.leaflet-pane {
+  z-index: 10 !important;
+}
+
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 20 !important;
+}
+
+.leaflet-popup-content-wrapper {
+  background: var(--bg-card) !important;
+  color: var(--text-main) !important;
+  border-radius: var(--radius-sm) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+}
+
+.leaflet-popup-tip {
+  background: var(--bg-card) !important;
+}
