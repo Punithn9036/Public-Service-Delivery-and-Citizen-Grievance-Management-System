@@ -31,13 +31,15 @@ import {
   Check,
   QrCode,
   Users,
-  Gavel
+  Gavel,
+  MapPin
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { applicationAPI, notificationAPI, blockchainAPI } from '../api/apiClient';
 import { isSameDepartment } from '../utils/departmentScope';
 import { AdminOfficerRosterPanel, AdminAppealsDuplicatesPanel, AdminGovernancePolicyPanel, AdminRealAnalyticsPanel, AdminAuditLogsPanel } from './AdminGovernancePanels';
+import GrievanceGeospatialMap from './GrievanceGeospatialMap';
 import { getStoredRoster, saveStoredRoster } from '../utils/officerDispatch';
 import { 
   evaluateDisciplinaryStatus, 
@@ -670,6 +672,15 @@ export default function AdminDashboard({
 
                   <button 
                     type="button" 
+                    className={`trending-chip ${activeSection === 'map' ? 'active-chip' : ''}`}
+                    onClick={() => handleFilterChip('section', 'map')}
+                  >
+                    <MapPin size={12} />
+                    <span>Area Map</span>
+                  </button>
+
+                  <button 
+                    type="button" 
                     className={`trending-chip ${selectedStatus === 'Submitted' ? 'active-chip' : ''}`}
                     onClick={() => handleFilterChip('status', 'Submitted')}
                   >
@@ -834,6 +845,13 @@ export default function AdminDashboard({
           style={{ padding: '8px 18px', fontWeight: 700 }}
         >
           <FileCheck2 size={16} /> {t('serviceApps')} ({serviceApps.length})
+        </button>
+        <button
+          onClick={() => setActiveSection('map')}
+          className={`btn btn-sm ${activeSection === 'map' ? 'btn-primary' : 'btn-secondary'}`}
+          style={{ padding: '8px 18px', fontWeight: 700 }}
+        >
+          <MapPin size={16} /> {t('Area Map') || 'Area Map'}
         </button>
         <button
           onClick={() => setActiveSection('analytics')}
@@ -1248,6 +1266,15 @@ export default function AdminDashboard({
             </table>
           </div>
         </div>
+      )}
+
+      {activeSection === 'map' && (
+        <GrievanceGeospatialMap
+          grievances={grievances}
+          departments={departments}
+          onOpenAction={handleOpenEdit}
+          user={user}
+        />
       )}
 
       {activeSection === 'analytics' && (

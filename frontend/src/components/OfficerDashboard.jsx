@@ -23,13 +23,20 @@ import {
   Search,
   Send,
   X,
-  Megaphone
+  Megaphone,
+  ChevronDown,
+  Building,
+  FileCheck2,
+  ClipboardCheck
 } from 'lucide-react';
+import govHeroBg from '../assets/gov-hero-bg.png';
+import nationalEmblemImg from '../assets/national-emblem.webp';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { adminAPI, grievanceAPI, ipfsAPI } from '../api/apiClient';
 import { isSameDepartment, isTicketAssignedToOfficer } from '../utils/departmentScope';
 import { submitOfficerExplanation } from '../utils/slaEscalationEngine';
+import GrievanceGeospatialMap, { derivePlotCoords as sharedDerivePlotCoords } from './GrievanceGeospatialMap';
 
 const OFFICER_VALID_TRANSITIONS = {
   'Submitted': ['Under Review', 'Escalated'],
@@ -64,27 +71,7 @@ const SECTOR_COORDS = {
   'Sector 5': { x: 50, y: 46, zone: 'Central Zone' }
 };
 
-const derivePlotCoords = (grievance, idx) => {
-  const txt = `${grievance.sector || ''} ${grievance.location || ''} ${grievance.landmark || ''}`;
-  for (const [secName, base] of Object.entries(SECTOR_COORDS)) {
-    if (txt.toLowerCase().includes(secName.toLowerCase())) {
-      const jitterX = ((idx * 13) % 14) - 7;
-      const jitterY = ((idx * 17) % 12) - 6;
-      return {
-        x: Math.min(90, Math.max(10, base.x + jitterX)),
-        y: Math.min(88, Math.max(12, base.y + jitterY)),
-        sectorLabel: secName
-      };
-    }
-  }
-  const keys = Object.keys(SECTOR_COORDS);
-  const fallback = SECTOR_COORDS[keys[idx % keys.length]];
-  return {
-    x: Math.min(90, Math.max(10, fallback.x + ((idx * 11) % 16) - 8)),
-    y: Math.min(88, Math.max(12, fallback.y + ((idx * 9) % 14) - 7)),
-    sectorLabel: grievance.sector || 'Assigned Ward'
-  };
-};
+const derivePlotCoords = (grievance, idx) => sharedDerivePlotCoords(grievance, idx);
 
 export default function OfficerDashboard({
   grievances = [],
@@ -427,7 +414,192 @@ export default function OfficerDashboard({
   }, [deptGrievances]);
 
   return (
-    <div className="admin-container animate-fade-in">
+    <div className="dashboard-content animate-fade-in" style={{ padding: 0 }}>
+      {/* ========================================================================= */}
+      {/* 1. GRAND GOVERNMENT HERO BANNER (FOR FIELD OFFICER) */}
+      {/* ========================================================================= */}
+      <div className="india-gov-hero-section admin-hero-theme">
+        {/* Overhanging Hero Background Layer */}
+        <div 
+          className="hero-bg-layer"
+          style={{
+            backgroundImage: `linear-gradient(180deg, rgba(10, 18, 35, 0.28) 0%, rgba(10, 18, 35, 0.48) 50%, rgba(10, 18, 35, 0.76) 100%), url(${govHeroBg})`
+          }}
+        />
+
+        <div className="hero-center-content">
+          {/* State Emblem of India */}
+          <div className="hero-emblem-container animate-float-subtle">
+            <img 
+              src={nationalEmblemImg} 
+              alt="State Emblem of India" 
+              className="hero-emblem-img"
+            />
+          </div>
+
+          {/* Role Pill Badge */}
+          <div className="admin-portal-hero-badge">
+            <ShieldCheck size={15} />
+            <span>
+              {officerDept ? `${officerDept} • Field Officer Control Desk` : 'Nodal Field Officer Command Desk'}
+            </span>
+          </div>
+
+          {/* Portal Title */}
+          <h1 className="hero-portal-title">
+            janseva<span className="hero-gov-dot">.gov.in</span>
+          </h1>
+
+          <div className="hero-portal-sub">
+            {officerDept ? `${officerDept} — Designated Field Officer Workspace` : 'Designated Field Officer Command Desk'}
+          </div>
+
+          <p className="hero-tagline-quote">
+            Authorized Officer: {user?.fullName || ownRosterProfile?.name || 'Field Officer'} — Statutory SLA Compliance & Rapid Field Remediation
+          </p>
+
+          {/* Central India.gov.in Style Search Bar */}
+          <form 
+            onSubmit={(e) => {
+              e.preventDefault();
+              const target = document.getElementById('officer-management-section');
+              if (target) target.scrollIntoView({ behavior: 'smooth' });
+            }} 
+            className="hero-search-wrapper"
+          >
+            <div className="hero-search-input-box">
+              <Search size={18} className="hero-search-icon" />
+              <input 
+                type="text" 
+                placeholder="Search assigned tickets by ID (GRV-...), citizen name, location, or issue..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="hero-search-input"
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm('')}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#94A3B8',
+                    cursor: 'pointer',
+                    fontSize: '1.25rem',
+                    padding: '0 8px',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}
+                  title="Clear search"
+                  aria-label="Clear search"
+                >
+                  &times;
+                </button>
+              )}
+            </div>
+          </form>
+
+          {/* Fast-Track Operations Chips */}
+          <div className="hero-trending-row">
+            <span className="trending-label">Quick Filters:</span>
+            <div className="trending-chips-wrap">
+              <button 
+                type="button" 
+                className={`trending-chip ${activeSection === 'grievances' && officerQueueScope === 'assigned' && statusFilter === 'All' ? 'active-chip' : ''}`}
+                onClick={() => {
+                  if (setActiveSection) setActiveSection('grievances');
+                  if (setOfficerQueueScope) setOfficerQueueScope('assigned');
+                  setStatusFilter('All');
+                  const target = document.getElementById('officer-management-section');
+                  if (target) target.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                <ClipboardCheck size={12} />
+                <span>Assigned to Me ({activeAssignedCount})</span>
+              </button>
+
+              <button 
+                type="button" 
+                className={`trending-chip ${activeSection === 'grievances' && officerQueueScope === 'department' ? 'active-chip' : ''}`}
+                onClick={() => {
+                  if (setActiveSection) setActiveSection('grievances');
+                  if (setOfficerQueueScope) setOfficerQueueScope('department');
+                  const target = document.getElementById('officer-management-section');
+                  if (target) target.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                <Building size={12} />
+                <span>Department Queue ({triageUnassignedCount})</span>
+              </button>
+
+              <button 
+                type="button" 
+                className={`trending-chip highlight-chip ${activeSection === 'applications' ? 'active-chip' : ''}`}
+                onClick={() => {
+                  if (setActiveSection) setActiveSection('applications');
+                  const target = document.getElementById('officer-management-section');
+                  if (target) target.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                <FileCheck2 size={12} />
+                <span>Service Requests ({pendingAppsCount})</span>
+              </button>
+
+              <button 
+                type="button" 
+                className={`trending-chip ${activeSection === 'sla-tribunal' ? 'active-chip' : ''}`}
+                onClick={() => {
+                  if (setActiveSection) setActiveSection('sla-tribunal');
+                  const target = document.getElementById('officer-management-section');
+                  if (target) target.scrollIntoView({ behavior: 'smooth' });
+                }}
+                style={{ borderColor: '#ef4444', color: '#dc2626' }}
+              >
+                <Scale size={12} color="#dc2626" />
+                <span>🚨 Escalated Breaches ({escalatedOwnCount})</span>
+              </button>
+
+              <button 
+                type="button" 
+                className={`trending-chip ${statusFilter === 'Resolved' ? 'active-chip' : ''}`}
+                onClick={() => {
+                  if (setActiveSection) setActiveSection('grievances');
+                  setStatusFilter('Resolved');
+                  const target = document.getElementById('officer-management-section');
+                  if (target) target.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                <CheckCircle2 size={12} />
+                <span>Resolved ({resolvedDeptCount})</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Scroll Down Arrow Indicator Button */}
+        <div className="hero-scroll-down-container">
+          <button 
+            type="button" 
+            className="hero-scroll-down-btn"
+            onClick={() => {
+              const target = document.getElementById('officer-management-section');
+              if (target) {
+                target.scrollIntoView({ behavior: 'smooth' });
+              }
+            }}
+            aria-label="Scroll down to officer workspace"
+            title="Scroll down to officer workspace"
+          >
+            <div className="scroll-arrow-circle">
+              <ChevronDown size={26} className="bouncing-arrow" />
+            </div>
+            <span className="scroll-arrow-label">Officer Workspace</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 2. OFFICER WORKSPACE CONSOLE */}
+      <div className="admin-container" id="officer-management-section">
       {canGoBack && onGoBack && (
         <div style={{ marginBottom: '0.75rem' }}>
           <button type="button" className="btn btn-outline btn-sm" onClick={onGoBack}>
@@ -816,154 +988,14 @@ export default function OfficerDashboard({
 
       {/* SECTION 3: FIELD WARD MAP & ROUTE */}
       {activeSection === 'map' && (
-        <div className="admin-table-card">
-          <div className="table-header-controls">
-            <div>
-              <h2><MapPin size={18} style={{ verticalAlign: 'middle' }} /> {officerDept} — {t('Area Map')}</h2>
-              <p>{t('Geographic sector plot of open grievances in your department with priority field sequence.')}</p>
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem', padding: '1rem' }}>
-            {/* Interactive SVG / Sector Plot */}
-            <div
-              style={{
-                position: 'relative',
-                minHeight: '340px',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--border-subtle)',
-                background: 'linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-card) 100%)',
-                overflow: 'hidden'
-              }}
-            >
-              {/* Grid lines */}
-              <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.25 }}>
-                <line x1="50" y1="0" x2="50" y2="100" stroke="var(--border-strong)" strokeWidth="0.4" strokeDasharray="2 2" />
-                <line x1="0" y1="50" x2="100" y2="50" stroke="var(--border-strong)" strokeWidth="0.4" strokeDasharray="2 2" />
-                <circle cx="50" cy="48" r="28" fill="none" stroke="var(--brand-700)" strokeWidth="0.3" strokeDasharray="1.5 1.5" />
-              </svg>
-
-              {Object.entries(SECTOR_COORDS).map(([sec, pos]) => (
-                <div
-                  key={sec}
-                  style={{
-                    position: 'absolute',
-                    left: `${pos.x}%`,
-                    top: `${pos.y}%`,
-                    transform: 'translate(-50%, -140%)',
-                    fontSize: '0.7rem',
-                    fontWeight: 700,
-                    color: 'var(--text-muted)',
-                    pointerEvents: 'none'
-                  }}
-                >
-                  {sec} ({pos.zone})
-                </div>
-              ))}
-
-              {mapTickets.map((ticket) => {
-                const isSelected = activeMapTicket?.id === ticket.id;
-                const pinColor = ticket.priority === 'Urgent' || ticket.status === 'Escalated'
-                  ? '#dc2626'
-                  : ticket.priority === 'High'
-                    ? '#ea580c'
-                    : '#2c5745';
-                return (
-                  <button
-                    key={ticket.id}
-                    type="button"
-                    title={`${ticket.id}: ${ticket.title}`}
-                    onClick={() => setSelectedMapTicketId(ticket.id)}
-                    style={{
-                      position: 'absolute',
-                      left: `${ticket.coords.x}%`,
-                      top: `${ticket.coords.y}%`,
-                      transform: 'translate(-50%, -50%)',
-                      width: isSelected ? '32px' : '24px',
-                      height: isSelected ? '32px' : '24px',
-                      borderRadius: '50%',
-                      border: '2px solid #fff',
-                      background: pinColor,
-                      color: '#fff',
-                      fontSize: '0.68rem',
-                      fontWeight: 800,
-                      cursor: 'pointer',
-                      boxShadow: isSelected ? '0 0 0 4px rgba(235, 125, 0, 0.35)' : '0 2px 6px rgba(0,0,0,0.25)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    !
-                  </button>
-                );
-              })}
-
-              {mapTickets.length === 0 && (
-                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontWeight: 600 }}>
-                  {t('All department grievances are closed.')}
-                </div>
-              )}
-            </div>
-
-            {/* Selected Pin & Field Route List */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
-              {activeMapTicket && (
-                <div className="card" style={{ padding: '1rem', border: '1px solid var(--border-strong)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-                    <strong>{activeMapTicket.id}</strong>
-                    <span className="badge badge-urgent">{activeMapTicket.priority}</span>
-                  </div>
-                  <h4 style={{ margin: '0 0 0.35rem 0' }}>{activeMapTicket.title}</h4>
-                  <p style={{ margin: '0 0 0.6rem 0', fontSize: '0.84rem', color: 'var(--text-muted)' }}>
-                    <MapPin size={12} style={{ verticalAlign: 'middle' }} /> {activeMapTicket.location} • {activeMapTicket.coords.sectorLabel}
-                  </p>
-                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    {!isTicketAssignedToOfficer(activeMapTicket, user) && onClaimGrievance && (
-                      <button
-                        type="button"
-                        className="btn btn-primary btn-sm"
-                        onClick={() => onClaimGrievance(activeMapTicket.id)}
-                      >
-                        <Hand size={13} /> {t('Claim Ticket')}
-                      </button>
-                    )}
-                    <button type="button" className="btn btn-outline btn-sm" onClick={() => openActionModal(activeMapTicket)}>
-                      {t('Open Action')}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <div className="card" style={{ padding: '1rem', flex: 1 }}>
-                <h4 style={{ margin: '0 0 0.5rem 0' }}>{t('Recommended Field Route')} ({mapTickets.length})</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', maxHeight: '210px', overflowY: 'auto' }}>
-                  {mapTickets.map((tItem, i) => (
-                    <button
-                      key={tItem.id}
-                      type="button"
-                      onClick={() => setSelectedMapTicketId(tItem.id)}
-                      style={{
-                        textAlign: 'left',
-                        padding: '0.5rem 0.65rem',
-                        borderRadius: 'var(--radius-sm)',
-                        border: '1px solid var(--border-subtle)',
-                        background: activeMapTicket?.id === tItem.id ? 'var(--bg-tertiary)' : 'var(--bg-card)',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
-                      }}
-                    >
-                      <span style={{ fontSize: '0.82rem', fontWeight: 600 }}>#{i + 1} {tItem.id} — {tItem.location}</span>
-                      <span className="badge badge-pending" style={{ fontSize: '0.7rem' }}>{tItem.priority}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <GrievanceGeospatialMap
+          grievances={deptGrievances}
+          departments={departments}
+          initialDept={officerDept || 'ALL'}
+          onOpenAction={openActionModal}
+          onClaimGrievance={onClaimGrievance}
+          user={user}
+        />
       )}
 
       {/* SECTION 4: OWN DUTY PROFILE & SLA COMPLIANCE (STRICTLY OWN RECORDS ONLY!) */}
@@ -1330,6 +1362,7 @@ export default function OfficerDashboard({
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

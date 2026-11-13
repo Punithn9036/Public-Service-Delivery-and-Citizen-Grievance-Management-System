@@ -209,6 +209,13 @@ export default function Sidebar({
           badge: adminPendingApps > 0 ? { text: `${adminPendingApps} Pending`, type: 'neutral' } : null
         },
         {
+          id: 'admin-map',
+          section: 'map',
+          label: t('Area Map'),
+          icon: MapPin,
+          badge: null
+        },
+        {
           id: 'admin-appeals',
           section: 'appeals',
           label: t('Appeals & Duplicates'),
